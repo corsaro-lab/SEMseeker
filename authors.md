@@ -2,7 +2,7 @@
 
 ## Authors
 
-- **Luigi Corsaro**. Author, maintainer.
+- **[Luigi Corsaro](https://drake69.github.io/)**. Author, maintainer.
   [](https://orcid.org/0000-0003-1218-230X)
 
 ## Citation
