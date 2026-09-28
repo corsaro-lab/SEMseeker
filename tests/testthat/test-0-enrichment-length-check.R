@@ -8,8 +8,10 @@
 # post-AI-035 it lists each array with its actual length and tells the
 # user where to fix it.
 
-# Minimal inference_details with depth_analysis == 3 so the function gets
-# past its first subset() filter before reaching the length check.
+# Minimal inference_details: enough to get past the first subset() filter of
+# enrichment_analysis() and reach the length check. It used to say
+# "with depth_analysis == 3"; that column is retired, and the row never carried
+# it in the first place.
 minimal_inf_details <- function() {
   data.frame(
     independent_variable = "Tumour_Stage_N",

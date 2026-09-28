@@ -231,6 +231,15 @@ test_that("a region scope reaches the sibling and the depth=1 inference", {
                             start_fresh = FALSE, showprogress = FALSE, verbosity = 1)
 
   pf <- SEMseeker:::anno_probe_features_get("GENE_TSS1500")
+  # AI-308: keep only the probes that ARE annotated to the class. On the Illumina
+  # path anno_probe_features_get() returns the whole annotation table, with NA in
+  # the column of the class asked for: for K450, GENE_TSS1500 carries 84,808
+  # annotated probes against 401,394 NA. This block used to select the
+  # coordinates without dropping them, which is precisely what the producer did
+  # wrong: the expected value it computed was the burden of the WHOLE sample, and
+  # the assertion passed because both sides made the same mistake. A test written
+  # by mirroring the implementation agrees with it even when it is wrong.
+  pf <- pf[!is.na(pf[["GENE_TSS1500"]]), , drop = FALSE]
   skip_if(is.null(pf) || nrow(pf) == 0,
           "no probe of the fixture is annotated TSS1500")
   mask_df <- unique(data.frame(
@@ -239,6 +248,9 @@ test_that("a region scope reaches the sibling and the depth=1 inference", {
     END   = as.integer(pf$END),
     stringsAsFactors = FALSE))
   expect_gt(nrow(mask_df), 0)
+  # the restriction is real: the class covers strictly fewer positions than the
+  # sample. Without this the block could pass again on an unrestricted mask.
+  expect_lt(nrow(mask_df), nrow(SEMseeker:::anno_probe_features_get("GENE_TSS1500")))
 
   pivot <- SEMseeker:::io_read_pivot("MUTATIONS", "HYPER", "POSITION", "WHOLE")
   pivot_df <- as.data.frame(pivot$collect())
@@ -267,7 +279,13 @@ test_that("a region scope reaches the sibling and the depth=1 inference", {
     family_test          = "spearman",
     transformation_y     = "",
     transformation_x     = "",
-    scopes               = paste("SAMPLE", scope, sep = "+"),
+    # AI-308: the request names the aggregation branch, not the region classes.
+    # The classes are the (AREA, SUBAREA) pairs declared below in areas/subareas
+    # and built at runtime; SCOPE = SAMPLE collapses each of them to one number
+    # per sample. The single-position class is normalised to the technology's
+    # own, which is why the PROBE assertions below still hold on a run that
+    # declared POSITION.
+    scope                = "SAMPLE",
     aggregation          = "SUM",
     filter_p_value       = FALSE,
     stringsAsFactors     = FALSE
@@ -327,7 +345,7 @@ test_that("a region scope reaches the sibling and the depth=1 inference", {
   expect_setequal(unique(scope_rows$FIGURE), unique(whole_rows$FIGURE))
 })
 
-test_that("an unproduced scope stops the analysis instead of testing nothing", {
+test_that("a retired column stops the analysis instead of testing nothing", {
   tempFolder <- tempFolders[15]
   unlink(tempFolder, recursive = TRUE)
   on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE)
@@ -352,6 +370,12 @@ test_that("an unproduced scope stops the analysis instead of testing nothing", {
     verbosity         = verbosity
   )
 
+  # AI-308: this used to name a region class the run had not produced and expect
+  # the run to stop rather than write a CSV that tested nothing. The request can
+  # no longer name a class at all: the classes are the (AREA, SUBAREA) pairs
+  # declared with areas/subareas, so the surviving guarantee is the one on the
+  # column itself: `scopes` is retired, and a request still carrying it is told
+  # so by name instead of being read as a typo for something else.
   inference_details <- data.frame(
     independent_variable = "Phenotest",
     family_test          = "spearman",
@@ -374,7 +398,7 @@ test_that("an unproduced scope stops the analysis instead of testing nothing", {
       showprogress      = showprogress,
       verbosity         = verbosity
     ),
-    "GENE_TSS1500")
+    "no longer exist")
 })
 
 test_that("an unknown region class is refused at the door, not silently ignored", {

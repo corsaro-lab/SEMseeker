@@ -369,80 +369,102 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
 
 #' Every artefact this marker is tested on (internal)
 #'
-#' AI-255. There used to be two consumers: `sem_run_depth1_marker()` read
-#' columns out of the joined per-sample table, `assoc_run_marker()` read a
-#' pivot, and `depth_analysis` chose between them. The two existed because the
-#' two artefacts had different *shapes* — a table with samples down the rows, a
-#' pivot with areas down the rows.
-#'
-#' They have the same shape now: a key column and one column per sample. A
-#' `SCOPE = SAMPLE` artefact is one row tall, so transposing it yields exactly
-#' one feature column — which is what the fitting code already does with a pivot
-#' of many rows. There is nothing left for a second code path to do, and nothing
-#' left for `depth` to select: a model handed a row does not know, and has no
+#' AI-255 unified the two consumers into one. `sem_run_depth1_marker()` read
+#' columns out of the joined per-sample table, `assoc_run_marker()` read a pivot,
+#' and `depth_analysis` chose between them; the two existed because the two
+#' artefacts had different *shapes*: a table with samples down the rows, a pivot
+#' with areas down the rows. They have the same shape now: a key column and one
+#' column per sample. A `SCOPE = SAMPLE` artefact is one row tall, so transposing
+#' it yields exactly one feature column, which is what the fitting code already
+#' does with a pivot of many rows. A model handed a row does not know, and has no
 #' reason to ask, whether the key of that row is a gene symbol or `PROBE_WHOLE`.
 #'
-#' So this returns one table of keys, `SCOPE` included, and the caller walks it.
+#' AI-308 gave the *choice* back a home. Unifying the code paths removed the
+#' second consumer, but it also removed the last thing that selected between the
+#' two aggregations, and nothing inherited that job: this function built both
+#' tables and stacked them, so every request produced the per-sample burden **and**
+#' the per-instance rows, summed into one result file. That was a leftover, not a
+#' design: the aggregation branches themselves have always been separate, and
+#' [io_pivot_build()] is where they part company.
+#'
+#' So the request now names its branch, and this returns one of the two:
+#' \itemize{
+#'   \item `SCOPE = INSTANCE`: the region classes of the run crossed with the
+#'     figures of the marker, one row per instance of each class;
+#'   \item `SCOPE = SAMPLE`: the same region classes, each collapsed to one
+#'     number per sample.
+#' }
+#' Both range over `ssEnv$keys_areas_subareas`, the registry built from
+#' `areas=`/`subareas=`: the region axis is declared once, at the run, and is the
+#' same axis whichever branch reads it.
+#'
+#' @section The single-position class at SCOPE = SAMPLE:
+#' `PROBE_WHOLE` and `POSITION_WHOLE` are one class under two names, and
+#' collapsed they are the same number: the whole sample, no mask. The caller
+#' skips whichever of the two the technology does not speak (AI-098), and
+#' `util_keys_create()` always forces `POSITION` into the registry, so an
+#' Illumina run that did not declare `PROBE` would have its whole-sample burden
+#' built on `POSITION_WHOLE` and then skipped, losing a row without an error.
+#' The collapsed branch therefore rewrites the single-position class to the
+#' technology's own ([io_single_position_area()]) and deduplicates.
 #'
 #' @param prep list from sem_prepare_study_for_analysis().
 #' @param marker the marker being tested.
 #' @param ssEnv session environment.
-#' @param family_test used only to drop the collapsed artefacts for the batch
-#'   families: `limma_`/`voom_` estimate a prior variance across instances, and a
-#'   single-row fit degenerates to OLS and contaminates that pool.
+#' @param family_test unused here since AI-308: `SCOPE = SAMPLE` with a
+#'   `limma_`/`voom_` family is refused at the door by
+#'   [assoc_validate_scope()], where the request can still be rejected instead
+#'   of quietly yielding an empty file. Kept in the signature because the caller
+#'   passes it and the argument documents that the constraint exists.
 #' @return data.frame of keys with SCOPE, AREA, SUBAREA, MARKER, FIGURE, DISCRETE.
 #' @keywords internal
 #' @noRd
 .assoc_marker_keys <- function(prep, marker, ssEnv, family_test) {
 
-  instance_keys <- ssEnv$keys_areas_subareas_markers_figures
-  instance_keys <- instance_keys[instance_keys$MARKER == marker, , drop = FALSE]
-  if (nrow(instance_keys) > 0)
-    instance_keys$SCOPE <- "INSTANCE"
-
-  # The collapsed artefacts: one number per sample, over the region classes the
-  # request names. Historically this was "depth 1".
-  sample_keys <- data.frame()
-  if (!grepl("^(limma|voom)_", family_test)) {
-    # A region class that does not resolve STOPS the run. It must not be caught
-    # and logged: a run that quietly drops a requested class writes an inference
-    # CSV that looks complete and simply never tested what was asked, which is
-    # the failure mode the whole taxonomy exists to make impossible.
-    #
-    # This used to be enforced by sem_study_summary_get(regions = …) in
-    # association_analysis(); that call became conditional, so this is now the
-    # only place that resolves them, and it has to keep the promise.
-    regions <- .sem_regions_resolve(util_split_and_clean(prep$inference_detail$scopes))
-    mf <- ssEnv$keys_markers_figures
-    mf <- mf[mf$MARKER == marker, , drop = FALSE]
-    if (length(regions) > 0 && nrow(mf) > 0) {
-      rows <- lapply(regions, function(region)
-        data.frame(MARKER   = as.character(mf$MARKER),
-                   FIGURE   = as.character(mf$FIGURE),
-                   SCOPE    = "SAMPLE",
-                   AREA     = region$area,
-                   SUBAREA  = region$subarea,
-                   DISCRETE = if ("DISCRETE" %in% colnames(mf)) mf$DISCRETE else TRUE,
-                   stringsAsFactors = FALSE))
-      sample_keys <- do.call(rbind, rows)
-    }
-  } else {
-    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
-              " family_test='", family_test,
-              "': collapsed (SCOPE=SAMPLE) artefacts skipped — a single-row fit ",
-              "degenerates to OLS and contaminates the eBayes prior.")
-  }
+  scope <- io_scope_validate(prep$inference_detail$scope)
 
   common <- c("MARKER", "FIGURE", "SCOPE", "AREA", "SUBAREA", "DISCRETE")
   take <- function(df) {
-    if (is.null(df) || nrow(df) == 0) return(NULL)
+    if (is.null(df) || nrow(df) == 0) return(data.frame())
     missing <- setdiff(common, colnames(df))
     for (m in missing) df[[m]] <- if (identical(m, "DISCRETE")) TRUE else NA_character_
-    df[, common, drop = FALSE]
+    unique(df[, common, drop = FALSE])
   }
 
-  out <- do.call(rbind, Filter(Negate(is.null), list(take(sample_keys), take(instance_keys))))
-  if (is.null(out)) data.frame() else unique(out)
+  if (identical(scope, "INSTANCE")) {
+    keys <- ssEnv$keys_areas_subareas_markers_figures
+    keys <- keys[keys$MARKER == marker, , drop = FALSE]
+    if (nrow(keys) > 0) keys$SCOPE <- "INSTANCE"
+    return(take(keys))
+  }
+
+  # SCOPE = SAMPLE: the region classes of the run, each collapsed to one number
+  # per sample. The classes come from the registry, not from the request: they
+  # are declared once, with areas=/subareas=, and built at runtime.
+  regions <- ssEnv$keys_areas_subareas
+  mf <- ssEnv$keys_markers_figures
+  mf <- mf[mf$MARKER == marker, , drop = FALSE]
+  if (is.null(regions) || nrow(regions) == 0 || nrow(mf) == 0)
+    return(data.frame())
+
+  canonical <- io_single_position_area()
+  areas <- as.character(regions$AREA)
+  subareas <- as.character(regions$SUBAREA)
+  single <- io_area_is_single_position(areas)
+  areas[single] <- canonical
+  regions <- unique(data.frame(AREA = areas, SUBAREA = subareas,
+                               stringsAsFactors = FALSE))
+
+  rows <- lapply(seq_len(nrow(regions)), function(i)
+    data.frame(MARKER   = as.character(mf$MARKER),
+               FIGURE   = as.character(mf$FIGURE),
+               SCOPE    = "SAMPLE",
+               AREA     = regions$AREA[i],
+               SUBAREA  = regions$SUBAREA[i],
+               DISCRETE = if ("DISCRETE" %in% colnames(mf)) mf$DISCRETE else TRUE,
+               stringsAsFactors = FALSE))
+
+  take(do.call(rbind, rows))
 }
 
 #' Instances already tested for THIS key (internal)

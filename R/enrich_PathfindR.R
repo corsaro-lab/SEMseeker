@@ -4,6 +4,11 @@ enrich_pathfindR <- function(study,
   inference_detail, significance = TRUE)
 {
 
+  # AI-311: what an enrichment can be about is declared once, not written
+  # out again here. A pathway is a set of genes, so the input is one row
+  # per gene (SCOPE = INSTANCE) of the GENE region class.
+  .enrich_in <- enrich_input_invariant()
+
 
   tmp <- tempdir()
   tempFolder <- paste(tmp,"/semseeker/",stringi::stri_rand_strings(1, 7, pattern = "[A-Za-z0-9]"),sep="")
@@ -77,8 +82,8 @@ enrich_pathfindR <- function(study,
           # AI-257: enrichment happens for genes and nothing else — a pathway is a set
           # of genes. And it needs a p-value PER gene, so a collapsed artefact (one
           # number per sample) has nothing to list. Two coordinates, both invariant.
-          area  = "GENE",
-          scope = "INSTANCE",
+          area  = .enrich_in$area,
+          scope = .enrich_in$scope,
           marker = keys[i,"MARKER"],
           pvalue_column=  pvalue_column,
           adjustment_method= adjustment_method,

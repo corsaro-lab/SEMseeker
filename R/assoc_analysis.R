@@ -20,18 +20,20 @@
 #'       \code{"none"}, \code{"scale"}, \code{"log"}, \code{"log2"},
 #'       \code{"log10"}, \code{"exp"}, or
 #'       \code{"quantile_<n>"} (e.g. \code{"quantile_3"}).}
-#'     \item{marker}{SEM metric column prefix (e.g. \code{"DELTARP"},
-#'       \code{"MUTATIONS"}).}
-#'     \item{depth_analysis}{Whether the region class is collapsed or kept open.
-#'       \code{1} tests one number per sample (scope \code{SAMPLE}); anything
-#'       above tests one row per instance of the class — a gene, an island, a
-#'       cytoband, a probe (scope \code{INSTANCE}). It used to be documented as a
-#'       three-step ladder (sample, type, genomic area), which described a
-#'       containment that the code never implemented and that the region classes
-#'       do not have: a TSS200 window and an open-sea stretch refine neither each
-#'       other nor anything between them, so they cannot be placed on one line.
-#'       What the artefact covers is said by \code{AREA} and \code{SUBAREA}; this
-#'       value survives as a label on the result rows.}
+#'     \item{scope}{Required. Which of the two aggregations to run, over the
+#'       region classes of the call (\code{areas}, \code{subareas}).
+#'       \code{"SAMPLE"} reduces the positions of each class to one number per
+#'       sample: the burden, or its density, or a descriptor of the signal.
+#'       \code{"INSTANCE"} reduces them to one number per instance of the class:
+#'       one row per gene, per island, per cytoband, per probe.
+#'
+#'       The two are \strong{mutually exclusive}. They used to be produced
+#'       together and written into the same file, which made every result the
+#'       union of two different questions; a request that wants both now writes
+#'       two rows, and each carries its own \code{SCOPE} in the output.
+#'
+#'       It has no default on purpose. Any default would answer half of what was
+#'       asked and say nothing about the other half.}
 #'     \item{aggregation}{Required. How the positions are reduced to the one
 #'       number the model is fitted on: \code{"SUM"}, \code{"MEAN"},
 #'       \code{"MEDIAN"}, \code{"VARIANCE"}, \code{"IQR"}, \code{"MODELOW"} or
@@ -43,20 +45,29 @@
 #'       its median and IQR are degenerate; the two modes exist only for the
 #'       signal on the beta scale. A request no marker of the run admits is
 #'       dropped with a warning naming it, not answered with an empty result.}
-#'     \item{scopes}{Optional. Which region classes to collapse to one number
-#'       per sample, several separated by \code{"+"} (default \code{"SAMPLE"},
-#'       meaning no restriction). A class such as \code{"GENE_TSS1500"} tests the
-#'       burden restricted to the positions of that class, and the result rows
-#'       carry \code{SCOPE = "SAMPLE"} with \code{AREA = "GENE"} and
-#'       \code{SUBAREA = "TSS1500"} — the coordinates of the taxonomy, not the
-#'       scope name squashed into one of them. The per-instance artefacts of the
-#'       run are tested regardless, and carry \code{SCOPE = "INSTANCE"}.
-#'
-#'       The artefact is built on the way in if it does not exist yet,
-#'       so a class no previous run foresaw costs one scan of the position pivot
-#'       rather than a rerun — provided this call registers it in \code{areas}
-#'       and \code{subareas}.}
 #'   }
+#'
+#'   The markers are \strong{not} named in \code{inference_details} either.
+#'   They are chosen by the \code{markers} argument of this call and every row
+#'   of the request is tested on all of them, one result file per marker. A
+#'   \code{marker} column was documented here for a long time and never existed
+#'   in the vocabulary, so a request written from that description was rejected
+#'   as carrying an unknown column.
+#'
+#'   The region classes are \strong{not} named in \code{inference_details}: they
+#'   are the \code{(AREA, SUBAREA)} pairs of the run, declared with the
+#'   \code{areas} and \code{subareas} arguments of this call and built at
+#'   runtime. Both scopes range over the same pairs, so
+#'   \code{scope = "SAMPLE"} with \code{areas = c("GENE", "PROBE")} gives the
+#'   burden over the gene probes and the burden over the whole sample, and
+#'   \code{scope = "INSTANCE"} gives one row per gene and one row per probe.
+#'   The artefact is built on the way in if it does not exist yet, so a class no
+#'   previous run foresaw costs one scan of the position pivot rather than a
+#'   rerun.
+#'
+#'   Result rows carry the coordinates as columns: \code{MARKER},
+#'   \code{FIGURE}, \code{SCOPE}, \code{AREA}, \code{SUBAREA},
+#'   \code{AGGREGATION}, never a class name squashed into one of them.
 #' @param result_folder character. Path to the SEMseeker result folder.
 #' @param maxResources numeric. Maximum percentage of CPU cores to use
 #'   (default 90).
@@ -79,10 +90,13 @@
 #'     independent_variable = "Sample_Group",
 #'     family_test          = "wilcoxon",
 #'     transformation_y     = "none",
-#'     marker               = "DELTARP",
-#'     areas                = "GENE"
+#'     aggregation          = "MEAN",
+#'     scope                = "INSTANCE"
 #'   ),
 #'   result_folder     = "~/semseeker_results/",
+#'   markers           = "DELTARP",
+#'   areas             = "GENE",
+#'   subareas          = "WHOLE",
 #'   multiple_test_adj = "BH"
 #' )
 #' }
@@ -113,10 +127,21 @@ association_analysis <- function(inference_details, result_folder, maxResources 
   anno_annotate_position_pivots()
 
   inference_details <- assoc_validate_inference_schema(unique(inference_details))
-  # AI-248: shape first, then meaning. Refuse an aggregation that no marker of
-  # this run admits before any result is written — checking it inside the
-  # per-marker loop would surface the mistake after part of the output exists.
+  # AI-248: shape first, then meaning. Refuse a request that cannot be honoured
+  # before any result is written: checking it inside the per-marker loop would
+  # surface the mistake after part of the output exists.
+  #
+  # AI-308: the scope goes first, because which aggregations are admissible
+  # depends on it. The two peaks of a bimodal density need one big group, so
+  # they exist at SCOPE = SAMPLE and nowhere else; asking for them per instance
+  # used to travel all the way to io_pivot_build() and stop there, with the run
+  # already under way.
+  inference_details <- assoc_validate_scope(inference_details)
   inference_details <- assoc_validate_aggregation(inference_details)
+  # AI-309: and the model. A family test that is absent or unknown used to make
+  # the row vanish from the loop below, leaving a result file indistinguishable
+  # from one where the test had run.
+  inference_details <- assoc_validate_family(inference_details)
 
   for (z in seq_len(nrow(inference_details))) {
     start_time <- Sys.time()
@@ -126,8 +151,10 @@ association_analysis <- function(inference_details, result_folder, maxResources 
 
     core_log_inference_header(inference_detail)
 
+    # AI-309: validated at the door, so there is nothing to check and nothing to
+    # skip here. The `next` this replaces is the reason a malformed request
+    # could produce a complete-looking file.
     family_test <- util_split_and_clean(inference_detail$family_test)
-    if (!assoc_validate_family_test(family_test)) next
 
     # AI-255: the models read artefacts, not columns — assoc_run_marker() opens
     # the pivot for every key, collapsed or not. So what this needs from the
@@ -150,9 +177,14 @@ association_analysis <- function(inference_details, result_folder, maxResources 
                                              collapse = ", "),
                 ", which the sample sheet does not carry: joining the per-sample ",
                 "features as well.")
+      # AI-308: the request no longer names region classes: they are the
+      # (AREA, SUBAREA) pairs of the run. A covariate the sheet does not carry
+      # can name any of them, plus "SAMPLE" for the unrestricted feature, so the
+      # join offers the whole registry rather than a list the request no longer
+      # has.
       study_summary <- sem_study_summary_get(
         inference_detail$samples_sql_condition,
-        regions = util_split_and_clean(inference_detail$scopes))
+        regions = unique(c("SAMPLE", as.character(ssEnv$keys_areas_subareas$COMBINED))))
     }
     prep <- sem_prepare_study_for_analysis(inference_detail, study_summary, family_test)
     if (is.null(prep)) next

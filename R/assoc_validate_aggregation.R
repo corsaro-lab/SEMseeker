@@ -35,7 +35,15 @@
 #' combinations that cannot be computed are named in a warning and skipped
 #' downstream.
 #'
-#' @param inference_details validated data.frame of requests.
+#' AI-308: it runs **after** [assoc_validate_scope()], and needs to. Which
+#' aggregations a marker admits depends on the scope: the two peaks of a
+#' bimodal density need one big group, so they exist at `SCOPE = SAMPLE` and
+#' nowhere else, so a request whose scope has not been validated yet cannot be
+#' judged here. `inference_details$scope` is therefore a precondition, not an
+#' optional column.
+#'
+#' @param inference_details validated data.frame of requests, with `scope`
+#'   already validated by [assoc_validate_scope()].
 #' @param keys marker/figure keys of the run, defaults to the session's.
 #' @return `inference_details`, possibly with impossible rows removed. Callers
 #'   must use the returned value.
@@ -77,10 +85,25 @@ assoc_validate_aggregation <- function(inference_details, keys = NULL) {
            "' is not an aggregation of the taxonomy. Legal names: ",
            paste(legal, collapse = ", "), ".", call. = FALSE)
 
+    # AI-308: the scope of the request reaches the registry. Which aggregations
+    # a marker admits is not a property of the marker alone: MODELOW/MODEHIGH
+    # estimate two peaks of a density and need the whole distribution, so they
+    # exist at SCOPE = SAMPLE and nowhere else. Without the scope this check
+    # could not see that, and a request for them per instance was answered here
+    # and refused later, inside io_pivot_build(), with the run already going.
+    #
+    # The AREA is deliberately NOT passed. Its restriction, a single-position
+    # block admits only VALUE, is not a refusal but a renaming: the request is
+    # honoured and the artefact takes the name that says nothing was reduced
+    # (see .assoc_aggregation_get()). Refusing it here would reject a legal
+    # request on the grounds that one of the run's classes needs it spelled
+    # differently.
+    scope <- io_scope_validate(detail$scope)
     admitted <- vapply(seq_len(nrow(keys)), function(i)
       requested %in% util_aggregations_allowed(keys$MARKER[i], keys$FIGURE[i],
                                                discrete = isTRUE(keys$DISCRETE[i]),
-                                               default  = FALSE),
+                                               default  = FALSE,
+                                               scope    = scope),
       logical(1))
     if (!any(admitted)) {
       impossible[z] <- TRUE

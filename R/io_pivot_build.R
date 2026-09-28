@@ -205,7 +205,21 @@ key_col_value <- function(aggregation) {
   if (identical(scope, "SAMPLE")) {
     # SELECT ONLY. The positions of the class, each one once: a probe annotated
     # to three genes is one position of the sample, not three.
-    keys <- pf$select(c("CHR", "START", "END"))$unique()
+    #
+    # AI-308: `drop_nulls("AREA")` first, and it is not decoration. On the
+    # Illumina path anno_probe_features_get() returns the WHOLE annotation table
+    # (every probe of the array) with NA in the column of the class asked for:
+    # for K450, GENE_TSS1500 carries 84,808 annotated probes against 401,394 NA.
+    # Selecting the coordinates without dropping those rows built the mask on
+    # all 485,512 positions whatever the class, so the inner join below excluded
+    # nothing and every "restricted" burden came out equal to the burden of the
+    # whole sample: identical for GENE_TSS1500, ISLAND_N_SHORE and GENE_WHOLE
+    # alike. Silent, because a number was produced for each class.
+    #
+    # The INSTANCE branch below never had the defect: it drops the same nulls
+    # after the join. The two branches part company here, so they have to select
+    # the same positions here.
+    keys <- pf$drop_nulls("AREA")$select(c("CHR", "START", "END"))$unique()
     masked <- base$join(keys, on = c("CHR", "START", "END"), how = "inner")
     drop_cols <- intersect(c("CHR", "START", "END", "PROBE", "K27", "K450", "K850"),
                            names(masked))

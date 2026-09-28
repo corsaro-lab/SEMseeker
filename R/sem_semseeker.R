@@ -48,9 +48,9 @@
 #'   Lower it explicitly for deliberate cross-technology runs.
 #'   The per-sample statistics are no longer selected here: they are
 #'   built on demand by \code{sem_study_summary_get(regions = ...)} and by
-#'   \code{association_analysis()} through \code{inference_details$scopes}, so a
-#'   region class that was not foreseen at run time costs one scan instead of a
-#'   whole rerun. Each position is counted once, even when it is annotated to
+#'   \code{association_analysis(scope = "SAMPLE")} over the region classes that
+#'   call declares, so a region class that was not foreseen at run time costs one
+#'   scan instead of a whole rerun. Each position is counted once, even when it is annotated to
 #'   several genes.
 #'
 #' @return Invisibly \code{NULL}; writes output files to \code{result_folder}.

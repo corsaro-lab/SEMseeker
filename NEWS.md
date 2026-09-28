@@ -4,6 +4,40 @@
 
 ### Breaking changes
 
+- **`association_analysis()` runs one aggregation per request, and it has to be
+  named.** `SCOPE` has two values: `SAMPLE` reduces the positions of a region
+  class to one number per sample, `INSTANCE` reduces them to one number per
+  instance of that class: one row per gene, per island, per probe. Until now
+  every request produced **both** and wrote them into the same file, so each
+  result was the union of two different questions, with no way to have asked for
+  only one.
+
+  `inference_details` therefore gains a required `scope` column, `"SAMPLE"` or
+  `"INSTANCE"`. It has no default: any default would answer half of what a
+  previous script asked and say nothing about the other half.
+
+  ```r
+  inference_details <- data.frame(
+    independent_variable = "Phenotest",
+    family_test          = "spearman",
+    aggregation          = "SUM",
+    scope                = "SAMPLE"      # or "INSTANCE"
+  )
+  ```
+
+  **Migration.** A request that wants both branches writes two rows, one per
+  scope; both still land in the same result file, told apart by the `SCOPE`
+  column. `limma_`/`voom_` families are refused at `scope = "SAMPLE"`: they
+  estimate a prior variance across instances, and a collapsed artefact holds one
+  row, whereas before the collapsed keys were skipped and the run continued on
+  the per-instance ones.
+
+- **`inference_details$scopes` is removed.** It named the region classes a
+  second time. They are the `(AREA, SUBAREA)` pairs of the run, declared with
+  the `areas` and `subareas` arguments of `association_analysis()` and built at
+  runtime; both scopes range over the same pairs. A request still carrying
+  `scopes` stops with a message naming the column and what replaced it.
+
 - **A p-value adjustment now names the family it was controlled over, and there
   are three.** `PVALUE_ADJ` said nothing about its family, and at
   `SCOPE = SAMPLE` that family holds a single row — so the column equalled the
@@ -194,6 +228,22 @@
   the way the macOS path does. Measured on CI, same commit and same suite: 285
   minutes on Windows against 134 on Linux. The ratio was the number of workers,
   not the speed of the platform.
+
+- **A per-sample burden restricted to a region class was computed over the whole
+  sample.** At `SCOPE = SAMPLE` the mask that selects the positions of a class
+  was built from the full probe annotation table, including the probes with no
+  annotation for that class. On a 450k run the mask covered all 485,512
+  positions whatever the class was, against 365,860 for `GENE_WHOLE`, 84,342
+  for `GENE_TSS1500` and 62,870 for `ISLAND_N_SHORE`, so every restricted
+  burden equalled the burden of the whole sample, and all classes returned the
+  same number. Per-instance results were never affected, and neither were
+  WGBS/long-read runs, where the annotation is resolved by coordinate overlap
+  and carries only the positions of the class.
+
+  **Migration.** Recompute the collapsed artefacts and any inference run on
+  them: delete the `SCOPE = SAMPLE` pivots of the result folder, or rerun the
+  analysis with `start_fresh = TRUE`. Per-instance results and the SEM layer
+  need no action.
 
 - **A consumer wrote over the file it was consuming.**
   `assoc_data_extractor()` read the canonical inference CSV, applied three

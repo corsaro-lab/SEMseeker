@@ -104,3 +104,31 @@ io_scope_validate <- function(scope) {
 io_area_is_single_position <- function(area) {
   toupper(as.character(area)) %in% c("PROBE", "POSITION")
 }
+
+#' Which single-position area this technology speaks (internal)
+#'
+#' AI-308. `PROBE` and `POSITION` are two names for the same bottom of the
+#' lattice, and each technology has exactly one that means anything: Illumina
+#' reports probe ids (`cg00000029`), long reads have no probe concept and are
+#' keyed by coordinate. `assoc_run_marker()` already skips the other one, the
+#' symmetric guard added by AI-098, so the two never both reach a result.
+#'
+#' At `SCOPE = SAMPLE` that guard is not enough on its own. The registry always
+#' carries `POSITION` (`util_keys_create()` forces it in), so an Illumina run
+#' that did not declare `PROBE` among its areas would have its whole-sample
+#' burden built on `POSITION_WHOLE` and then dropped by the guard: a row
+#' missing from the result, which is the failure mode that looks like an answer.
+#' Naming the canonical area lets the collapsed branch normalise to it instead.
+#'
+#' @param tech the session technology; read from the session when omitted.
+#' @return `"POSITION"` for WGBS/LONGREAD, `"PROBE"` otherwise.
+#' @keywords internal
+#' @noRd
+io_single_position_area <- function(tech = NULL) {
+  if (is.null(tech)) {
+    ssEnv <- core_get_session_info()
+    tech <- ssEnv$tech
+  }
+  if (!is.null(tech) && toupper(as.character(tech)[1]) %in% c("WGBS", "LONGREAD"))
+    "POSITION" else "PROBE"
+}

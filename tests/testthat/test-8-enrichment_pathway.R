@@ -113,6 +113,7 @@ test_that("enrich_WebGestalt returns NULL gracefully when WebGestaltR not instal
       transformation_y     = "",
       transformation_x     = "",
       aggregation          = "SUM",
+      scope                = "INSTANCE",
       filter_p_value       = FALSE,
       areas_sql_condition  = NA,
       samples_sql_condition = NA,
@@ -147,6 +148,7 @@ test_that("enrich_STRINGdb returns NULL gracefully when STRINGdb not installed",
       transformation_y     = "",
       transformation_x     = "",
       aggregation          = "SUM",
+      scope                = "INSTANCE",
       filter_p_value       = FALSE,
       stringsAsFactors = FALSE
     )
@@ -177,6 +179,7 @@ test_that("enrich_pathfindR returns NULL gracefully when pathfindR not installed
       transformation_y     = "",
       transformation_x     = "",
       aggregation          = "SUM",
+      scope                = "INSTANCE",
       filter_p_value       = FALSE,
       stringsAsFactors = FALSE
     )
@@ -236,7 +239,9 @@ test_that("enrich_ctdR runs without error on synthetic association results", {
     verbosity         = verbosity
   )
 
-  # ── association_analysis (depth=3 to produce GENE-area pivot results) ─────
+  # ── association_analysis at scope INSTANCE: enrichment reads SCOPE = INSTANCE
+  #    and AREA = GENE (assoc_results_get()), so the collapsed branch would leave
+  #    it nothing to read ─────────────────────────────────────────────────────
   inference_details <- data.frame(
     independent_variable = "Phenotest",
     family_test          = "spearman",
@@ -244,6 +249,7 @@ test_that("enrich_ctdR runs without error on synthetic association results", {
     transformation_x     = "",
 
     aggregation          = "SUM",
+    scope                = "INSTANCE",
     filter_p_value       = FALSE,
     stringsAsFactors     = FALSE
   )
@@ -275,12 +281,15 @@ test_that("enrich_ctdR runs without error on synthetic association results", {
     )
   )
 
-  # Pathway folder should have been created — but skip if the depth=3 regression
-  # (53310c1) is still in effect: depth_analysis=3 produces only DEPTH=1 rows,
-  # leaving no gene-area pivot material for ctdR enrichment.
+  # AI-308: the skip here used to blame a "depth_analysis = 3 regression"
+  # producing only DEPTH = 1 rows. That diagnosis outlived the column it named:
+  # depth was retired, and the run above now asks for SCOPE = INSTANCE
+  # explicitly, which is what enrichment reads. The conditional stays because
+  # ctdR can legitimately produce nothing on a synthetic fixture, but it no
+  # longer asserts a cause it cannot observe.
   pathway_dir <- file.path(tempFolder, "Pathway")
   if (!dir.exists(pathway_dir)) {
-    testthat::skip("Pathway dir not created — depth_analysis=3 regression of 53310c1 leaves no gene-area results for ctdR")
+    testthat::skip("ctdR produced no Pathway output on this fixture")
   }
   testthat::expect_true(dir.exists(pathway_dir))
 

@@ -35,10 +35,13 @@ assoc_validate_inference_schema <- function(inference_details, strict = TRUE) {
     "collinearity_check",
     "transformation_y",
     "transformation_x",
-    # AI-223 slice 2a, AI-255: which region classes to test, named as the
-    # feature columns name them ("SAMPLE", "GENE_TSS1500", …). Several are given
-    # separated by "+", like covariates. Default "SAMPLE".
-    "scopes",
+    # AI-308: which of the two aggregation branches the request wants. SAMPLE
+    # reduces the positions to one number per sample, INSTANCE to one number per
+    # instance of the region class. They are alternatives, not addends, so the
+    # request has to name one. The region classes are NOT named here: they are
+    # the (AREA, SUBAREA) pairs of the run, declared with
+    # association_analysis(areas =, subareas =) and built at runtime.
+    "scope",
     # AI-248: which aggregation of the feature is tested (SUM, MEAN, MEDIAN,
     # VARIANCE, IQR, MODELOW, MODEHIGH). Mandatory: with several aggregations
     # over the same scope, a request that does not name one does not identify
@@ -69,9 +72,16 @@ assoc_validate_inference_schema <- function(inference_details, strict = TRUE) {
       "removed. The granularity of an artefact is said by SCOPE, AREA and ",
       "SUBAREA, which say more: those pairs are only partially ordered, so an ",
       "integer scale projected a lattice onto a line. A request that used ",
-      "depth_analysis = 1 now names the region classes it wants in `scopes`; ",
-      "anything above 1 tested the instances of the classes of the run, which ",
-      "is what happens by default"))
+      "depth_analysis = 1 now writes scope = \"SAMPLE\"; anything above 1 ",
+      "wrote scope = \"INSTANCE\", and the region classes it ranges over are ",
+      "the (AREA, SUBAREA) pairs of the run"),
+    scopes = paste0(
+      "removed. It named the region classes a second time, and they are ",
+      "already the (AREA, SUBAREA) pairs of the run: declare them with ",
+      "association_analysis(areas =, subareas =) and they are built at ",
+      "runtime. What the request names now is `scope`: SAMPLE or INSTANCE, ",
+      "which of the two aggregation branches to run. The two are mutually ",
+      "exclusive: a request that wants both writes two rows"))
   hit <- intersect(names(retired), unknown_cols)
   if (length(hit) > 0)
     stop("inference_details carries column(s) that no longer exist:\n  ",

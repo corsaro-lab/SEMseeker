@@ -253,11 +253,14 @@ test_that("every coordinate of the key is required", {
   k
 }
 
-test_that("a request that names no aggregation is refused, at every depth", {
+test_that("a request that names no aggregation is refused, in either scope", {
+  # AI-308: the loop used to run over depth 1, 2, 3: three values of a column
+  # that had already been retired, so it ran the same assertion three times. The
+  # axis that does vary is the scope, and it varies in two.
   keys <- .tax_keys(MARKER = "MUTATIONS", FIGURE = "HYPER", DISCRETE = TRUE)
-  for (depth in c(1L, 2L, 3L)) {
+  for (scope in c("SAMPLE", "INSTANCE")) {
     details <- data.frame(independent_variable = "Phenotest", family_test = "spearman",
-                          aggregation = NA,
+                          aggregation = NA, scope = scope,
                           stringsAsFactors = FALSE)
     expect_error(SEMseeker:::assoc_validate_aggregation(details, keys), "required")
   }
@@ -266,7 +269,7 @@ test_that("a request that names no aggregation is refused, at every depth", {
 test_that("an aggregation outside the taxonomy is refused", {
   keys <- .tax_keys(MARKER = "MUTATIONS", FIGURE = "HYPER", DISCRETE = TRUE)
   details <- data.frame(independent_variable = "Phenotest", family_test = "spearman",
-                        aggregation = "AVERAGE",
+                        aggregation = "AVERAGE", scope = "SAMPLE",
                         stringsAsFactors = FALSE)
   expect_error(SEMseeker:::assoc_validate_aggregation(details, keys),
                "not an aggregation")
@@ -282,6 +285,7 @@ test_that("an impossible request drops its row instead of stopping the batch", {
     # MODELOW exists only for SIGNAL/BETA, so the first row is possible;
     # a run with only counts would make it impossible
     aggregation          = c("MEDIAN", "SUM"),
+    scope                = c("SAMPLE", "SAMPLE"),
     stringsAsFactors = FALSE)
 
   expect_warning(kept <- SEMseeker:::assoc_validate_aggregation(details, keys),
@@ -303,6 +307,7 @@ test_that("a batch keeps the rows it can run and drops the ones it cannot", {
     independent_variable = c("Phenotest", "Phenotest"),
     family_test          = c("spearman", "spearman"),
     aggregation          = c("MEDIAN", "SUM"),
+    scope                = c("SAMPLE", "SAMPLE"),
     stringsAsFactors = FALSE)
 
   expect_warning(kept <- SEMseeker:::assoc_validate_aggregation(details, keys),
@@ -314,7 +319,7 @@ test_that("a batch keeps the rows it can run and drops the ones it cannot", {
 test_that("a possible request passes silently", {
   keys <- .tax_keys(MARKER = "MUTATIONS", FIGURE = "HYPER", DISCRETE = TRUE)
   details <- data.frame(independent_variable = "Phenotest", family_test = "spearman",
-                        aggregation = "SUM",
+                        aggregation = "SUM", scope = "SAMPLE",
                         stringsAsFactors = FALSE)
   expect_silent(kept <- SEMseeker:::assoc_validate_aggregation(details, keys))
   expect_equal(nrow(kept), 1L)
