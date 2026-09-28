@@ -22,10 +22,34 @@ jobs:
         with:
           fetch-depth: 0   # full history so gitleaks can scan all commits
 
-      - name: Run gitleaks
-        uses: gitleaks/gitleaks-action@v3
+      # The gitleaks CLI is used directly instead of gitleaks-action: the action
+      # requires a paid licence key on organisation-owned repositories, the CLI
+      # does not, and the scan coverage is the same.
+      - name: Install gitleaks
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_VERSION: '8.30.1'
+        run: |
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin gitleaks
+          gitleaks version
+
+      # --redact keeps any match out of the public build log.
+      - name: Run gitleaks
+        run: |
+          gitleaks git . \
+            --redact \
+            --verbose \
+            --exit-code 1 \
+            --report-format sarif \
+            --report-path gitleaks.sarif
+
+      - name: Upload gitleaks report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-report
+          path: gitleaks.sarif
+          if-no-files-found: ignore
 
   # ── 2. R dependency CVE audit ─────────────────────────────────────────────
   oyster:

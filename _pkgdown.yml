@@ -11,6 +11,12 @@ template:
       </script>
       <script defer src="https://cdn.vemetric.com/main.js" id="vmtrc-scr" data-token="nWIrdnyvzA1sksDn"></script>
 
+# Il nome dell'autore diventa un link al suo sito, ovunque pkgdown lo stampi: footer di ogni
+# pagina (qui e' gia' attivo via footer.left = developed_by), sidebar della home, pagina autori.
+authors:
+  Luigi Corsaro:
+    href: https://drake69.github.io/
+
 home:
   title: "semseeker — Stochastic Epigenetic Mutation Seeker"
   description: >
