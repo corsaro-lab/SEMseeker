@@ -1,4 +1,8 @@
-url: https://drake69.github.io/semseeker/
+# L'url dichiarato qui finisce nei canonical di ogni pagina e in ogni <loc> della sitemap che
+# pkgdown genera. Dal trasferimento del repo all'org corsaro-lab il valore vecchio non
+# esisteva piu': la sitemap pubblicata mandava i motori su un 404, e dal 2026-09-29 su un 301
+# verso un 404, perche' il sito personale ha cambiato dominio. Il sito vero e' questo.
+url: https://corsaro-lab.github.io/SEMseeker/
 
 template:
   bootstrap: 5
@@ -15,7 +19,7 @@ template:
 # pagina (qui e' gia' attivo via footer.left = developed_by), sidebar della home, pagina autori.
 authors:
   Luigi Corsaro:
-    href: https://drake69.github.io/
+    href: https://luigicorsaro.com/?utm_source=semseeker-docs
 
 home:
   title: "semseeker — Stochastic Epigenetic Mutation Seeker"
@@ -45,7 +49,7 @@ navbar:
       href: reference/index.html
     github:
       icon: fab fa-github
-      href: https://github.com/drake69/semseeker
+      href: https://github.com/corsaro-lab/SEMseeker
 
 footer:
   structure:
