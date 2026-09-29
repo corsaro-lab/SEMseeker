@@ -150,62 +150,59 @@ test_that("anno_area_granges_build CHR_CYTOBAND returns GRanges with label", {
 # GENE subareas whose label travels through names(gr)
 #
 # BODY, TSS200 and TSS1500 read the per-gene `symbols` vector that
-# .anno_gene_granges() computes once from the gene ids, and three tests above
+# .anno_gene_granges() computes once from the gene ids, and the tests above
 # cover them. 1STEXON, 5UTR, 3UTR and EXONBND take the other branch of the
 # label block: they read names(gr) and map those through
 # .anno_entrez_to_symbol(). Nothing exercised that branch, and it has two
 # failure modes that are silent rather than loud:
 #
-#   * the names are not Entrez ids (a transcript id, say), in which case the
-#     mapper finds no match and hands the id straight back, so the label is a
-#     run of digits that looks like an identifier and is not a gene;
-#   * names(gr) is absent altogether, in which case the label becomes the
-#     positional placeholder GENE_<SUBAREA>_<n>, which no consumer can join on.
+#   * names(gr) is absent, and the label falls back to the positional
+#     placeholder GENE_<SUBAREA>_<n>, which no consumer can join on;
+#   * names(gr) holds identifiers of the wrong kind - a transcript id where an
+#     Entrez id is expected - and the mapper, finding no match, hands the id
+#     straight back, so the label is an identifier that names no gene.
 #
 # Either way the area is built, the run completes, and the result names genes
-# that were never resolved. These tests pin the label to something that can
-# actually be a gene.
+# that were never resolved.
+#
+# The assertion compares the label vocabulary against GENE_BODY, which is one
+# range per gene of the same TxDb and is already covered above. Both sides go
+# through the same mapper, so the comparison holds whether or not the symbol
+# database is installed: what it measures is whether the two windows are
+# naming genes of the same model, not how those genes are spelled.
 # ---------------------------------------------------------------------------
-
-# Share of labels carrying at least one letter. Entrez ids and transcript ids
-# are digits only, gene symbols are not, so a collapse of the mapping shows up
-# as this share falling towards zero rather than as an error.
-.granges_symbolic_label_share <- function(gr) {
-  lbl <- as.character(GenomicRanges::mcols(gr)$label)
-  lbl <- lbl[!is.na(lbl) & nzchar(lbl)]
-  if (length(lbl) == 0L) return(0)
-  mean(grepl("[A-Za-z]", lbl))
-}
 
 for (.subarea in c("1STEXON", "5UTR", "3UTR", "EXONBND")) {
 
   test_that(paste0("anno_area_granges_build GENE_", .subarea,
-                   " builds and labels by parent gene"), {
+                   " labels name genes of the same model as GENE_BODY"), {
     # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
     skip_on_os("mac")
     skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
     skip_if_not_installed("GenomicRanges")
     skip_if_not_installed("GenomicFeatures")
-    # Without the symbol database every label is an Entrez id by design
-    # (.anno_entrez_to_symbol falls back to the id), which would fail the
-    # assertion below for a reason that is not the one under test.
-    skip_if_not_installed("org.Hs.eg.db")
 
     area_subarea <- paste0("GENE_", .subarea)
-    gr <- SEMseeker:::anno_area_granges_build(area_subarea,
-                                              genome_build = "hg19")
+    gr   <- SEMseeker:::anno_area_granges_build(area_subarea,
+                                                genome_build = "hg19")
+    body <- SEMseeker:::anno_area_granges_build("GENE_BODY",
+                                                genome_build = "hg19")
 
     expect_s4_class(gr, "GRanges")
     expect_true(length(gr) > 0L)
     expect_true("label" %in% names(GenomicRanges::mcols(gr)))
 
-    lbl <- as.character(GenomicRanges::mcols(gr)$label)
+    lbl <- unique(as.character(GenomicRanges::mcols(gr)$label))
+    lbl <- lbl[!is.na(lbl) & nzchar(lbl)]
+    expect_true(length(lbl) > 0L)
 
     expect_false(
       any(grepl(paste0("^", area_subarea, "_[0-9]+$"), lbl)),
       info = paste0(area_subarea, ": labels fell back to the positional ",
                     "placeholder, so names(gr) carried no parent gene"))
 
-    expect_gt(.granges_symbolic_label_share(gr), 0.5)
+    ref    <- unique(as.character(GenomicRanges::mcols(body)$label))
+    shared <- length(intersect(lbl, ref)) / length(lbl)
+    expect_gt(shared, 0.5)
   })
 }
