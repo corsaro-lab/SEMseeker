@@ -206,3 +206,28 @@ for (.subarea in c("1STEXON", "5UTR", "3UTR", "EXONBND")) {
     expect_gt(shared, 0.5)
   })
 }
+
+test_that("GENE labels are gene symbols, not the Entrez ids TxDb keys on", {
+  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
+  skip_on_os("mac")
+  skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
+  skip_if_not_installed("GenomicRanges")
+  skip_if_not_installed("GenomicFeatures")
+  skip_if_not_installed("org.Hs.eg.db")
+
+  # The Illumina backend labels a gene region with the symbol it reads from
+  # UCSC_RefGene_Name. This backend starts from the Entrez ids TxDb keys on and
+  # has to map them. .anno_entrez_to_symbol() does not fail when it cannot: it
+  # hands the id back, and the same gene is then called TP53 on one path and
+  # 7157 on the other. Nothing downstream notices, because both are valid
+  # strings and both become AREA; the joins simply return nothing.
+  for (sa in c("BODY", "1STEXON", "5UTR", "3UTR", "EXONBND")) {
+    gr  <- SEMseeker:::anno_area_granges_build(paste0("GENE_", sa),
+                                                genome_build = "hg19")
+    lbl <- unique(as.character(GenomicRanges::mcols(gr)$label))
+    lbl <- lbl[!is.na(lbl) & nzchar(lbl)]
+    expect_true(length(lbl) > 0L)
+    expect_lt(mean(grepl("^[0-9]+$", lbl)), 0.5,
+              label = paste0("GENE_", sa, ": share of labels that are bare ids"))
+  }
+})

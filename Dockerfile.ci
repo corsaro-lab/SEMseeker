@@ -56,8 +56,30 @@ RUN echo 'options(repos = c(\n\
   CRAN       = "https://cloud.r-project.org"\n\
 ))' >> /usr/local/lib/R/etc/Rprofile.site
 
+# ── Raise the download timeout from R's 60 second default.
+#    The polars installer fetches a pre-built library of about 265 MB. At the
+#    default the transfer is cut mid-file and download.file() reports a length
+#    mismatch rather than a timeout; the installer then falls back to building
+#    from source, finds no cargo in this image, and the whole dependency layer
+#    fails. Observed twice in a row, truncating at 181 MB and 192 MB after
+#    1m 0.8s - the timeout, not the network.
+RUN echo 'options(timeout = max(1200, getOption("timeout")))' \
+  >> /usr/local/lib/R/etc/Rprofile.site
+
 # ── Bootstrap tooling (pak for parallel installs, rcmdcheck for the check step)
 RUN Rscript -e "install.packages(c('pak', 'rcmdcheck'))"
+
+# ── Install polars ahead of pak, with install.packages().
+#    There is no binary of polars for aarch64 in the repositories above, so its
+#    configure script fetches a pre-built library of about 265 MB from a GitHub
+#    release. That download obeys options(timeout), and pak does NOT read
+#    Rprofile.site in the subprocesses it installs from, so under pak the
+#    transfer is cut at the 60 second default, the installer falls back to
+#    building from source, finds no cargo, and the whole dependency layer fails.
+#    install.packages() does read Rprofile.site, so with the raised timeout
+#    above the same download completes (measured: 111 s). pak then finds polars
+#    already installed and leaves it alone.
+RUN Rscript -e "install.packages('polars')"
 
 # ── Install package dependencies
 #    Layer is cached as long as DESCRIPTION doesn't change.
@@ -86,6 +108,31 @@ RUN Rscript -e "\
       'IlluminaHumanMethylationEPICanno.ilm10b4.hg19', \
       'IlluminaHumanMethylation450kanno.ilmn12.hg19', \
       'IlluminaHumanMethylation27kanno.ilmn12.hg19'\
+    ), \
+    ask = FALSE, update = FALSE\
+  )"
+
+# ── Install the Bioconductor packages the GRanges annotation backend needs.
+#    Without these the whole GENE/ISLAND coordinate path skips: every test in
+#    test-5-area-granges-build.R and test-5-annotation-concordance.R is guarded
+#    by skip_if_not_installed(), so a local run goes green without exercising a
+#    single line of it - the same silent-skip failure the meta-test
+#    test-0-suggests-installed.R exists to prevent on GitHub.
+#
+#    org.Hs.eg.db is here for a reason of meaning, not of coverage: TxDb keys
+#    genes by Entrez id, and without the symbol database the label of a gene
+#    region stays that id, while the Illumina path labels with gene symbols.
+#    The two backends would name the same gene two ways.
+#
+#    Separate layer: it is the slow and heavy one (the TxDb chain runs to about
+#    a gigabyte), and keeping it apart means a change to the Illumina layer
+#    above does not force it to rebuild.
+RUN Rscript -e "\
+  BiocManager::install(\
+    c(\
+      'AnnotationHub', \
+      'TxDb.Hsapiens.UCSC.hg19.knownGene', \
+      'org.Hs.eg.db'\
     ), \
     ask = FALSE, update = FALSE\
   )"

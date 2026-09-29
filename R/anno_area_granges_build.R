@@ -401,7 +401,11 @@
 #' \describe{
 #'   \item{GENE areas}{\code{TxDb.Hsapiens.UCSC.hg19.knownGene} (or hg38/mm10),
 #'     \code{GenomicFeatures}, \code{GenomicRanges}, \code{IRanges}.
-#'     \code{org.Hs.eg.db} is optional (falls back to Entrez IDs as labels).}
+#'     \code{org.Hs.eg.db} is required in practice: without it the label of
+#'     a gene region stays the Entrez id that TxDb keys on, while the
+#'     Illumina path labels with gene symbols, so the two backends name the
+#'     same gene two different ways. The code falls back rather than
+#'     failing, but the result is not comparable across backends.}
 #'   \item{ISLAND areas}{\code{AnnotationHub} (downloads track on first use,
 #'     then caches locally).}
 #'   \item{CHR / DMR areas}{no extra packages needed.}
