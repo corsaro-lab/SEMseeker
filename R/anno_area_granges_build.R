@@ -81,6 +81,40 @@
   }
 }
 
+#' Rename a per-transcript GRanges by the Entrez id of its parent gene
+#'
+#' Everything TxDb groups \code{by = "tx"} comes back named by transcript id:
+#' \code{exonsBy(by = "tx")}, \code{fiveUTRsByTranscript()},
+#' \code{threeUTRsByTranscript()}. The label block downstream reads
+#' \code{names()} and maps it with \code{.anno_entrez_to_symbol()}, which
+#' expects an Entrez gene id.
+#'
+#' Handing it a transcript id does not fail. Both are small integers, so most
+#' transcript ids collide with a valid Entrez id and the mapper returns the
+#' symbol of an unrelated gene: transcript 43 comes back as whatever gene
+#' Entrez 43 is. The label is then a real, well-formed, wrong gene symbol, and
+#' nothing downstream can tell it from a right one.
+#'
+#' Ranges whose transcript has no parent gene are dropped: a range that cannot
+#' name its gene has nothing to contribute to a per-gene question.
+#'
+#' @param txdb a TxDb object.
+#' @param gr a GRanges named by transcript id.
+#' @return \code{gr}, named by Entrez gene id, without the unmappable ranges.
+#' @keywords internal
+#' @noRd
+.anno_name_by_parent_gene <- function(txdb, gr) {
+  by_gene <- GenomicFeatures::transcriptsBy(txdb, by = "gene")
+  tx_ids  <- as.character(GenomicRanges::mcols(unlist(by_gene))$tx_id)
+  gene_of <- stats::setNames(
+    rep(names(by_gene), S4Vectors::elementNROWS(by_gene)), tx_ids)
+
+  genes <- unname(gene_of[as.character(names(gr))])
+  gr    <- gr[!is.na(genes)]
+  names(gr) <- genes[!is.na(genes)]
+  gr
+}
+
 # ---------------------------------------------------------------------------
 # CpG island helper (AnnotationHub + disk cache)
 # ---------------------------------------------------------------------------
@@ -163,20 +197,21 @@
       out
     },
     `1STEXON` = {
-      exons_by <- GenomicFeatures::exonsBy(txdb, by = "gene")
-      # Take first exon per gene (rank 1 = closest to TSS)
-      first_exon <- IRanges::endoapply(exons_by, function(e) {
-        e[order(GenomicRanges::mcols(e)$exon_rank)[1], ]
-      })
-      unlist(first_exon)
+      # exon_rank is a property of a transcript, not of a gene: exonsBy(by =
+      # "gene") does not carry it, so ranking exons there cannot work. Group by
+      # transcript, take rank 1 (the first exon in transcription order, which on
+      # the minus strand is the rightmost), then name by the parent gene.
+      ex <- unlist(GenomicFeatures::exonsBy(txdb, by = "tx"))
+      ex <- ex[GenomicRanges::mcols(ex)$exon_rank == 1L]
+      .anno_name_by_parent_gene(txdb, ex)
     },
     `5UTR` = {
-      utrs <- GenomicFeatures::fiveUTRsByTranscript(txdb)
-      unlist(utrs)
+      .anno_name_by_parent_gene(
+        txdb, unlist(GenomicFeatures::fiveUTRsByTranscript(txdb)))
     },
     `3UTR` = {
-      utrs <- GenomicFeatures::threeUTRsByTranscript(txdb)
-      unlist(utrs)
+      .anno_name_by_parent_gene(
+        txdb, unlist(GenomicFeatures::threeUTRsByTranscript(txdb)))
     },
     BODY = {
       all_genes
