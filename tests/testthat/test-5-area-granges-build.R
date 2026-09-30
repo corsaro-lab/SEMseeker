@@ -231,3 +231,40 @@ test_that("GENE labels are gene symbols, not the Entrez ids TxDb keys on", {
               label = paste0("GENE_", sa, ": share of labels that are bare ids"))
   }
 })
+
+test_that(".anno_entrez_to_symbol refuses identifiers of the wrong kind", {
+  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
+  skip_on_os("mac")
+  skip_if_not_installed("org.Hs.eg.db")
+  skip_if_not_installed("AnnotationDbi")
+
+  # Real Entrez gene ids map, and the handful that carry no symbol fall back to
+  # the id without complaint: that is what the fallback is for.
+  expect_equal(SEMseeker:::.anno_entrez_to_symbol(c("7157", "672", "1956")),
+               c("TP53", "BRCA1", "EGFR"))
+
+  # A vector that is not Entrez gene ids at all must stop rather than label.
+  # Silently returning here is what let a caller pass transcript ids and get
+  # the symbols of unrelated genes back.
+  bogus <- as.character(seq.int(900000000L, 900000099L))
+  expect_error(SEMseeker:::.anno_entrez_to_symbol(bogus),
+               "wrong kind of key")
+
+  # And the case that actually happens, which takes a different route through
+  # AnnotationDbi: a vector where a few keys are valid by coincidence. That is
+  # what transcript ids look like, since both they and Entrez ids are small
+  # integers, and it does NOT raise inside mapIds - only the share of unmapped
+  # keys gives it away. Without this the test would pass while covering the
+  # branch that never fires in production.
+  mixed <- c("7157", "672", bogus)
+  expect_error(SEMseeker:::.anno_entrez_to_symbol(mixed),
+               "wrong kind of key")
+
+  # Just below the threshold the call must still succeed: the handful of Entrez
+  # ids that carry no symbol are what the fallback exists for, and they must not
+  # be mistaken for a caller using the wrong key.
+  ok <- c(rep(c("7157", "672", "1956", "4609"), 4L), "900000001")
+  expect_silent(res <- SEMseeker:::.anno_entrez_to_symbol(ok))
+  expect_length(res, length(ok))
+  expect_identical(utils::tail(res, 1L), "900000001")
+})

@@ -59,26 +59,82 @@
   get(pkg, envir = asNamespace(pkg))
 }
 
-# Map Entrez IDs → gene symbols using org.Hs.eg.db (optional).
-# Falls back to Entrez ID strings if the package is not available.
+# Share of unmappable keys above which the vector is treated as the wrong kind
+# of identifier rather than as a few missing annotations.
+#
+# Measured on hg19: gene Entrez ids of the TxDb fail to map for 0.02 per cent
+# of the set, 5 out of 28,622, which are ids that genuinely carry no symbol.
+# The same call with transcript ids fails for 94 per cent. Anything between the
+# two separates the cases; 20 per cent sits a thousandfold above the legitimate
+# rate and far below the broken one.
+.SYMBOL_UNMAPPED_MAX <- 0.20
+
+# Map Entrez gene IDs to gene symbols.
+#
+# This used to fall back to the id, twice: to the id string when the symbol
+# database was absent, and to the id of every key that did not map. Both were
+# silent, and together they hid a caller that was passing transcript ids. The
+# label it produced was a real gene symbol of an unrelated gene, because
+# transcript ids and Entrez ids are both small integers and most of them
+# collide. Nothing downstream could tell that label from a correct one.
+#
+# So the failures are loud now. The residual fallback stays for the handful of
+# Entrez ids that carry no symbol: at 0.02 per cent it is the thing it was
+# meant for.
 .anno_entrez_to_symbol <- function(entrez_ids) {
-  if (requireNamespace("org.Hs.eg.db", quietly = TRUE) &&
-      requireNamespace("AnnotationDbi", quietly = TRUE)) {
-    syms <- suppressMessages(
+  if (!requireNamespace("org.Hs.eg.db", quietly = TRUE) ||
+      !requireNamespace("AnnotationDbi", quietly = TRUE))
+    stop("a gene region has to be labelled with a gene symbol, and that needs ",
+         "org.Hs.eg.db and AnnotationDbi. Without them the label would stay the ",
+         "Entrez id the transcript database keys on, while the array path ",
+         "labels with symbols, so the two would name the same gene two ways and ",
+         "no result of one could be joined to the other. ",
+         "BiocManager::install(c(\"org.Hs.eg.db\", \"AnnotationDbi\")).",
+         call. = FALSE)
+
+  entrez_ids <- as.character(entrez_ids)
+  # AnnotationDbi does not return NAs when NONE of the keys are valid: it raises
+  # .testForValidKeys("None of the keys entered are valid keys for 'ENTREZID'").
+  # That is the same diagnosis as the threshold below, arrived at by a different
+  # route, so it is caught here and reported in the same words. Leaving it to
+  # propagate would be loud enough but would name AnnotationDbi's internals
+  # instead of the mistake, which is that the caller passed the wrong kind of
+  # identifier. The partial case - a vector where a few keys happen to be valid,
+  # which is exactly what transcript ids look like - does not raise at all and is
+  # what the threshold is for.
+  syms <- tryCatch(
+    suppressMessages(
       AnnotationDbi::mapIds(
         org.Hs.eg.db::org.Hs.eg.db,
-        keys      = as.character(entrez_ids),
+        keys      = entrez_ids,
         column    = "SYMBOL",
         keytype   = "ENTREZID",
         multiVals = "first"
       )
-    )
-    # Replace NAs with the Entrez ID itself
-    syms[is.na(syms)] <- as.character(entrez_ids[is.na(syms)])
-    unname(syms)
-  } else {
-    as.character(entrez_ids)
-  }
+    ),
+    error = function(e) {
+      if (grepl("valid keys", conditionMessage(e), fixed = TRUE))
+        return(stats::setNames(rep(NA_character_, length(entrez_ids)), entrez_ids))
+      stop(e)
+    })
+
+  unmapped <- mean(is.na(syms))
+  if (length(syms) > 0 && unmapped > .SYMBOL_UNMAPPED_MAX)
+    stop(sprintf(
+      paste0("%.1f%% of the identifiers passed for symbol lookup are not Entrez ",
+             "gene ids of this database (%d of %d). That is not a gap in the ",
+             "annotation, it is the wrong kind of key: either the caller passed ",
+             "identifiers of something else, such as transcript ids, or the ",
+             "genome build is not the one org.Hs.eg.db describes. Labelling ",
+             "anyway is the worse outcome, because most wrong keys collide with ",
+             "a valid Entrez id and come back as the symbol of an unrelated ",
+             "gene. First few: %s."),
+      100 * unmapped, sum(is.na(syms)), length(syms),
+      paste(utils::head(entrez_ids[is.na(syms)], 5), collapse = ", ")),
+      call. = FALSE)
+
+  syms[is.na(syms)] <- entrez_ids[is.na(syms)]
+  unname(syms)
 }
 
 #' Rename a per-transcript GRanges by the Entrez id of its parent gene
