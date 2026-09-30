@@ -9,9 +9,13 @@
 #'   grouping variable (default \code{"Sample_Group"}).
 #' @param maxResources numeric. Maximum percentage of CPU cores to use
 #'   (default 90).
-#' @param parallel_strategy character. Parallelisation backend; possible
-#'   values: \code{"none"}, \code{"multisession"}, \code{"sequential"},
-#'   \code{"multicore"}, \code{"cluster"} (default \code{"multicore"}).
+#' @param parallel_strategy character. Parallelisation backend; one of
+#'   \code{"multisession"}, \code{"sequential"}, \code{"cluster"}
+#'   (default \code{"multisession"}).
+#'   Asking for \code{"multicore"} is accepted and converted to
+#'   \code{"multisession"}: it means fork(), which is unsafe with this
+#'   package's native thread pool on every platform that offers it, and
+#'   absent on Windows. The conversion is logged.
 #' @param ... Additional arguments passed to \code{core_init_env()}.
 #'
 #' @return Invisibly \code{NULL}. Sensitivity / specificity tables are written

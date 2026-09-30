@@ -9,8 +9,12 @@
 #' @param result_folder character. Path to the SEMseeker result folder.
 #' @param maxResources numeric. Maximum percentage of CPU cores to use (default 90).
 #' @param parallel_strategy character. Parallelisation backend passed to
-#'   \code{future}; e.g. \code{"multicore"}, \code{"multisession"},
-#'   \code{"sequential"} (default \code{"multicore"}).
+#'   \code{future}; one of \code{"multisession"}, \code{"sequential"},
+#'   \code{"cluster"} (default \code{"multisession"}).
+#'   Asking for \code{"multicore"} is accepted and converted to
+#'   \code{"multisession"}: it means fork(), which is unsafe with this
+#'   package's native thread pool on every platform that offers it, and
+#'   absent on Windows. The conversion is logged.
 #' @param start_fresh logical. If \code{TRUE}, delete previous results before
 #'   running (default \code{FALSE}).
 #' @param ... Additional named arguments passed to \code{core_init_env()}.

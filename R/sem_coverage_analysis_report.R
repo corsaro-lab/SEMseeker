@@ -12,7 +12,11 @@
 #' @param maxResources numeric. Maximum percentage of CPU cores to use
 #'   (default 90).
 #' @param parallel_strategy character. Parallelisation backend passed to
-#'   \code{future} (default \code{"multicore"}).
+#'   \code{future} (default \code{"multisession"}).
+#'   Asking for \code{"multicore"} is accepted and converted to
+#'   \code{"multisession"}: it means fork(), which is unsafe with this
+#'   package's native thread pool on every platform that offers it, and
+#'   absent on Windows. The conversion is logged.
 #' @param ... Additional named arguments passed to \code{core_init_env()}.
 #' @return Invisibly \code{NULL}. Coverage tables and charts are written to
 #'   the result folder.
