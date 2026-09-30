@@ -8,7 +8,7 @@
 #' @param signal_thresholds thresholds defined to calculate epimutations
 #' @return files into the result folder with pivot table and bedgraph.
 #'   A BANNER is logged once per batch before the per-sample loop showing:
-#'   input_positions, beta_range_positions, covered_by_inner_join — allows
+#'   input_positions, beta_range_positions, covered_by_inner_join - allows
 #'   immediate audit of cross-run coverage (e.g. Nanopore sample vs Illumina reference).
 #' @importFrom doRNG %dorng%
 #'
@@ -28,7 +28,7 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
   }
 
   ### get signal_values ########################################################
-  # AI-224: idempotent normalisation of both sides — the per-sample subset
+  # AI-224: idempotent normalisation of both sides - the per-sample subset
   # below is name-based and must not depend on the caller having cleaned them.
   .normalized <- core_normalize_sample_ids(sample_sheet, signal_data)
   sample_sheet <- .normalized$sample_sheet
@@ -111,7 +111,7 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
   }
   gc()
 
-  # ── Coverage banner — emitted ONCE before per-sample analysis ───────────────
+  # ── Coverage banner - emitted ONCE before per-sample analysis ───────────────
   # Shows how many positions in the current run are covered by signal_thresholds.
   # Especially important for cross-run analysis (e.g. Nanopore sample vs an
   # Illumina reference batch passed via populationControlRangeBetaValues):
@@ -139,7 +139,7 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
       )$collect()$height
       core_log_event(
         "BANNER: ", format(Sys.time(), "%a %b %d %X %Y"),
-        " [sem_analyze_population] Coverage —",
+        " [sem_analyze_population] Coverage -",
         " input_positions=", coverage_n_input,
         " | beta_range_positions=", coverage_n_ranges,
         " | covered_by_inner_join=", coverage_n_covered,
@@ -168,7 +168,7 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
     # CRITICAL (E-14): multisession workers are fresh R processes where
     # .pkgglobalenv$ssEnv is empty. All internal helpers (io_bed_file_name,
     # sem_analyze_single_sample, etc.) call core_get_session_info() which reads from
-    # .pkgglobalenv — NOT from the exported `ssEnv` variable. Without this
+    # .pkgglobalenv - NOT from the exported `ssEnv` variable. Without this
     # call, multisession workers fail with "core_get_session_info called without
     # result folder". See engineering-decisions.md §1.3.
     # AI-041: in-memory only; saveRDS would happen N_samples × N_workers
@@ -180,7 +180,7 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
     # AI-075: precomputed existing-bed sets => O(1) %in% lookups instead of
     # 4 stat syscalls per sample (~16k saved on a 4000-sample population).
     # skip_dir_create=TRUE because all destination dirs were ensured ONCE at
-    # the top of sem_analyze_population — no per-sample dir_check_and_create.
+    # the top of sem_analyze_population - no per-sample dir_check_and_create.
     bed_mut_hyper   <- SEMseeker:::io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "MUTATIONS","HYPER", skip_dir_create = dir_known_mut_hyper)
     bed_mut_hypo    <- SEMseeker:::io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "MUTATIONS","HYPO", skip_dir_create = dir_known_mut_hypo)
     bed_deltas_hypo <- SEMseeker:::io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "DELTAS","HYPO", skip_dir_create = dir_known_deltas_hypo)

@@ -231,7 +231,7 @@ anno_probe_annotation_build <- function(tech, force = FALSE) {
   # ---- Semantic area columns (one row per probe) ----
   # GENE / ISLAND / CHR are 1:1 mappings: each pure helper returns a NAMED LIST
   # of columns for ALL probes. They are independent column-groups, NOT a
-  # mutually-exclusive dispatch — every probe gets its gene context AND its
+  # mutually-exclusive dispatch - every probe gets its gene context AND its
   # island context AND its cytoband. The helpers are pure (no annotation-package
   # access), so each area's recoding is unit-tested without an Illumina package.
   col_groups <- c(
@@ -242,11 +242,11 @@ anno_probe_annotation_build <- function(tech, force = FALSE) {
   )
   for (nm in names(col_groups)) anno_df[[nm]] <- col_groups[[nm]]
 
-  # ---- DMR columns (1:many membership — NOT a 1:1 column) ----
+  # ---- DMR columns (1:many membership - NOT a 1:1 column) ----
   # A probe can belong to several DMRs, so this is a row-EXPANDING join, not a
   # per-probe column like GENE/ISLAND/CHR. The duplication is intentional and
   # required: anno_probe_features_get() selects [tech, PROBE, CHR, START, END,
-  # area_subarea] and dplyr::distinct()s — for DMR_* this preserves every
+  # area_subarea] and dplyr::distinct()s - for DMR_* this preserves every
   # membership, while for the other areas the duplicate rows collapse back.
   dmr <- SEMseeker::dmr_annotation
   anno_df <- merge(anno_df, dmr, by = "PROBE", all.x = TRUE)

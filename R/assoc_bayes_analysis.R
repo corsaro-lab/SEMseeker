@@ -135,7 +135,7 @@ assoc_bayes_analysis <- function(
       tempDataFrame <- tempDataFrame[, colnames(tempDataFrame) != "Sample_ID",
                                      drop = FALSE]
 
-      # A-09 fix 4: column reference, not string literal — "x" != "y" is always TRUE
+      # A-09 fix 4: column reference, not string literal - "x" != "y" is always TRUE
       tempDataFrame <- subset(tempDataFrame, Sample_Group != "Reference")
       tempDataFrame <- subset(tempDataFrame, Sample_Group != 0)
       tempDataFrame <- as.data.frame(tempDataFrame)
@@ -157,7 +157,7 @@ assoc_bayes_analysis <- function(
         core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
           " [assoc_bayes_analysis] Skipping ", key$MARKER, "/", key$FIGURE,
           "/", key$AREA, "/", key$SUBAREA,
-          " — n_case=", n_case, " n_control=", n_control)
+          " - n_case=", n_case, " n_control=", n_control)
         next
       }
 

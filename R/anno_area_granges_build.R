@@ -1,14 +1,14 @@
-# area_granges_build.R — Semantic area GRanges for WGBS / long-read data
+# area_granges_build.R - Semantic area GRanges for WGBS / long-read data
 #
 # Reconstructs the same genomic boundaries that Illumina uses for its area
-# definitions (TSS200, TSS1500, gene body, CpG islands, shores, shelves …)
+# definitions (TSS200, TSS1500, gene body, CpG islands, shores, shelves ...)
 # using TxDb annotation packages and AnnotationHub, so that WGBS / long-read
 # analyses use exactly the same region semantics as Illumina array analyses.
 #
 # Reference genome is taken from ssEnv$genome_build (set in core_init_env()) or
 # passed explicitly; default "hg19" matches the Illumina annotation packages.
 #
-# NOTE — PROBE_WHOLE vs POSITION_WHOLE (technology semantics)
+# NOTE - PROBE_WHOLE vs POSITION_WHOLE (technology semantics)
 # -----------------------------------------------------------
 # For Illumina data, "PROBE_WHOLE" means individual array probes identified
 # by manufacturer IDs (e.g. cg00000029).  Statistical tests run at the
@@ -30,8 +30,8 @@
 #   DMR:     WHOLE, DMR
 #   PROBE:   WHOLE  (coordinate-only, handled by anno_probe_features_get())
 #
-# All returned GRanges carry mcols()$label — the subarea identifier used
-# downstream to group CpGs (gene symbol, island coordinate, cytoband name …).
+# All returned GRanges carry mcols()$label - the subarea identifier used
+# downstream to group CpGs (gene symbol, island coordinate, cytoband name ...).
 
 # ---------------------------------------------------------------------------
 # Package-level in-memory cache (survives the R session, cleared on restart)
@@ -210,14 +210,14 @@
 }
 
 # ---------------------------------------------------------------------------
-# Individual area builders — each returns a GRanges with mcols()$label
+# Individual area builders - each returns a GRanges with mcols()$label
 # ---------------------------------------------------------------------------
 
 .anno_build_gene_area <- function(subarea, txdb) {
   # TSS = single-base GRanges at each gene's transcription start (strand-aware)
   all_genes <- GenomicFeatures::genes(txdb, single.strand.genes.only = FALSE)
   # genes() can return a GRangesList for multi-strand genes; keep only GRanges
-  if (is(all_genes, "GRangesList"))
+  if (methods::is(all_genes, "GRangesList"))
     all_genes <- unlist(all_genes)
 
   # After unlist(), gene_ids live in names(all_genes); direct GRanges from
@@ -295,7 +295,7 @@
   if (subarea %in% c("TSS200", "TSS1500", "BODY")) {
     GenomicRanges::mcols(gr)$label <- symbols
   } else if (subarea == "WHOLE") {
-    # After reduce(), per-gene identity is lost — use region coordinates as label
+    # After reduce(), per-gene identity is lost - use region coordinates as label
     GenomicRanges::mcols(gr)$label <-
       paste0(GenomicRanges::seqnames(gr), ":",
              GenomicRanges::start(gr), "-",
@@ -376,7 +376,7 @@
     if (is.null(cb_obj) || !is.data.frame(cb_obj))
       stop("cytoband_hg19 data object not found in SEMseeker package.")
     # cytoband_hg19$CHR is stored as factor with an empty level (""); convert
-    # to character and drop rows with missing/empty seqnames — GenomicRanges
+    # to character and drop rows with missing/empty seqnames - GenomicRanges
     # refuses GRanges construction if any seqlevel is NA or "".
     cb_chr <- as.character(cb_obj$CHR)
     valid  <- !is.na(cb_chr) & nzchar(cb_chr)
@@ -456,7 +456,7 @@
 #' Build a GRanges object for a given genomic area/subarea
 #'
 #' Constructs the same region boundaries used by Illumina array annotation
-#' (TSS200, TSS1500, gene body, CpG islands, shores, shelves …) from TxDb
+#' (TSS200, TSS1500, gene body, CpG islands, shores, shelves ...) from TxDb
 #' packages and AnnotationHub, so that WGBS and long-read analyses share
 #' identical region semantics with Illumina array analyses.
 #'
@@ -481,7 +481,7 @@
 #'   \item \strong{Illumina}: one row per array probe (manufacturer ID,
 #'     e.g. \code{cg00000029}).  Probe identity is meaningful and cross-study
 #'     comparable for the same array platform.
-#'   \item \strong{WGBS / LONGREAD}: treated as \code{POSITION_WHOLE} — one
+#'   \item \strong{WGBS / LONGREAD}: treated as \code{POSITION_WHOLE} - one
 #'     row per genomic position encoded as \code{"CHR\_START"} (e.g.
 #'     \code{"1\_10000"}).  Cross-study comparisons require the same
 #'     \code{genome_build}.

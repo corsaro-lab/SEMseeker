@@ -54,12 +54,12 @@ assoc_model_polynomial <- function (family_test, tempDataFrame, sig.formula , tr
   if(length(covariates)>0)
   {
     formula <- assoc_polynomial_formula_build(dependent_variable, independent_variable, degree, covariates)
-    polynomial_model_result <- stats::lm(formula, data = train.data, na.action = na.exclude)
+    polynomial_model_result <- stats::lm(formula, data = train.data, na.action = stats::na.exclude)
   }
   else
     # Build the polynomial_model_result
     polynomial_model_result <- stats::lm(eval(parse(text=dependent_variable)) ~ stats::poly(eval(parse(text=independent_variable)),
-      degree, raw = TRUE), data = train.data, na.action = na.exclude)
+      degree, raw = TRUE), data = train.data, na.action = stats::na.exclude)
 
 
 

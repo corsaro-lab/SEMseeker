@@ -12,7 +12,7 @@
 #'   2. Collapse runs of two or more whitespace characters into one.
 #'   3. Trim leading / trailing whitespace.
 #'
-#' It does NOT lowercase, title-case, or replace any other character —
+#' It does NOT lowercase, title-case, or replace any other character -
 #' that keeps the function fully reversible visually (a reader can
 #' mentally re-insert the underscores to find the matching CSV column).
 #'

@@ -23,7 +23,7 @@ BugReports: https://github.com/corsaro-lab/SEMseeker/issues
 biocViews: Epigenetics, DNAMethylation, MethylationArray, DifferentialMethylation,
         GeneExpression, Pathways, MultipleComparison, Normalization,
         StatisticalMethod, Software, Coverage, Sequencing
-Imports: caret, dplyr, doFuture, doRNG, fastDummies, foreach, future,
+Imports: caret, dplyr, methods, doFuture, doRNG, fastDummies, foreach, future,
         GenomicRanges, ggplot2, ggvenn, graphics, grDevices, gtools,
         jsonlite, lqmm, matrixStats, plyr, polars, progressr, reshape,
         reshape2, R.utils, rlang, stats, stringr, tools, utils, withr,

@@ -57,7 +57,7 @@ assoc_inter_study_association_meta_analysis <- function(inference_details,statis
       studies_count <- length(unique(results_inference_subset[,"STUDY"]))
       if(studies_count<2)
         next
-      meta_model <- metagen(
+      meta_model <- meta::metagen(
         TE = results_inference_subset[,statistic_parameter],   # effect size for each study
         seTE = results_inference_subset$STD.ERROR,  # standard error of the effect size for each study
         studlab = results_inference_subset$STUDY,  # study label

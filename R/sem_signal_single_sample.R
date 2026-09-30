@@ -1,6 +1,6 @@
 #' sem_signal_single_sample
 #'
-#' @param values signal vaòues
+#' @param values signal values
 #' @param sample_detail detais of sample
 #' @param probe_features annotation probe
 #'
@@ -11,7 +11,7 @@ sem_signal_single_sample <- function(values,sample_detail,probe_features)
   ssEnv <- core_get_session_info()
 
   # AI-248: the per-sample folder is named after the (marker, figure) key, and
-  # the figure of SIGNAL is the scale — it must agree with io_bed_file_name()
+  # the figure of SIGNAL is the scale - it must agree with io_bed_file_name()
   # and with io_list_bed_files_for_marker_figure(), which rebuild the same name.
   folder_to_save <- io_dir_check_and_create(ssEnv$result_folderData, c(sample_detail$Sample_Group ,paste0("SIGNAL","_", io_signal_figure(), sep = "")))
   # DEBUG (2026-06-09): right before the data.frame() that has

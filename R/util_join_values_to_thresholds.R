@@ -1,10 +1,10 @@
 # util_join_values_to_thresholds
 #
-# Private helper — inner-join a per-sample values data.frame to a thresholds
+# Private helper - inner-join a per-sample values data.frame to a thresholds
 # data.frame on (CHR, START, END) using Polars.
 #
 # This is the canonical join used by sem_mutations_get(), sem_delta_single_sample(),
-# and sem_deltar_single_sample() — all three need the same intersection.
+# and sem_deltar_single_sample() - all three need the same intersection.
 #
 # WHY POLARS:
 #   Nanopore bedmethyl files can have 28M+ rows.  Base-R merge()/match()
@@ -19,13 +19,13 @@
 # @param values     data.frame: CHR, START, END, VALUE (col 4)
 # @param thresholds data.frame: CHR, START, END + threshold columns
 #                   (signal_inferior_thresholds, signal_superior_thresholds,
-#                    signal_median_values, iqr, q1, q3 — any subset is fine)
-# @return data.frame — inner join result; columns CHR, START, END, VALUE plus
+#                    signal_median_values, iqr, q1, q3 - any subset is fine)
+# @return data.frame - inner join result; columns CHR, START, END, VALUE plus
 #         whichever threshold columns were present in the input.
 #         Returns 0-row data.frame if there is no positional overlap.
 util_join_values_to_thresholds <- function(values, thresholds) {
 
-  # E-13: Normalise CHR — strip "chr" prefix so bed-file values (chr1) match
+  # E-13: Normalise CHR - strip "chr" prefix so bed-file values (chr1) match
   # threshold values (1). io_dump_sample_as_bed_file() prepends "chr" when writing
   # bed files, but signal_thresholds retains bare chromosome numbers from the
   # probe annotation. Without this normalisation the inner join returns 0 rows.
@@ -39,8 +39,8 @@ util_join_values_to_thresholds <- function(values, thresholds) {
     stringsAsFactors = FALSE
   )
 
-  # Select only positional key + known threshold columns — avoids carrying
-  # large probe-annotation columns (GENE_*, ISLAND_*, …) through the join.
+  # Select only positional key + known threshold columns - avoids carrying
+  # large probe-annotation columns (GENE_*, ISLAND_*, ...) through the join.
   keep_cols <- intersect(
     c("CHR", "START", "END",
       "signal_inferior_thresholds", "signal_superior_thresholds",

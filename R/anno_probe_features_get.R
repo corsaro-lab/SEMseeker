@@ -12,7 +12,7 @@
 #' CHR_CYTOBAND, DMR_*) are resolved via \code{\link{anno_area_granges_build}} and
 #' \code{GenomicRanges::findOverlaps()}.
 #'
-#' @section PROBE_WHOLE vs POSITION_WHOLE — technology semantics:
+#' @section PROBE_WHOLE vs POSITION_WHOLE - technology semantics:
 #' The area \code{PROBE_WHOLE} has different meanings depending on technology:
 #' \describe{
 #'   \item{Illumina}{Each row identifies a specific \emph{array probe} by its
@@ -25,7 +25,7 @@
 #'     its genomic coordinate (\code{CHR\_START}, e.g. \code{"1\_10000"}).
 #'     The statistical test is performed at the individual-position level.
 #'     Two WGBS datasets can be compared only if they share the same reference
-#'     genome (\code{ssEnv\$genome_build}) — mismatches are detected by the
+#'     genome (\code{ssEnv\$genome_build}) - mismatches are detected by the
 #'     session provenance guard (C-06).}
 #' }
 #' In both cases the downstream analysis pipeline is identical; the distinction
@@ -48,7 +48,7 @@ anno_probe_features_get <- function(area_subarea) {
 
   # Contract: sem_prepare_batch_signal() (fresh path) or core_get_meth_tech() (resume
   # path) should set ssEnv$tech before any anno_probe_features_get() call site.
-  # Fallback: read the SIGNAL PROBE pivot and re-derive — kept for tests and
+  # Fallback: read the SIGNAL PROBE pivot and re-derive - kept for tests and
   # legacy callers that bypass sem_prepare_batch_signal(). Loud WARNING so the
   # drift is observable.
   if (is.null(ssEnv$tech) || ssEnv$tech == "") {
@@ -57,7 +57,7 @@ anno_probe_features_get <- function(area_subarea) {
               "sem_prepare_batch_signal() should run first in the normal pipeline.")
     signal_pivot_lazy <- io_read_pivot("SIGNAL", io_signal_figure(), "PROBE", "WHOLE")
     if (is.null(signal_pivot_lazy))
-      stop("SIGNAL PROBE pivot not available — cannot detect technology.")
+      stop("SIGNAL PROBE pivot not available - cannot detect technology.")
     signal_data_r <- as.data.frame(signal_pivot_lazy$collect())
     if ("AREA" %in% colnames(signal_data_r)) {
       rownames(signal_data_r) <- signal_data_r$AREA
@@ -80,7 +80,7 @@ anno_probe_features_get <- function(area_subarea) {
   if (ssEnv$tech %in% c("WGBS", "LONGREAD")) {
 
     # AI-027: read via unified dispatcher. NULL means neither cached
-    # nor per-sample bed files exist for SIGNAL — same failure
+    # nor per-sample bed files exist for SIGNAL - same failure
     # mode as the previous file.exists() check.
     sig_pivot_lazy <- io_read_pivot("SIGNAL", io_signal_figure(), "POSITION", "WHOLE")
     if (is.null(sig_pivot_lazy))
@@ -154,7 +154,7 @@ anno_probe_features_get <- function(area_subarea) {
   }
 
   # -----------------------------------------------------------------------
-  # Illumina path — Bioconductor annotation packages
+  # Illumina path - Bioconductor annotation packages
   # -----------------------------------------------------------------------
   pkg <- .ANNO_PKGS[[ssEnv$tech]]
   if (is.null(pkg) || !requireNamespace(pkg, quietly = TRUE)) {
@@ -182,8 +182,8 @@ anno_probe_features_get <- function(area_subarea) {
     # anno_probe_features_get()'s scope. It never ran when ssEnv$tech was set
     # by the legacy lazy-detection path (the function returned early via
     # the PROBE / CHR branch), but with the AREA-based call sites added
-    # by anno_annotate_position_pivots() — area_subarea = "GENE_BODY",
-    # "ISLAND_N_SHORE", etc. — the else-branch is now reached and the
+    # by anno_annotate_position_pivots() - area_subarea = "GENE_BODY",
+    # "ISLAND_N_SHORE", etc. - the else-branch is now reached and the
     # broken reference halts the run.
   }
 
@@ -197,7 +197,7 @@ anno_probe_features_get <- function(area_subarea) {
   if (grepl("PROBE", area_subarea))
     probe_features$PROBE_WHOLE <- probe_features$PROBE
 
-  # Drop the technology flag column — not needed downstream
+  # Drop the technology flag column - not needed downstream
   probe_features <- probe_features[
     , -which(colnames(probe_features) %in% ssEnv$tech), drop = FALSE]
 

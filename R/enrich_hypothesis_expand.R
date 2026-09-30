@@ -14,7 +14,7 @@
 #' **Why they are one question and not two.** The direction of an epimutation
 #' maps onto transcription only together with where it sits: hypermethylation at
 #' a promoter silences, hypomethylation there de-represses, but hypermethylation
-#' in the body of a gene is associated with *active* transcription — the same
+#' in the body of a gene is associated with *active* transcription - the same
 #' sign means the opposite thing. Naming a direction without naming a region is
 #' not yet a biological hypothesis, which is why neither may be omitted.
 #'
@@ -25,19 +25,19 @@ NULL
 #' Region windows a `gene_region` answer stands for (internal)
 #'
 #' The aliases are named after the biology and expand to the windows of the
-#' Illumina gene annotation. An alias is admissible here — where the package
-#' otherwise refuses to bury a choice in a constant — only because its expansion
+#' Illumina gene annotation. An alias is admissible here - where the package
+#' otherwise refuses to bury a choice in a constant - only because its expansion
 #' does not stay hidden: it is written in the log when it is expanded and
 #' stamped into the enrichment result, so a reader of that result can see which
 #' windows produced it and disagree. A caller who reads `PROMOTER` differently
 #' passes the windows explicitly instead.
 #'
 #' \itemize{
-#'   \item `PROMOTER` — `TSS200`, `TSS1500`, `1STEXON`. The promoter-proximal
+#'   \item `PROMOTER` - `TSS200`, `TSS1500`, `1STEXON`. The promoter-proximal
 #'     windows, where methylation gates transcription.
-#'   \item `GENE_BODY` — `BODY`. The transcribed region, where the association
+#'   \item `GENE_BODY` - `BODY`. The transcribed region, where the association
 #'     between methylation and expression runs the other way.
-#'   \item `WHOLE_GENE` — `WHOLE`. Every position of the gene, one window: the
+#'   \item `WHOLE_GENE` - `WHOLE`. Every position of the gene, one window: the
 #'     hypothesis is that the locus is affected, without saying where.
 #' }
 #'
@@ -81,7 +81,7 @@ util_gene_region_expand <- function(gene_region) {
   if (any(asked %in% names(aliases)))
     stop("gene_region mixes an alias with explicit windows: ",
          paste(asked, collapse = ", "),
-         ". Pass one alias, or the windows it should stand for — not both, or ",
+         ". Pass one alias, or the windows it should stand for - not both, or ",
          "the result cannot say which definition produced it.", call. = FALSE)
 
   structure(asked, alias = paste(asked, collapse = "+"))
@@ -89,7 +89,7 @@ util_gene_region_expand <- function(gene_region) {
 
 #' Figures an `epimutation_direction` answer stands for (internal)
 #'
-#' `ANY` is the union of the two directions, and it is a legitimate hypothesis —
+#' `ANY` is the union of the two directions, and it is a legitimate hypothesis -
 #' for a marker of instability the direction is how the loss of epigenetic
 #' control shows itself, not what defines it. What it costs is stated where it
 #' is chosen: over a union a gene reaches the list from more than one family, so

@@ -1,7 +1,7 @@
 # ---------------------------------------------------------------------------
-# sem_deltaX_get() — polars-native, wide-dataframe derived markers
+# sem_deltaX_get() - polars-native, wide-dataframe derived markers
 #
-# AI-030 (2026-06-01). Replaces the legacy R-loop sem_deltaX_get_legacy() — see
+# AI-030 (2026-06-01). Replaces the legacy R-loop sem_deltaX_get_legacy() - see
 # that file for the previous implementation kept for reference.
 #
 # Builds the derived pivot tables (DELTAQ, DELTARQ, DELTAP, DELTARP) from the
@@ -10,16 +10,16 @@
 # Invariants (confirmed with user 2026-06-01):
 #   - breaks GLOBAL on the union of HYPER+HYPO sample values (not per-figure)
 #   - zero == missing (excluded from stats, returned NA in the output)
-#   - right=TRUE intervals (a, b] — matches polars cut default and R cut
+#   - right=TRUE intervals (a, b] - matches polars cut default and R cut
 #     default
 #   - skip per-sample bedgraph dumps for derived markers (legacy sem_save_figure
-#     used to write 4013 single bedgraphs per derived marker × figure — the
+#     used to write 4013 single bedgraphs per derived marker × figure - the
 #     ~9 min wall-clock bottleneck on ewas_data_hub)
 #
 # Implementation notes:
 #   - For markers ending in 'P' (DELTAP, DELTARP): the bin edges are
 #     equal-width on [global_min, global_max]. Only the per-column min/max
-#     are pulled out — O(N_samples) RAM, streaming-friendly. No unpivot.
+#     are pulled out - O(N_samples) RAM, streaming-friendly. No unpivot.
 #   - For markers ending in 'Q' (DELTAQ, DELTARQ): quantile bin edges need
 #     the full value distribution; we collect the two source DataFrames and
 #     compute the quantiles in R (R `quantile` is C-vectorised and exact;
@@ -64,7 +64,7 @@ sem_deltaX_get <- function(markers = NULL) {
       otherwise(polars::pl$col(col_name))
   }
 
-  # Per-column min/max ignoring nulls — pulled into R as scalars, then
+  # Per-column min/max ignoring nulls - pulled into R as scalars, then
   # global aggregated. Memory cost: O(N_samples) doubles per source figure.
   # NB: polars R $select() wants expressions as varargs, so we splice the
   # list via do.call().
@@ -128,14 +128,14 @@ sem_deltaX_get <- function(markers = NULL) {
       if (!is.finite(mn) || !is.finite(mx) || mn == mx) {
         core_log_event("WARNING: ", Sys.time(),
                   " [deltaX_get_polars] degenerate range for ", mar,
-                  ": min=", mn, " max=", mx, " — skip")
+                  ": min=", mn, " max=", mx, " - skip")
         next
       }
       breaks_full <- seq(mn, mx, length.out = Q_val + 1L)
 
     } else if (endsWith(mar, "Q")) {
       # Quantile: need the full distribution. Collect both DataFrames and
-      # flatten — costly in RAM (~ N_samples × N_probes × 8 bytes per
+      # flatten - costly in RAM (~ N_samples × N_probes × 8 bytes per
       # source figure) but exact.
       probs <- seq(0, 1, length.out = Q_val + 1L)
       df_h  <- as.data.frame(lf_h$select(cols_h)$collect())
@@ -150,7 +150,7 @@ sem_deltaX_get <- function(markers = NULL) {
     } else {
       core_log_event("WARNING: ", Sys.time(),
                 " [deltaX_get_polars] marker ", mar,
-                " doesn't end in P or Q — skipping")
+                " doesn't end in P or Q - skipping")
       next
     }
 
@@ -163,7 +163,7 @@ sem_deltaX_get <- function(markers = NULL) {
     if (length(inner_breaks) == 0L) {
       core_log_event("WARNING: ", Sys.time(),
                 " [deltaX_get_polars] no inner breakpoints for ", mar,
-                " — skip")
+                " - skip")
       next
     }
 

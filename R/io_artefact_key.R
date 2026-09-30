@@ -1,8 +1,8 @@
 #' Compose the identity key of a computed artefact (internal)
 #'
 #' AI-255. **The** single compositor of the six-coordinate key. Everything that
-#' names an artefact — a pivot file, a row of an inference result, an entry in a
-#' resume or overlap comparison — goes through here, so two artefacts are the
+#' names an artefact - a pivot file, a row of an inference result, an entry in a
+#' resume or overlap comparison - goes through here, so two artefacts are the
 #' same thing exactly when their keys are equal.
 #'
 #' \preformatted{
@@ -16,8 +16,8 @@
 #'
 #' Before AI-255 identity was the *combination* of columns, checked separately in
 #' deduplication, in the resume match and in the cross-study overlaps. Every new
-#' coordinate had to be remembered in each of those places — the work AI-248 did
-#' by hand across three files — and forgetting one is exactly how a silent defect
+#' coordinate had to be remembered in each of those places - the work AI-248 did
+#' by hand across three files - and forgetting one is exactly how a silent defect
 #' is born. One composed string means the seventh coordinate will change one
 #' function instead of five call sites.
 #'
@@ -27,7 +27,7 @@
 #' `N_SHORE` / `S_SHELF` (aligned to Illumina's `Relation_to_Island`, so not ours
 #' to rename). `ISLAND_N_SHORE` is three tokens for two coordinates. Coordinates
 #' travel as columns; if one ever has to be recovered from a key, it is matched
-#' against the closed vocabularies, longest first — never by index.
+#' against the closed vocabularies, longest first - never by index.
 #'
 #' The genome build is part of the identity, not decoration: the same gene on
 #' hg19 and on hg38 is not the same thing.
@@ -56,7 +56,7 @@ io_artefact_key <- function(marker, figure, scope, area, subarea, aggregation,
   parts <- c(marker, figure, scope, area, subarea, aggregation, genome_build)
   if (any(vapply(parts, function(p) is.null(p) || !nzchar(as.character(p)[1]),
                  logical(1))))
-    stop("io_artefact_key(): every coordinate is required — marker, figure, ",
+    stop("io_artefact_key(): every coordinate is required - marker, figure, ",
          "scope, area, subarea, aggregation. An artefact whose name omits one ",
          "cannot be told apart from an artefact that omits a different one.",
          call. = FALSE)
@@ -66,8 +66,8 @@ io_artefact_key <- function(marker, figure, scope, area, subarea, aggregation,
 
 #' The two legal values of the SCOPE coordinate (internal)
 #'
-#' AI-255. `SAMPLE` is the partition with one block — the whole sample reduced to
-#' one number — and `INSTANCE` is the partition induced by the region class, one
+#' AI-255. `SAMPLE` is the partition with one block - the whole sample reduced to
+#' one number - and `INSTANCE` is the partition induced by the region class, one
 #' number per gene, island, cytoband or probe. There is no third value: the
 #' historical 1/2/3 depth scale tried to order a lattice on a line and lost the
 #' pairs that are not comparable (a TSS200 window and an open-sea stretch refine
@@ -95,8 +95,8 @@ io_scope_validate <- function(scope) {
 #' Is this region class a single position? (internal)
 #'
 #' AI-255. `PROBE` and `POSITION` are the bottom of the refinement lattice: one
-#' block per position. It is the only place where `VALUE` — the identity, "I do
-#' not aggregate" — is a meaningful aggregation, and the only place where an
+#' block per position. It is the only place where `VALUE` - the identity, "I do
+#' not aggregate" - is a meaningful aggregation, and the only place where an
 #' omitted aggregation can be resolved without guessing.
 #'
 #' @keywords internal

@@ -71,7 +71,7 @@ assoc_statistical_power <- function(signal_data, sample_sheet, exposure,
 
   # --- resolve alpha (session default when available) -----------------------
   if (is.null(alpha)) {
-    ssEnv <- tryCatch(get_session_info(), error = function(e) NULL)
+    ssEnv <- tryCatch(core_get_session_info(), error = function(e) NULL)
     alpha <- if (!is.null(ssEnv) && !is.null(ssEnv$alpha))
       as.numeric(ssEnv$alpha) else 0.05
   }

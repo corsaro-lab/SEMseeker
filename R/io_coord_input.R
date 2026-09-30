@@ -1,4 +1,4 @@
-# coord_input.R — Transparent conversion of coordinate-based input
+# coord_input.R - Transparent conversion of coordinate-based input
 # (WGBS and long-read) to SEMseeker's internal probe-ID-indexed format.
 #
 # Design:
@@ -9,7 +9,7 @@
 #   before core_get_meth_tech(). If the input has CHR/START columns, it converts
 #   the data frame to a probe-ID-indexed matrix using a synthetic probe ID:
 #
-#     synthetic probe ID = "{CHR_no_prefix}_{START}"
+#     synthetic probe ID = "{CHR_no_prefix}_<START>"
 #     e.g. "chr1" / 10000  →  "1_10000"
 #          "chrX" / 543200 →  "X_543200"
 #
@@ -116,7 +116,7 @@ io_normalize_signal_input <- function(signal_data) {
 
 #' Parse synthetic probe IDs back to a CHR / START / END data frame.
 #'
-#' Synthetic probe ID format: "{CHR}_{START}" where CHR has no "chr" prefix.
+#' Synthetic probe ID format: "<CHR>_<START>" where CHR has no "chr" prefix.
 #' E.g. "1_10000" → CHR = "1", START = 10000L, END = 10001L.
 #'
 #' @param probe_ids Character vector of synthetic probe IDs.

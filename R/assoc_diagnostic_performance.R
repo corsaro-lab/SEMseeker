@@ -85,7 +85,6 @@ diagnostic_performance <-
       }
 
       nkeys <- nrow(keys)
-      variables_to_export_nested <- c("variables_to_export","keys","result_folderPivot","sample_names","ssEnv","io_file_path_build")
       if (nrow(keys) > 0)
         for (k in seq_len(nkeys))
         {
@@ -153,7 +152,7 @@ diagnostic_performance <-
             tempDataFrame[is.na(tempDataFrame)] <- 0
             # AI-106 (2026-06-09): same sanitize+memo+counter-rename pattern
             # as apply_stat_model.R. Colnames hold AREA_OF_TEST gene/CpG
-            # island names that may carry ' ', '-', ':', '/', "'" — all
+            # island names that may carry ' ', '-', ':', '/', "'" - all
             # invalid as R identifiers. Sanitise here only for internal
             # formula safety; the result's AREA_OF_TEST is reverse-mapped
             # back to the raw name before writing the CSV (preserves the
@@ -163,7 +162,7 @@ diagnostic_performance <-
             if (anyDuplicated(safe_cols)) {
               safe_cols <- make.unique(safe_cols, sep = "_")
             }
-            safe_to_real <- setNames(real_cols, safe_cols)
+            safe_to_real <- stats::setNames(real_cols, safe_cols)
             colnames(tempDataFrame) <- safe_cols
 
             tempDataFrame[,independent_variable] <- as.character(tempDataFrame[,independent_variable])

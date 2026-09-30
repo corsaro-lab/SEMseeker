@@ -64,7 +64,7 @@ enrich_Phenolyzer_STRINGdb <- function(study,
         pp <- utils::read.csv2(pathway_report_path,stringsAsFactors = FALSE)
         if(nrow(pp)==0)
           next
-        enrich_result_save(pp, pathway_report_path, "STRINGdb")
+        enrich_result_save(pp, pathway_report_path, "STRINGdb", study = study)
         next
       }
       #### START LOAD PHENOLYZER
@@ -126,7 +126,7 @@ enrich_Phenolyzer_STRINGdb <- function(study,
 
       if(exists("result_pathway"))
       {
-        enrich_result_save(pp, pathway_report_path, "STRINGdb")
+        enrich_result_save(pp, pathway_report_path, "STRINGdb", study = study)
       }
     }
 

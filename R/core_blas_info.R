@@ -2,13 +2,13 @@
 #
 # R ships with the single-thread reference BLAS by default. AI-040
 # limma/voom families spend most of their wall-clock in BLAS calls
-# (solve / crossprod inside lmFit + eBayes) — they lose ~5-10x against
+# (solve / crossprod inside lmFit + eBayes) - they lose ~5-10x against
 # a multi-threaded BLAS (Accelerate on macOS, OpenBLAS or MKL on Linux,
 # OpenBLAS Rblas.dll on Windows). The user can't tell the difference
 # without being told: the code runs, returns the right numbers, just
 # on one core out of N.
 #
-# This file only DETECTS and WARNS — no user-facing helper, no system
+# This file only DETECTS and WARNS - no user-facing helper, no system
 # mutation. The fix command is printed in the warning itself,
 # OS-specific.
 

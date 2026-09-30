@@ -18,7 +18,7 @@ assoc_compute_quantile_delta_permutation(
 
 \item{shuffle}{logical; if TRUE, permute the independent variable before fitting}
 
-\item{quantile}{quantile level (0–1) at which to compute the group difference; default 0.5 (median)}
+\item{quantile}{quantile level (0-1) at which to compute the group difference; default 0.5 (median)}
 }
 \value{
 A numeric scalar: the observed quantile difference between groups

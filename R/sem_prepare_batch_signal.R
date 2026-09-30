@@ -13,7 +13,7 @@
 #' previously lived in `sem_analyze_batch()` fresh-path and was a source of
 #' silent drift between the SIGNAL matrix and the probe_features used to
 #' compute thresholds, write the POSITION pivot, and run downstream
-#' analyses. The classic failure (visible v35–v43) was
+#' analyses. The classic failure (visible v35-v43) was
 #'
 #'   `Error in data.frame(probe_features, VALUE = values,
 #'                        row.names = probe_features$PROBE):
@@ -23,7 +23,7 @@
 #'
 #' @param signal_data A data.frame whose rownames are probe identifiers
 #'   (Illumina probe IDs like `"cg00050873"` for K27/K450/K850, or
-#'   coordinate-encoded `"{CHR}_{START}"` strings for WGBS/LONGREAD).
+#'   coordinate-encoded `"<CHR>_<START>"` strings for WGBS/LONGREAD).
 #'   Sample columns follow. Must be PROBE-keyed, i.e. already passed
 #'   through `io_normalize_signal_input()`.
 #' @param tech Character scalar. One of `"K27"`, `"K450"`, `"K850"`,
@@ -36,11 +36,11 @@
 #' @return The input `signal_data` filtered to the autosomal manifest
 #'   intersection, with two attributes attached:
 #'   \itemize{
-#'     \item `probe_features` — data.frame with columns
+#'     \item `probe_features` - data.frame with columns
 #'       `PROBE, CHR, START, END` (+ any extra columns produced by the
 #'       tech-specific annotation builder), one row per surviving probe,
 #'       in the same order as `rownames(signal_data)`.
-#'     \item `tech` — the resolved tech string.
+#'     \item `tech` - the resolved tech string.
 #'   }
 #'
 #' @section Invariants:

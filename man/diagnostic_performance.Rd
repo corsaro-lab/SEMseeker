@@ -10,7 +10,7 @@ diagnostic_performance(
   result_folder,
   independent_variable = "Sample_Group",
   maxResources = 90,
-  parallel_strategy = "multicore",
+  parallel_strategy = "multisession",
   ...
 )
 }
@@ -29,9 +29,13 @@ grouping variable (default \code{"Sample_Group"}).}
 \item{maxResources}{numeric. Maximum percentage of CPU cores to use
 (default 90).}
 
-\item{parallel_strategy}{character. Parallelisation backend; possible
-values: \code{"none"}, \code{"multisession"}, \code{"sequential"},
-\code{"multicore"}, \code{"cluster"} (default \code{"multicore"}).}
+\item{parallel_strategy}{character. Parallelisation backend; one of
+\code{"multisession"}, \code{"sequential"}, \code{"cluster"}
+(default \code{"multisession"}).
+Asking for \code{"multicore"} is accepted and converted to
+\code{"multisession"}: it means fork(), which is unsafe with this
+package's native thread pool on every platform that offers it, and
+absent on Windows. The conversion is logged.}
 
 \item{...}{Additional arguments passed to \code{core_init_env()}.}
 }

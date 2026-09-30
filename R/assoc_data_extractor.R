@@ -39,7 +39,7 @@ assoc_data_extractor <- function(inference_details,destination_folder="", result
         results_inference <- results_inference[,!grepl("SAMPLES_SQL_CONDITION", colnames(results_inference))]
 
         # AI-257: this function used to write the filtered frame back over
-        # `fileNameResults` — the very file it had just read. Extracting was
+        # `fileNameResults` - the very file it had just read. Extracting was
         # therefore destructive: the three filters above (the figures of the
         # marker, the areas_sql_condition of the request, the dropped
         # SAMPLES_SQL_CONDITION columns) were applied to the canonical inference

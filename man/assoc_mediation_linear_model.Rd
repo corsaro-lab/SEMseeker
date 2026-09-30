@@ -43,7 +43,7 @@ A \code{data.frame} with one row containing mediation results:
 }
 \description{
 Fits a causal mediation model via \code{\link[mediation]{mediate}}, testing
-whether the effect of \code{treatment} on \code{outcome} is (partially)
+whether the effect of \code{treatment} on \code{outcome} methods::is (partially)
 mediated by a \code{mediator} variable.  The formula must follow the
 convention \code{mediator ~ outcome + treatment [+ covariates]}.
 }

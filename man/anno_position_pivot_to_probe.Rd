@@ -18,7 +18,7 @@ A polars LazyFrame with the PROBE column and one column per
 }
 \description{
 Returns a Polars LazyFrame rather than an R
-data.frame. Materialisation downstream is opt-in only — sem_analyze_batch
+data.frame. Materialisation downstream is opt-in only - sem_analyze_batch
 and sem_analyze_population_bulk consume the lazy frame directly. This
 eliminates the ~12 GB R-side peak that caused silent jetsam kills on
 ewas-scale matrices (367k × 4013) in resume mode (v18, v21).

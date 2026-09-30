@@ -69,13 +69,13 @@ enrich_ctdR <- function(study,
         pp <- utils::read.csv2(pathway_report_path,stringsAsFactors = FALSE)
         if(nrow(pp)==0)
           next
-        enrich_result_save(pp, pathway_report_path, "ctdR")
+        enrich_result_save(pp, pathway_report_path, "ctdR", study = study)
         next
       }
 
       results_inference <- assoc_results_get(
         inference_detail =  inference_detail,
-        # AI-257: enrichment happens for genes and nothing else — a pathway is a set
+        # AI-257: enrichment happens for genes and nothing else - a pathway is a set
         # of genes. And it needs a p-value PER gene, so a collapsed artefact (one
         # number per sample) has nothing to list. Two coordinates, both invariant.
         area  = .enrich_in$area,
@@ -165,7 +165,7 @@ enrich_ctdR <- function(study,
 
       if(exists("result_pathway"))
       {
-        enrich_result_save(result_pathway, pathway_report_path, "ctdR")      }
+        enrich_result_save(result_pathway, pathway_report_path, "ctdR", study = study)      }
     }
   }
 }

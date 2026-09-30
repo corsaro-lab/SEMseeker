@@ -2,10 +2,10 @@
 #'
 #' Extracted by AI-255 from `anno_annotate_position_pivots()` so the on-demand
 #' builder ([io_pivot_build()]) and the batch annotation share one implementation
-#' — two copies of this logic would drift, and the drift would be silent.
+#' - two copies of this logic would drift, and the drift would be silent.
 #'
 #' AI-050: Bioconductor annotation packages assign some probes to multiple genes
-#' (intergenic overlaps, antisense, …), producing composite `AREA` strings like
+#' (intergenic overlaps, antisense, ...), producing composite `AREA` strings like
 #' `"NUDT6;SPATA5"`. Treating the composite as a single gene was a regression
 #' that made `assoc_apply_stat_model()` fail to parse (PVALUE=NA) and inflated
 #' false positives downstream, because one p-value got smeared across N
@@ -18,7 +18,7 @@
 #'
 #' **This is correct, and it is also why an exploded frame must never be summed
 #' across rows**: a probe on three genes contributes to three rows because those
-#' are three different questions. Adding them counts it three times — see
+#' are three different questions. Adding them counts it three times - see
 #' [io_pivot_build()], where the `SAMPLE` scope masks positions instead.
 #'
 #' @param lazy a polars LazyFrame carrying an `AREA` column.

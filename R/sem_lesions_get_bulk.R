@@ -1,4 +1,4 @@
-#' sem_lesions_get_bulk — multi-sample bp-window LESIONS computation
+#' sem_lesions_get_bulk - multi-sample bp-window LESIONS computation
 #'
 #' Versione **multi-sample (bulk)** di sem_lesions_get, usata dal path
 #' `sem_analyze_population_bulk()` per processare N sample in parallelo via

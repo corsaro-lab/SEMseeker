@@ -6,18 +6,18 @@
 #' two together in one vocabulary is what stops a column called `MEDIAN` from
 #' holding a mean.
 #'
-#' `VALUE` is the identity — the block is already a single position, there is
+#' `VALUE` is the identity - the block is already a single position, there is
 #' nothing to reduce. It is not a degenerate `SUM`: naming it `SUM` would invite
 #' the reader to believe a reduction happened.
 #'
 #' `MODELOW` / `MODEHIGH` are the only distribution-shape operators: they
 #' estimate the highest density peak on each side of 0.5, so they need the whole
-#' distribution rather than a streaming reduce, and enough of it — they delegate
+#' distribution rather than a streaming reduce, and enough of it - they delegate
 #' to [util_signal_descriptors()], which refuses below a minimum numerosity.
 #'
 #' AI-255 removed the `N_PROBES` branch that used to live here. The number of
-#' usable positions is a property of the **imputation** — how many probes of that
-#' sample survived the treatment of missing values — not an aggregation of a
+#' usable positions is a property of the **imputation** - how many probes of that
+#' sample survived the treatment of missing values - not an aggregation of a
 #' marker, and it belongs in `SAMPLE_SHEET_RESULT` with the other descriptive
 #' properties of the sample. Note that nothing is lost for the density: the
 #' `MEAN` of a binary marker *is* the density, denominator included.

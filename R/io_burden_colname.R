@@ -1,10 +1,10 @@
-#' Compose a per-marker burden column name — superseded, no live caller
+#' Compose a per-marker burden column name - superseded, no live caller
 #'
 #' `<SCOPE>_<MARKER>_<FIGURE>`, e.g. `SAMPLE_MUTATIONS_HYPER`.
 #'
 #' **Superseded twice over, and kept only until it is removed (AI-259).**
-#' AI-248 replaced the two rules of AI-223 — this one for burdens and
-#' [io_stat_colname()] for descriptors — with the single four-segment compositor
+#' AI-248 replaced the two rules of AI-223 - this one for burdens and
+#' [io_stat_colname()] for descriptors - with the single four-segment compositor
 #' [io_feature_colname()], which makes the operator explicit instead of implying
 #' it from the marker: `SAMPLE_MUTATIONS_HYPER` is `SAMPLE_MUTATIONS_HYPER_SUM`
 #' under that rule. AI-255 then removed the artefact these names described,

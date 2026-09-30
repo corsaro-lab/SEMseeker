@@ -32,7 +32,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
   # previous design re-read the file inside every iteration AND rbind.fill'd its
   # entire content into the running `results` accumulator, so on a run that
   # iterates over (HYPO, HYPER) for the same marker the file got the
-  # already-saved rows added twice — visible as N x 2 duplication in the
+  # already-saved rows added twice - visible as N x 2 duplication in the
   # output CSV (e.g. DELTARQ_HYPO with 35292 rows instead of 17646).
   # Reading once + using the pre-loaded snapshot for the area_to_remove filter
   # keeps both behaviours correct without growing `results` across iterations.
@@ -43,15 +43,15 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
     # boolean come 'true'/'false' minuscoli, read.csv2 poi li carica come
     # character e rompe i subset logici downstream).
     # AI-061+ (2026-06-09): three polars 1.x quirks rolled into one read_csv:
-    #   1. null_values="NA"          — utils::write.csv2 emits "NA" literal
+    #   1. null_values="NA"          - utils::write.csv2 emits "NA" literal
     #      for missing, polars treats only "" as null on numeric columns,
     #      so without this it fails on "NA" in an f64-locked column.
-    #   2. infer_schema_length large — early rows can be all zeros for
+    #   2. infer_schema_length large - early rows can be all zeros for
     #      INTERCEPT_PVALUE / similar, polars infers i64, then later finds a
     #      scientific-notation float (e.g. "2,52861832797769e-304") and
     #      fails to coerce to integer. Scanning more rows up-front lets it
     #      infer Float64 correctly.
-    #   3. decimal_comma=TRUE        — write.csv2 uses "," as decimal sep.
+    #   3. decimal_comma=TRUE        - write.csv2 uses "," as decimal sep.
     # Both quirks were exposed on ewas v32 / v33 mid-association.
     old_results_global <- unique(as.data.frame(
       polars::pl$read_csv(fileNameResults, separator = ";",
@@ -71,10 +71,10 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
     key <- keys[k, ]
     # AI-098 (2026-06-09): symmetric tech-aware skip. Each technology has
     # exactly one canonical AREA representation; the other is no-op:
-    #   - Illumina (K27/K450/K850): PROBE is canonical — literature reports
+    #   - Illumina (K27/K450/K850): PROBE is canonical - literature reports
     #     probe IDs (cg00000029). POSITION would produce a duplicate
     #     coord-keyed CSV with the same numerical results → skip.
-    #   - WGBS / LONGREAD: POSITION is canonical — long-reads have no
+    #   - WGBS / LONGREAD: POSITION is canonical - long-reads have no
     #     "probe" concept; coordinates are the natural row identifier.
     #     PROBE pivot doesn't exist for these techs → skip.
     # This replaces the unconditional `if (AREA == "POSITION") next` which
@@ -85,7 +85,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
 
     # AI-255: the requested aggregation reaches the read. Until now it was
     # validated at the door and then dropped here, so a request for MEDIAN on
-    # GENE_TSS1500 was answered with the mean — silently, because the file
+    # GENE_TSS1500 was answered with the mean - silently, because the file
     # existed and its name said nothing about which operator had produced it.
     # An aggregation the artefact cannot admit is a request that can never be
     # satisfied, so it stops the run; a missing SOURCE is an environmental
@@ -102,7 +102,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
     # AI-027 + AI-255: read via unified dispatcher, which builds the artefact
     # from the position pivot when it is not on disk. Returns NULL only when the
     # source itself is unavailable. A collapsed artefact is one row tall, so the
-    # transpose below yields one feature column — the same shape the fitting
+    # transpose below yields one feature column - the same shape the fitting
     # code already handles for a pivot of many rows. That is why one road is
     # enough, and why depth had nothing left to select.
     pivot_lazy <- io_read_pivot(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA,
@@ -181,7 +181,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
 
     # AI-043: use the pre-loaded snapshot (old_results_global) for the
     # area_to_remove filter, NOT a fresh re-read of the file. Don't rbind.fill
-    # old_results into the running 'results' accumulator either — that was the
+    # old_results into the running 'results' accumulator either - that was the
     # source of cross-iteration row doubling. The file's content was already
     # folded into 'results' once, before the for-k loop opened.
     #
@@ -229,7 +229,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
     # AI-040 Fase 3: limma_<N> and voom_<N> need the WHOLE pivot at once
     # for eBayes shrinkage to be statistically meaningful. Per-chunk
     # limma estimates the prior variance from a chunk-specific subset,
-    # so p-values become dependent on chunk boundaries — leaky for the
+    # so p-values become dependent on chunk boundaries - leaky for the
     # empirical-Bayes interpretation. Force batch families to a single
     # whole-pivot pass instead of the default chunked loop.
     chunk_size <- if (grepl("^(limma|voom)_", family_test)) {
@@ -287,7 +287,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
         # AI-061+ (2026-06-09): mirror the AI-077 save-guard from the
         # batch-family branch above. Only rewrite the (potentially
         # hundreds-of-MB) CSV when this chunk actually appended new
-        # rows — full resume case (nothing new) should be a no-op.
+        # rows - full resume case (nothing new) should be a no-op.
         new_rows_appended_chunk <- !is.null(result_temp_local_batch) &&
                                    nrow(result_temp_local_batch) > 0L
         if (new_rows_appended_chunk) {
@@ -341,7 +341,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
 
   # One inference_details row spans every key of the marker, and a request is
   # made once for all of them. Where the block is a single position, SUM, MEAN
-  # and MEDIAN of that block are the same number as the block itself — so the
+  # and MEDIAN of that block are the same number as the block itself - so the
   # request is not refused, it is honoured, and the artefact is called by the
   # name that says what happened: VALUE. Naming it SUM would invite the reader
   # to believe a reduction took place.
@@ -349,7 +349,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
       !identical(requested, "VALUE")) {
     core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
               " aggregation '", requested, "' on ", key$AREA,
-              " is the identity — one position per block — recorded as VALUE.")
+              " is the identity - one position per block - recorded as VALUE.")
     return("VALUE")
   }
 
@@ -470,19 +470,19 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
 #' Instances already tested for THIS key (internal)
 #'
 #' AI-255. The resume filter decides what not to compute again, so it is an
-#' identity check — and it was missing two coordinates.
+#' identity check - and it was missing two coordinates.
 #'
 #' It matched on `MARKER`, `FIGURE`, `AREA` and `SUBAREA` only. Since AI-248 the
 #' same area appears once per aggregation, and since AI-255 once per scope, so a
 #' run that had already tested `MEAN` on `GENE_WHOLE` left rows that a later run
-#' asking for `MEDIAN` read as "these genes are done" — and skipped every one of
+#' asking for `MEDIAN` read as "these genes are done" - and skipped every one of
 #' them, writing an empty `MEDIAN` result that looks like a completed job.
 #'
 #' NEWS 0.99.5 claimed the aggregation was already part of the resume match. It
 #' was part of the deduplication and of the overlaps; here it never was.
 #'
 #' Columns absent from an older CSV are simply not matched on, so a result folder
-#' written before this release resumes as it did — one aggregation, one scope.
+#' written before this release resumes as it did - one aggregation, one scope.
 #'
 #' @param old the results already on disk.
 #' @param key the key being computed.

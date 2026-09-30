@@ -68,7 +68,7 @@ assoc_intra_study_association_replication <- function(inference_details_origin, 
         )
     } else if (nrow(inference_source) > 0L) {
       core_log_event("WARNING: [cross_study_association] Origin inference results",
-                " have no GENOME_BUILD column — legacy run without provenance.",
+                " have no GENOME_BUILD column - legacy run without provenance.",
                 " Proceeding but cross-build safety cannot be guaranteed.")
     }
 

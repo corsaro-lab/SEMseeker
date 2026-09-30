@@ -19,7 +19,7 @@ with the result.
 **Why they are one question and not two.** The direction of an epimutation
 maps onto transcription only together with where it sits: hypermethylation at
 a promoter silences, hypomethylation there de-represses, but hypermethylation
-in the body of a gene is associated with *active* transcription — the same
+in the body of a gene is associated with *active* transcription - the same
 sign means the opposite thing. Naming a direction without naming a region is
 not yet a biological hypothesis, which is why neither may be omitted.
 }

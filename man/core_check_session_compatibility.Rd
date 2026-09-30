@@ -19,10 +19,10 @@ Invisibly returns a \code{data.frame} with one row per session
 Reads \code{session_metadata.json} from each path in \code{session_list}
 and enforces provenance rules before combining results across studies:
 \enumerate{
-  \item \strong{Stops} if \code{genome_build} differs — coordinates from
+  \item \strong{Stops} if \code{genome_build} differs - coordinates from
     different assemblies are physically incomparable and would produce
     silently wrong intersection results.
-  \item \strong{Warns} if \code{tech} differs — cross-array meta-analysis
+  \item \strong{Warns} if \code{tech} differs - cross-array meta-analysis
     (e.g. K450 + K850) is statistically valid on the probe intersection but
     must be intentional.
 }

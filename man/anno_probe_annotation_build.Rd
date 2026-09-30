@@ -20,4 +20,10 @@ cytoband and DMR/area membership) for an Illumina methylation array
 platform, joining the bundled \code{\link{cytoband_hg19}} and
 \code{\link{dmr_annotation}} reference data.
 }
+\details{
+The result is cached on disk under \code{tools::R_user_dir("SEMseeker",
+"cache")}, keyed by technology and genome build, and memoised in the package
+environment for the rest of the process. It is deliberately NOT stored in
+\code{ssEnv} - see the note above this function.
+}
 \keyword{internal}

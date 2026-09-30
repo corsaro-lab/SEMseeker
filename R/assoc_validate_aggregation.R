@@ -1,7 +1,7 @@
 #' Validate the requested aggregations against the markers of the run
 #'
 #' AI-248. Semantic validation of `inference_details$aggregation`, run **at the
-#' door** of `association_analysis()` — before the session does any work, before
+#' door** of `association_analysis()` - before the session does any work, before
 #' a single result row is written. Checking it deeper, inside the per-marker
 #' loop, would mean discovering the mistake after part of the output already
 #' exists.
@@ -16,17 +16,17 @@
 #' registry ([util_aggregations_allowed()]) says what is legal, the compositor
 #' says how it is named. Making the compositor validate would couple naming to
 #' the domain vocabulary and would break the callers that legitimately compose
-#' hypothetical names — the scope probe does exactly that to find out which
+#' hypothetical names - the scope probe does exactly that to find out which
 #' columns a sibling actually carries.
 #'
 #' Two failure modes, treated differently on purpose:
 #' \itemize{
-#'   \item a **malformed** request — no aggregation named, or a name that is not
-#'     in the taxonomy — stops the run. It is a mistake in how the request was
+#'   \item a **malformed** request - no aggregation named, or a name that is not
+#'     in the taxonomy - stops the run. It is a mistake in how the request was
 #'     written, and no rewriting of it can be trusted to mean what the author
 #'     intended;
-#'   \item an **impossible** request — a legal aggregation that none of this
-#'     run's markers admits, e.g. the median of a 0/1 marker — does not stop
+#'   \item an **impossible** request - a legal aggregation that none of this
+#'     run's markers admits, e.g. the median of a 0/1 marker - does not stop
 #'     anything: the row is dropped with a loud warning and the remaining rows
 #'     run. Losing one row of a batch is better than losing the batch, as long
 #'     as the loss is said out loud.
@@ -111,7 +111,7 @@ assoc_validate_aggregation <- function(inference_details, keys = NULL) {
         "inference_details row ", z, ": aggregation '", requested,
         "' is admissible for none of the markers of this run (",
         paste(unique(keys$MARKER), collapse = ", "),
-        "), so the row is dropped. A count marker carries SUM and MEAN — its ",
+        "), so the row is dropped. A count marker carries SUM and MEAN - its ",
         "median, variance and IQR are degenerate on a vector of zeros and ",
         "ones; the two modes exist only for SIGNAL on the BETA scale.")
       core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"), " ",

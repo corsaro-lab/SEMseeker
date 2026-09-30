@@ -8,8 +8,13 @@ assoc_multinomial_model <- function (family_test, tempDataFrame, sig.formula , t
 
   ssEnv <- core_get_session_info()
 
-  # multinomial_degree_partition-partition_percentage
-  multinomial_params <- family_test
+  # The family string is split so that a trailing "_predictor" suffix can swap
+  # response and predictor, the same shape assoc_relu_model() uses. Without the
+  # split, multinomial_params held the whole string, length() was always 1, and
+  # the swap below could never fire. It still cannot fire today for a different
+  # reason: assoc_validate_family() accepts the bare "multinomial" and no
+  # suffixed form, so the branch is there for when it does.
+  multinomial_params <- unlist(strsplit(as.character(family_test), "_"))
   res <-  data.frame("r_model","multinomial")
 
   tempDataFrame <- as.data.frame(tempDataFrame)
@@ -36,10 +41,11 @@ assoc_multinomial_model <- function (family_test, tempDataFrame, sig.formula , t
     return(res)
 
 
-  # Coefficients and Confidence Intervals
-  coefficients <- coef(multinomial_model_result)
-
-  # Extract coefficients and standard errors
+  # Wald test on the multinom fit: summary() carries both the coefficients and
+  # their standard errors. The lines that READ model_summary were here, the line
+  # that builds it was not, so this function could never return a result. The
+  # coef() call above it was overwritten on the next line and is gone.
+  model_summary <- summary(multinomial_model_result)
   coefficients <- model_summary$coefficients
   std_errors <- model_summary$standard.errors
 
@@ -101,15 +107,19 @@ assoc_multinomial_model <- function (family_test, tempDataFrame, sig.formula , t
       ssEnv$plot_format)
 
     # Predict the values for the plot
-    train.data$predicted <- predict(multinomial_model_result, newdata = train.data)
+    # The model is fitted on the whole tempDataFrame: this function never split
+    # train from test. The block below was transplanted from the relu model,
+    # which does split, and arrived without partition_percentage, train.data,
+    # test.data, predictions_test or degree. Plot what is actually here.
+    plot_data <- tempDataFrame
+    plot_data$predicted <- stats::predict(multinomial_model_result, newdata = plot_data)
 
     if(length(covariates)>0)
     {
       # Plot the data and the multinomial fit
-      ggp <- ggplot2::ggplot(train.data, ggplot2::aes_string(x = independent_variable, y = dependent_variable)) +
+      ggp <- ggplot2::ggplot(plot_data, ggplot2::aes_string(x = independent_variable, y = dependent_variable)) +
         ggplot2::geom_point(color = ssEnv$color_palette[1]) +
         ggplot2::geom_line(ggplot2::aes_string(y = "predicted"), color = ssEnv$color_palette_darker[2]) +
-        ggplot2::stat_smooth(method = lm, formula = y ~ poly(x, degree, raw = TRUE), color = ssEnv$color_palette_darker[3]) +
         ggplot2::xlab(independent_variable) +
         ggplot2::ylab(dependent_variable) +
         ggplot2::ggtitle("")
@@ -121,23 +131,18 @@ assoc_multinomial_model <- function (family_test, tempDataFrame, sig.formula , t
       #   stat_smooth(method = lm,
       #     formula = formula,
       #     color = ssEnv$color_palette_darker[2]) +
-      #   theme_minimal()
+      #   ggplot2::theme_minimal()
     }
     else
     {
       # do a plot with train.data, test.data and predictions with 3 different colors 1 color for train.data, 1 color for test.data and 1 color for predictions
-      ggp <- ggplot2::ggplot(train.data, ggplot2::aes(eval(parse(text=independent_variable)), eval(parse(text=dependent_variable))) ) +
+      ggp <- ggplot2::ggplot(plot_data, ggplot2::aes(eval(parse(text=independent_variable)), eval(parse(text=dependent_variable))) ) +
         ggplot2::geom_point( color = ssEnv$color_palette[1] ) +
         ggplot2::geom_line(ggplot2::aes_string(y = "predicted"), color = ssEnv$color_palette_darker[2]) +
-        ggplot2::stat_smooth(method = lm, formula = y ~ poly(x, degree, raw = TRUE), color = ssEnv$color_palette_darker[3]) +
         ggplot2::xlab(independent_variable) +
         ggplot2::ylab(dependent_variable)
     }
 
-    if (partition_percentage < 1)
-      ggp <- ggp + ggplot2::geom_point(data = test.data, ggplot2::aes(y = predictions_test, x = eval(parse(text=independent_variable))), color = ssEnv$color_palette_darker[3]) +
-      ggplot2::xlab(independent_variable) +
-      ggplot2::ylab(dependent_variable)
 
 
     ggplot2::ggsave(
@@ -155,17 +160,17 @@ assoc_multinomial_model <- function (family_test, tempDataFrame, sig.formula , t
 
   }
   # # do a plot with train.data, test.data and predictions with 3 different colors 1 color for train.data, 1 color for test.data and 1 color for predictions
-  # ggplot2::ggplot(train.data, ggplot2::aes(eval(parse(text=independent_variable)), eval(parse(text=dependent_variable))) ) +
+  # ggplot2::ggplot(plot_data, ggplot2::aes(eval(parse(text=independent_variable)), eval(parse(text=dependent_variable))) ) +
   #   ggplot2::geom_point( color = ssEnv$color_palette[1] ) +
   #   ggplot2::stat_smooth(method = lm, formula = y ~ stats::poly(x, degree, raw = TRUE))
   #
   # # do a plot with train.data, test.data and predictions with 3 different colors 1 color for train.data, 1 color for test.data and 1 color for predictions
-  # ggplot2::ggplot(train.data, ggplot2::aes(eval(parse(text=independent_variable)), eval(parse(text=dependent_variable))) ) +
+  # ggplot2::ggplot(plot_data, ggplot2::aes(eval(parse(text=independent_variable)), eval(parse(text=dependent_variable))) ) +
   #   ggplot2::geom_point( color = ssEnv$color_palette[1] ) + ggplot2::stat_smooth(method = lm, formula = y ~ poly(x, degree, raw = TRUE)) +
   #   ggplot2::geom_point(data = test.data, ggplot2::aes(y = predictions), color = ssEnv$color_palette[2])
   #
   # # do a plot with train.data, test.data and predictions with 3 different colors 1 color for train.data, 1 color for test.data and 1 color for predictions
-  # ggplot2::ggplot(train.data, ggplot2::aes(eval(parse(text=independent_variable)), eval(parse(text=dependent_variable))) ) +
+  # ggplot2::ggplot(plot_data, ggplot2::aes(eval(parse(text=independent_variable)), eval(parse(text=dependent_variable))) ) +
   #   ggplot2::geom_point( color = ssEnv$color_palette[1] ) + ggplot2::stat_smooth(method = lm, formula = y ~ poly(x, degree, raw = TRUE)) +
   #   ggplot2::geom_point(data = test.data, ggplot2::aes(y = predictions), color = ssEnv$color_palette[2]) +
   #   ggplot2::geom_point(data = data.frame(train.data,multinomial_model_result$residuals) , ggplot2::aes(y = multinomial_model_result$residuals), color = "cyan")

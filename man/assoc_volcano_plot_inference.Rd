@@ -20,7 +20,7 @@ assoc_volcano_plot_inference(
 }
 \arguments{
 \item{inference_detail}{A single row of `inference_details` (data.frame
-or list) — the same shape consumed by `association_analysis()`. Must
+or list) - the same shape consumed by `association_analysis()`. Must
 carry `independent_variable`, `family_test`, `covariates`,
 `covariates_dummy`, `transformation_y`,
 `areas_sql_condition`, `samples_sql_condition`.}
@@ -34,6 +34,9 @@ carry `independent_variable`, `family_test`, `covariates`,
 (e.g. `c("SIGNAL","DELTARP","DELTARQ")` for limma_2 PROBE). If NULL,
 inferred from the CSVs that exist in `Inference/` matching this
 scheda's metadata.}
+
+\item{pvalue_column}{Name of the p-value column to plot on the y axis. NULL
+lets the function pick the adjusted column matching the inference request}
 
 \item{alpha}{Significance threshold drawn as a horizontal dashed line
 at `-log10(alpha)`. Points with `PVALUE_ADJ <= alpha` are coloured
@@ -66,7 +69,7 @@ convention so the visual artifact is one-to-one traceable to the
 analytic output:
 }
 \details{
-`{MARKER}_{IV}_{transformation_y}_{family}_{covariates}_{areas_sql_condition}_{AREA}_{SUBAREA}.png`
+`<MARKER>_<IV>_<transformation_y>_<family>_<covariates>_<areas_sql_condition>_<AREA>_<SUBAREA>.png`
 
 (passed through `core_name_cleaning()` which uppercases + replaces
 comparison operators with `_GT_` / `_LT_` / `_EQ_` etc.)

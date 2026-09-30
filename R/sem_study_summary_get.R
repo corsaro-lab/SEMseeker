@@ -4,13 +4,13 @@
 #' run, which meant the region classes had to be **foreseen six hours earlier**:
 #' asking for one that had not been produced raised *"produce it with
 #' semseeker(sample_stats_scopes = ...) and rerun the analysis"*. They are now
-#' `SCOPE = SAMPLE` artefacts — pivots one row tall — and **this call is what
+#' `SCOPE = SAMPLE` artefacts - pivots one row tall - and **this call is what
 #' builds them**. Changing your mind costs one scan of the position pivot; the
 #' written artefact is the cache, so the second call is a read.
 #'
 #' @param sql_sample_selection filter applied via [assoc_filter_sql()].
 #' @param regions character vector of region classes to carry, named the way the
-#'   columns name them: `"SAMPLE"` (no restriction — every position of the
+#'   columns name them: `"SAMPLE"` (no restriction - every position of the
 #'   sample) or any `(AREA, SUBAREA)` pair of the run, e.g. `"GENE_TSS1500"`.
 #'   Default `"SAMPLE"`, the historical behaviour.
 #' @param with_sample_stats logical. When `TRUE` (default) the statistics are
@@ -23,7 +23,7 @@ sem_study_summary_get <- function(sql_sample_selection = "", regions = NULL,
                                   with_sample_stats = TRUE)
 {
   ssEnv <- core_get_session_info()
-  # io_file_path_build() uppercases via core_name_cleaning() — the on-disk file is
+  # io_file_path_build() uppercases via core_name_cleaning() - the on-disk file is
   # SAMPLE_SHEET_RESULT.csv, written by sem_study_summary_total(). Going through
   # io_file_path_build() here guarantees the same path is resolved on every OS
   # regardless of file-system case sensitivity.
@@ -169,7 +169,7 @@ sem_study_summary_get <- function(sql_sample_selection = "", regions = NULL,
 
 #' Resolve requested region classes against the registry of the run
 #'
-#' AI-255. `"SAMPLE"` means no restriction — every position of the sample, which
+#' AI-255. `"SAMPLE"` means no restriction - every position of the sample, which
 #' in the taxonomy is the region class `PROBE_WHOLE`. It stays spelled `SAMPLE`
 #' in the column prefixes because that is what a reader of the table expects to
 #' see, and because the depth-1 consumer looks its columns up by that name.

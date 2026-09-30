@@ -48,7 +48,7 @@ io_bedmethyl_read <- function(file_paths, sample_ids = NULL, min_coverage = 5L) 
     stop("io_bedmethyl_read(): sample_ids length must match file_paths length.")
   }
 
-  # bedmethyl uses positional columns — name only the ones we keep
+  # bedmethyl uses positional columns - name only the ones we keep
   bedmethyl_cols <- c("CHR", "START", "END", "mod", "score", "strand",
                       "start_code", "end_code", "color",
                       "N_valid_cov", "fraction_modified")

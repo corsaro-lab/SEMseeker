@@ -5,12 +5,12 @@ core_parallel_session <- function()
   parallel_strategy <- ssEnv$parallel_strategy
 
   # NOTE: `multicore` on macOS uses fork() and is known to be unsafe in
-  # combination with Polars' C++ thread pool — forked children can be
+  # combination with Polars' C++ thread pool - forked children can be
   # killed by a Mach exception with no R-visible error. Tests on macOS
   # now default to `multisession` (see setup.R). End users on macOS
   # should use `multisession` or `sequential`.
   #
-  # E-14: `multisession` workers are fresh R processes — .pkgglobalenv$ssEnv
+  # E-14: `multisession` workers are fresh R processes - .pkgglobalenv$ssEnv
   # starts empty. Every %dorng% foreach body must call
   # core_update_session_info(ssEnv) as its first statement to populate the
   # worker's namespace. See engineering-decisions.md §1.3.
@@ -132,7 +132,7 @@ core_parallel_session <- function()
   # workers start with the SYSTEM .libPaths() (or have renv reset them on
   # startup) and therefore cannot see SEMseeker or its dependencies, which
   # live in the renv project library. The result is a silent death right
-  # after "I will work in multisession..." — workers fail at the first
+  # after "I will work in multisession..." - workers fail at the first
   # library() lookup with no R-visible error in the parent log.
   #
   # Fix: capture the parent .libPaths() (which includes the renv project

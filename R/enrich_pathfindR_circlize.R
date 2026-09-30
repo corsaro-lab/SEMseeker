@@ -124,7 +124,7 @@ enrich_pathfindR_circlize <- function(
         # circos.genomicInitialize(cytoband, plotType = NULL)
         #
         # # the labels track
-        # label_df = rbind(results[, 1:4], setNames(results[, c(6:8, 5)], colnames(results)[1:4]))
+        # label_df = rbind(results[, 1:4], stats::setNames(results[, c(6:8, 5)], colnames(results)[1:4]))
         # label_df = unique(label_df)
         # label_df = label_df[,c("CHR","START","END","GENE")]
         # circos.genomicLabels(label_df, labels.column = 4, side = "outside", cex = 0.6)
@@ -133,13 +133,13 @@ enrich_pathfindR_circlize <- function(
         # circos.track(track.index = get.current.track.index(), panel.fun = function(x, y) {
         #   circos.text(CELL_META$xcenter, CELL_META$ylim[1], CELL_META$sector.index,
         #     niceFacing = TRUE, adj = c(0.5, 0), cex = 0.8)
-        # }, track.height = strheight("fj", cex = 0.8)*1.2, bg.border = NA, cell.padding = c(0, 0, 0, 0))
+        # }, track.height = graphics::strheight("fj", cex = 0.8)*1.2, bg.border = NA, cell.padding = c(0, 0, 0, 0))
         #
         # # ideogram track
         # circos.genomicIdeogram(cytoband)
         #
         # # genomic links
-        # my_col <- grDevicesrainbow(nrow(results))
+        # my_col <- grDevices::rainbow(nrow(results))
         # circos.genomicLink(results[, 1:3], results[, 6:8], col = my_col)
 
 
@@ -169,7 +169,7 @@ enrich_pathfindR_circlize <- function(
         circlize::circos.genomicInitialize(cytoband, plotType = NULL)
 
         # Prepare label data frame
-        label_df <- rbind(results[, 1:4], setNames(results[, c(6:8, 5)], colnames(results)[1:4]))
+        label_df <- rbind(results[, 1:4], stats::setNames(results[, c(6:8, 5)], colnames(results)[1:4]))
         label_df <- unique(label_df)
         label_df <- label_df[, c("CHR", "START", "END", "GENE")]
 
@@ -180,13 +180,13 @@ enrich_pathfindR_circlize <- function(
         circlize::circos.track(track.index = circlize::get.current.track.index(), panel.fun = function(x, y) {
           circlize::circos.text(circlize::CELL_META$xcenter, circlize::CELL_META$ylim[1], circlize::CELL_META$sector.index,
             niceFacing = TRUE, adj = c(0.5, 0), cex = chr_font_size)
-        }, track.height = strheight("fj", cex = chr_font_size) * 2, bg.border = "grey", bg.col= "white", cell.padding = c(0, 0, 0, 0))
+        }, track.height = graphics::strheight("fj", cex = chr_font_size) * 2, bg.border = "grey", bg.col= "white", cell.padding = c(0, 0, 0, 0))
 
         # Add the ideogram track
         circlize::circos.genomicIdeogram(cytoband)
 
         # Add genomic links with unique colors
-        my_col <- grDevicesrainbow(nrow(results))
+        my_col <- grDevices::rainbow(nrow(results))
         circlize::circos.genomicLink(results[, 1:3], results[, 6:8], col = my_col)
 
         # Clear the circos plot after drawing

@@ -6,7 +6,7 @@
 #' @param signal_data character. Path to the signal parquet file under
 #'   \code{Data/Pivots/SIGNAL/}, or a data.frame already loaded into memory.
 #'   The file is named \code{SIGNAL_<FIGURE>_PROBE_WHOLE_<GENOME_BUILD>.parquet},
-#'   where \code{FIGURE} is the scale the run was written on — \code{BETA} for a
+#'   where \code{FIGURE} is the scale the run was written on - \code{BETA} for a
 #'   proportion bounded in [0,1], \code{MVALUE} for the logit-transformed one.
 #' @param result_folder character. Path to the SEMseeker result folder.
 #' @param maxResources numeric. Maximum percentage of CPU cores to use

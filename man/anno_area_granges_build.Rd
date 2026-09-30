@@ -21,7 +21,7 @@ A \code{GRanges} object.  \code{mcols(gr)$label} contains the
 }
 \description{
 Constructs the same region boundaries used by Illumina array annotation
-(TSS200, TSS1500, gene body, CpG islands, shores, shelves …) from TxDb
+(TSS200, TSS1500, gene body, CpG islands, shores, shelves ...) from TxDb
 packages and AnnotationHub, so that WGBS and long-read analyses share
 identical region semantics with Illumina array analyses.
 }
@@ -38,7 +38,7 @@ inline by \code{\link{anno_probe_features_get}}:
   \item \strong{Illumina}: one row per array probe (manufacturer ID,
     e.g. \code{cg00000029}).  Probe identity is meaningful and cross-study
     comparable for the same array platform.
-  \item \strong{WGBS / LONGREAD}: treated as \code{POSITION_WHOLE} — one
+  \item \strong{WGBS / LONGREAD}: treated as \code{POSITION_WHOLE} - one
     row per genomic position encoded as \code{"CHR\_START"} (e.g.
     \code{"1\_10000"}).  Cross-study comparisons require the same
     \code{genome_build}.
@@ -51,7 +51,11 @@ Install via \code{BiocManager::install()}.
 \describe{
   \item{GENE areas}{\code{TxDb.Hsapiens.UCSC.hg19.knownGene} (or hg38/mm10),
     \code{GenomicFeatures}, \code{GenomicRanges}, \code{IRanges}.
-    \code{org.Hs.eg.db} is optional (falls back to Entrez IDs as labels).}
+    \code{org.Hs.eg.db} is required in practice: without it the label of
+    a gene region stays the Entrez id that TxDb keys on, while the
+    Illumina path labels with gene symbols, so the two backends name the
+    same gene two different ways. The code falls back rather than
+    failing, but the result is not comparable across backends.}
   \item{ISLAND areas}{\code{AnnotationHub} (downloads track on first use,
     then caches locally).}
   \item{CHR / DMR areas}{no extra packages needed.}

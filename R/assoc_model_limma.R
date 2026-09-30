@@ -2,7 +2,7 @@
 #'
 #' Mirror of \code{assoc_model_polynomial()} but the backend is
 #' \code{limma::lmFit + limma::eBayes} instead of \code{stats::lm}.
-#' Parses \code{family_test} as \code{limma_<degree>[_<partition>]} —
+#' Parses \code{family_test} as \code{limma_<degree>[_<partition>]} -
 #' partition is optional and defaults to 1 because empirical-bayes
 #' shrinkage from \code{eBayes()} replaces the train/test split that
 #' polynomial uses.
@@ -14,7 +14,7 @@
 #' mode (planned in a later phase of AI-040).
 #'
 #' Dispatcher in \code{execute_model.R} checks
-#' \code{requireNamespace("limma")} before calling this — see AI-038's
+#' \code{requireNamespace("limma")} before calling this - see AI-038's
 #' dispatch=guard pattern.
 #'
 #' @keywords internal
@@ -25,7 +25,7 @@ assoc_model_limma <- function(family_test, tempDataFrame, sig.formula,
                                      key) {
 
   # Note: unlike assoc_model_polynomial() this function does not
-  # need ssEnv — there's no plotting branch yet and no folder lookup.
+  # need ssEnv - there's no plotting branch yet and no folder lookup.
   # Adding core_get_session_info() here breaks unit tests that call the
   # model in isolation without a materialised session.
 
@@ -61,7 +61,7 @@ assoc_model_limma <- function(family_test, tempDataFrame, sig.formula,
 
   if (nrow(tempDataFrame) == 0) return(res)
 
-  # Drop rows with NA in any column used by the model — limma::lmFit
+  # Drop rows with NA in any column used by the model - limma::lmFit
   # accepts NAs but the degenerate 1-row matrix doesn't benefit from
   # observation weights, so we just exclude.
   use_cols <- c(dependent_variable, independent_variable, covariates)
@@ -96,7 +96,7 @@ assoc_model_limma <- function(family_test, tempDataFrame, sig.formula,
                    error = function(e) NULL)
   if (is.null(fit)) return(res)
 
-  # Coefficient-wise p-values and estimates — same column-naming scheme
+  # Coefficient-wise p-values and estimates - same column-naming scheme
   # as assoc_model_polynomial so downstream consumers (CSV layer
   # + plotters) see the same shape.
   coef_names <- colnames(fit$coefficients)

@@ -8,7 +8,7 @@ association_analysis(
   inference_details,
   result_folder,
   maxResources = 90,
-  parallel_strategy = "multicore",
+  parallel_strategy = "multisession",
   start_fresh = FALSE,
   ...
 )
@@ -82,9 +82,13 @@ association_analysis(
 \item{maxResources}{numeric. Maximum percentage of CPU cores to use
 (default 90).}
 
-\item{parallel_strategy}{character. Parallelisation backend; possible
-values: \code{"none"}, \code{"multisession"}, \code{"sequential"},
-\code{"multicore"}, \code{"cluster"} (default \code{"multicore"}).}
+\item{parallel_strategy}{character. Parallelisation backend; one of
+\code{"multisession"}, \code{"sequential"}, \code{"cluster"}
+(default \code{"multisession"}).
+Asking for \code{"multicore"} is accepted and converted to
+\code{"multisession"}: it means fork(), which is unsafe with this
+package's native thread pool on every platform that offers it, and
+absent on Windows. The conversion is logged.}
 
 \item{start_fresh}{logical. If \code{TRUE}, delete previous inference
 results before running (default \code{FALSE}).}

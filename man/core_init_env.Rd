@@ -19,7 +19,7 @@ core_init_env(result_folder, maxResources = 90, ...)
     \code{"cluster"}}
   \item{\code{genome_build}}{reference genome assembly: \code{"hg19"} (default,
     matches Illumina array annotation), \code{"hg38"} (GRCh38, typical for
-    long-read / Nanopore data), \code{"mm10"} (mouse — requires C-05).
+    long-read / Nanopore data), \code{"mm10"} (mouse - requires C-05).
     Stored in \code{ssEnv$genome_build} and written to session provenance
     metadata (C-06).}
   \item{\code{tech}}{override technology auto-detection: \code{"K850"},

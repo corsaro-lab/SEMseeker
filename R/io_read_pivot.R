@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------------------
-# io_read_pivot() — unified dispatcher for marker pivot access
+# io_read_pivot() - unified dispatcher for marker pivot access
 #
 # DRAFT 2026-06-01 (AI-027 in semseeker/sestante/backlog.json). Parallel
 # implementation: nothing in the package calls this yet, the existing pivot
@@ -20,7 +20,7 @@
 # Rationale: the materialised pivot is treated as an OPTIONAL cache, not as
 # the primary storage. Deleting it forces a re-merge from the bed files.
 # This also enables analyses that touch only a subset of samples or genomic
-# ranges to benefit from polars predicate/projection pushdown — they never
+# ranges to benefit from polars predicate/projection pushdown - they never
 # read the full pivot from disk.
 
 #' Read or stream-build a marker position pivot
@@ -77,7 +77,7 @@ io_read_pivot <- function(marker, figure, area = "POSITION", subarea = "WHOLE",
   # derived HERE rather than having to be foreseen at SEM time. This is what
   # removes the old "produce it with semseeker(...) and rerun the analysis":
   # changing your mind now costs one scan instead of a whole run. The written
-  # file is the cache — the second call takes branch 1.
+  # file is the cache - the second call takes branch 1.
   is_base <- identical(scope, "INSTANCE") && io_area_is_single_position(area) &&
              identical(toupper(as.character(subarea)), "WHOLE")
   if (isTRUE(build) && !is_base) {
@@ -87,7 +87,7 @@ io_read_pivot <- function(marker, figure, area = "POSITION", subarea = "WHOLE",
     # for. The scan of the position pivot is the expensive part and it is shared:
     # one group_by emits SUM, MEAN, MEDIAN, VARIANCE and IQR together. Building
     # them one at a time would turn three requests on the same area into three
-    # scans — which is the cost the taxonomy is supposed to avoid, and which the
+    # scans - which is the cost the taxonomy is supposed to avoid, and which the
     # producer this replaced already avoided. The extra artefacts are small and
     # are the cache for the next request.
     aggregations <- tryCatch(

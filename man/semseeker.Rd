@@ -43,7 +43,7 @@ emitted and the pipeline proceeds.}
 and \code{core_init_env()} (e.g. \code{parallel_strategy}, \code{alpha},
 \code{LESIONS_BP}, \code{marker}, \code{areas}). \code{LESIONS_BP}
 (default 2000) is the maximum bp distance between two probes for them to
-be in the same LESIONS enrichment window — replaces the legacy
+be in the same LESIONS enrichment window - replaces the legacy
 \code{sliding_window_size} probe-count parameter (removed in 0.99.2).
 \code{coverage_minimum} (default 80) is the minimum percentage of input
 positions that must be present in the reference annotation: the coverage
@@ -60,9 +60,9 @@ several genes.}
 Invisibly \code{NULL}; writes output files to \code{result_folder}.
 }
 \description{
-Public entry point. Accepts a wide range of inputs — bedmethyl files
+Public entry point. Accepts a wide range of inputs - bedmethyl files
 (modkit / nanopolish), coordinate-based data frames (WGBS / long-read),
-Illumina probe-indexed matrices, or already-loaded data frames — normalises
+Illumina probe-indexed matrices, or already-loaded data frames - normalises
 them to the internal format, validates the tech / genome_build combination,
 and delegates to the core pipeline \code{\link{sem_core}}. Input
 values are passed through unchanged: if you need to convert M-values to
@@ -72,11 +72,11 @@ beta, call \code{\link{sem_mvalue_to_beta}} explicitly before \code{semseeker()}
 Supported \code{input} forms:
 \itemize{
   \item Character vector of bedmethyl file paths (\code{.bed}/\code{.tsv}/
-    \code{.bedmethyl}) — parsed via \code{\link{io_bedmethyl_read}}.
+    \code{.bedmethyl}) - parsed via \code{\link{io_bedmethyl_read}}.
   \item Data frame with \code{CHR}/\code{START}[\code{/END}] columns
-    (WGBS / long-read coordinate format) — normalised via
+    (WGBS / long-read coordinate format) - normalised via
     \code{\link{io_normalize_signal_input}}.
-  \item Matrix or data frame with probe-ID rownames (Illumina array) —
+  \item Matrix or data frame with probe-ID rownames (Illumina array) -
     passed through unchanged.
   \item List of any of the above, one element per batch.
 }

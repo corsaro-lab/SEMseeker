@@ -72,14 +72,14 @@ enrich_STRINGdb <- function(study,
         pp <- utils::read.csv2(pathway_report_path,stringsAsFactors = FALSE)
         if(nrow(pp)==0)
           next
-        enrich_result_save(pp, pathway_report_path, "STRINGdb")
+        enrich_result_save(pp, pathway_report_path, "STRINGdb", study = study)
         next
       }
 
       results_inference <- assoc_results_get(
         inference_detail =  inference_detail,
         marker = keys[i,"MARKER"],
-        # AI-257: neither coordinate was declared here — see enrich_WebGestalt.
+        # AI-257: neither coordinate was declared here - see enrich_WebGestalt.
         area  = .enrich_in$area,
         scope = .enrich_in$scope,
         pvalue_column=  pvalue_column,
@@ -170,7 +170,7 @@ enrich_STRINGdb <- function(study,
 
       if(exists("result_pathway"))
       {
-        enrich_result_save(result_pathway, pathway_report_path, "STRINGdb")
+        enrich_result_save(result_pathway, pathway_report_path, "STRINGdb", study = study)
       }
     }
 

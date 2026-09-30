@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------------------
-# io_stream_merge_bed() — lazy long→wide merge of per-sample bed/bedgraph files
+# io_stream_merge_bed() - lazy long→wide merge of per-sample bed/bedgraph files
 #
 # AI-027 (2026-06-01). Returns a polars LazyFrame that, when collected,
 # produces a wide pivot table:

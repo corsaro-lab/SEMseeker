@@ -1,8 +1,8 @@
 #' Materialise the per-sample statistics of the run
 #'
 #' AI-223, rewritten by AI-255. This used to produce `SAMPLE_STATS_RESULT.csv`,
-#' a second kind of artefact with its own shape — samples down the rows,
-#' features across the columns — and its own producer, mask and aggregation
+#' a second kind of artefact with its own shape - samples down the rows,
+#' features across the columns - and its own producer, mask and aggregation
 #' code. That shape is what hid the fact that a burden over the whole sample and
 #' a burden per gene are the same marker reduced over different extents.
 #'
@@ -14,7 +14,7 @@
 #' This pass is therefore a **warm-up, not a requirement**: it leaves the
 #' statistics of the default region class on disk at the end of a SEM run, so a
 #' user who only wants the descriptive table does not pay for it later. Anything
-#' it does not materialise is built on first read — which is what removed the
+#' it does not materialise is built on first read - which is what removed the
 #' old *"produce it and rerun the analysis"*.
 #'
 #' @return invisibly, the character vector of written artefact paths.
@@ -67,7 +67,7 @@ sem_sample_stats_build <- function() {
 #' AI-255. `N_PROBES` is **not** an aggregation of a marker and not a property
 #' of a scope: it is how many positions of that sample survived the treatment of
 #' missing values. It therefore belongs on the sample sheet, with the other
-#' descriptive properties of the sample, and not in the taxonomy — which is why
+#' descriptive properties of the sample, and not in the taxonomy - which is why
 #' [util_aggregate_values()] no longer answers to the name.
 #'
 #' Nothing is lost for the density: the `MEAN` of a binary marker *is* the

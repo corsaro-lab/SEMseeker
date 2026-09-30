@@ -89,10 +89,10 @@ core_pivot_sidecar_write <- function(pivot_path) {
 #' Reads \code{session_metadata.json} from each path in \code{session_list}
 #' and enforces provenance rules before combining results across studies:
 #' \enumerate{
-#'   \item \strong{Stops} if \code{genome_build} differs — coordinates from
+#'   \item \strong{Stops} if \code{genome_build} differs - coordinates from
 #'     different assemblies are physically incomparable and would produce
 #'     silently wrong intersection results.
-#'   \item \strong{Warns} if \code{tech} differs — cross-array meta-analysis
+#'   \item \strong{Warns} if \code{tech} differs - cross-array meta-analysis
 #'     (e.g. K450 + K850) is statistically valid on the probe intersection but
 #'     must be intentional.
 #' }
@@ -120,7 +120,7 @@ core_pivot_sidecar_write <- function(pivot_path) {
 #' @export
 core_check_session_compatibility <- function(session_list) {
   if (length(session_list) < 2L) {
-    core_log_event("INFO: [core_check_session_compatibility] Only one session — nothing to compare.")
+    core_log_event("INFO: [core_check_session_compatibility] Only one session - nothing to compare.")
     return(invisible(NULL))
   }
 
@@ -129,7 +129,7 @@ core_check_session_compatibility <- function(session_list) {
     if (!file.exists(json_path)) {
       core_log_event("WARNING: [core_check_session_compatibility]",
                 " No session_metadata.json in: ", folder,
-                " — provenance cannot be verified.")
+                " - provenance cannot be verified.")
       return(data.frame(folder        = folder,
                         genome_build  = NA_character_,
                         tech          = NA_character_,

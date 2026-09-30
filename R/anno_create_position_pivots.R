@@ -30,7 +30,7 @@ anno_create_position_pivots <- function(population, keys) {
 
   ssEnv <- core_get_session_info()
 
-  # Restrict to base markers — derived markers (DELTAP/DELTARP/DELTAQ/DELTARQ)
+  # Restrict to base markers - derived markers (DELTAP/DELTARP/DELTAQ/DELTARQ)
   # are built by sem_deltaX_get() post-SEM, not here. LESIONS is treated as a
   # base marker too: its per-sample bed files are written by sem_lesions_get()
   # during sem_analyze_population, and we need a POSITION pivot for annotate_*

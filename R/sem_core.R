@@ -33,7 +33,7 @@ sem_core <- function(sample_sheet,
   ssEnv$batch_count <- length(sample_sheet)
   ssEnv <- core_update_session_info(ssEnv)
 
-  # C-06: write session provenance metadata (genome_build, tech, version, …)
+  # C-06: write session provenance metadata (genome_build, tech, version, ...)
   total_sample_n <- sum(vapply(sample_sheet, nrow, integer(1)))
   core_session_metadata_write(result_folder, sample_n = total_sample_n)
 

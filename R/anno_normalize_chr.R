@@ -22,10 +22,10 @@
 #'
 #' # Idempotent:
 #' anno_normalize_chr(c("1", "X"), "internal")
-#' # => c("1", "X")  — already bare, unchanged
+#' # => c("1", "X")  - already bare, unchanged
 #'
 #' anno_normalize_chr(c("chr1", "chrX"), "output")
-#' # => c("chr1", "chrX")  — already prefixed, unchanged
+#' # => c("chr1", "chrX")  - already prefixed, unchanged
 #'
 #' @keywords internal
 #' @noRd

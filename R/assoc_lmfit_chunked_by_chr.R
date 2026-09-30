@@ -3,10 +3,10 @@
 # decides the monolithic y_mat would exceed the RAM budget.
 #
 # Chromosome is the natural unit for chunking because:
-#   1. it bounds the chunk size to a known fraction (~5%–20% of the
+#   1. it bounds the chunk size to a known fraction (~5%-20% of the
 #      genome for human autosomes),
 #   2. it composes naturally with the canonical CHR/START sort gate
-#      written by io_signal_save() — each chr-block is already contiguous
+#      written by io_signal_save() - each chr-block is already contiguous
 #      and pre-sorted on disk, so the lazy filter is a single linear
 #      scan,
 #   3. it's tech-agnostic: Illumina probes have a chromosome
@@ -16,7 +16,7 @@
 # Filtering strategy (tech-aware, no pivot schema change required):
 #   Illumina    : `pl$col("AREA")$is_in(probes_in_chr)`  (lookup via
 #                 probe_features data.frame, ~12 MB R)
-#   WGBS/LONGREAD: `pl$col("AREA")$str$starts_with("chr<i>_")` — chromosome
+#   WGBS/LONGREAD: `pl$col("AREA")$str$starts_with("chr<i>_")` - chromosome
 #                 parsed lazily from AREA string prefix, no manifest
 #                 lookup needed.
 #
@@ -35,24 +35,24 @@
 #'   `area_to_remove` and transformed by `io_data_preparation_lazy()`.
 #'   First column MUST be `AREA` (probe / position identifier); the
 #'   remaining columns are samples.
-#' @param sample_cols_kept Character vector — sample column names that
+#' @param sample_cols_kept Character vector - sample column names that
 #'   survived the IV / covariates complete-cases filter. Used to subset
 #'   the pivot lazily before materialisation, same as the monolithic
 #'   path.
-#' @param design Numeric matrix — passed to `limma::lmFit()` for every
+#' @param design Numeric matrix - passed to `limma::lmFit()` for every
 #'   chunk. Must be the same design across chunks (the helper
 #'   `assoc_concat_lmfit_objects()` asserts this).
-#' @param engine Character — `"limma"` or `"voom"`. NOTE: voom chunked
+#' @param engine Character - `"limma"` or `"voom"`. NOTE: voom chunked
 #'   requires a global mean-variance trend, not implemented yet.
 #'   Routing voom to this function emits a WARNING and falls back to
 #'   monolithic (caller must ensure they don't hit this path).
-#' @param key List with `MARKER`/`FIGURE`/`AREA`/`SUBAREA` — for log lines.
-#' @param family_test Character — log identifier.
-#' @param probe_features `data.frame` with columns `PROBE` and `CHR` —
+#' @param key List with `MARKER`/`FIGURE`/`AREA`/`SUBAREA` - for log lines.
+#' @param family_test Character - log identifier.
+#' @param probe_features `data.frame` with columns `PROBE` and `CHR` -
 #'   required for Illumina pivots (manifests the probe → chr lookup).
 #'   Pass `NULL` for WGBS/LONGREAD where the AREA string is
 #'   coord-encoded.
-#' @param tech_is_longread Logical — TRUE for WGBS / LONGREAD, FALSE
+#' @param tech_is_longread Logical - TRUE for WGBS / LONGREAD, FALSE
 #'   for Illumina. Decides the filter strategy (`is_in` vs
 #'   `starts_with`).
 #'
@@ -74,7 +74,7 @@ assoc_lmfit_chunked_by_chr <- function(pivot_lazy,
     core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
               " assoc_lmfit_chunked_by_chr: voom chunking requires a global ",
               "mean-variance trend pass (not implemented yet, AI-099). ",
-              "Falling back to monolithic — caller must ensure the y_mat ",
+              "Falling back to monolithic - caller must ensure the y_mat ",
               "fits within budget.")
     return(assoc_lmfit_monolithic_lazy(pivot_lazy, sample_cols_kept, design,
                                   engine, key, family_test))

@@ -11,7 +11,7 @@ core_update_session_info(ssEnv, save_to_disk = TRUE)
 
 \item{save_to_disk}{logical. If TRUE (default, backward-compatible) writes
 the session to disk as well as in-memory. If FALSE, only updates the
-in-memory cache — fast path for worker bodies inside `foreach \%dorng\%`.}
+in-memory cache - fast path for worker bodies inside `foreach \%dorng\%`.}
 }
 \value{
 ssEnv, invisibly.

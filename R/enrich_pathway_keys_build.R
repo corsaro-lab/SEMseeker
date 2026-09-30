@@ -5,7 +5,7 @@
 #' and every window other than `WHOLE` became `ALL_SUBAREAS`. Two consequences,
 #' neither of them written anywhere. The enrichment restricted to
 #' hypermethylation, and the enrichment restricted to promoters, were not
-#' reachable from any argument of any exported function — and the line that
+#' reachable from any argument of any exported function - and the line that
 #' looked like it dropped single-figure keys on purpose could never fire, because
 #' the rewrite above it had already removed every one of them.
 #'

@@ -4,7 +4,7 @@
 #' [util_signal_descriptors()] builds its output on this vector, so the computed
 #' keys and the declared vocabulary cannot drift apart.
 #'
-#' It used to serve a second side — the producer of `SAMPLE_STATS_RESULT.csv`
+#' It used to serve a second side - the producer of `SAMPLE_STATS_RESULT.csv`
 #' composed that file's column names from it via [io_stat_colname()]. AI-255
 #' removed the file, and with it that call site; this vector now has one
 #' consumer, and [io_stat_colname()] has none.
@@ -16,8 +16,8 @@
 #'
 #' **`N_PROBES` is not here (AI-255).** This vector is the vocabulary of columns
 #' an artefact carries, and no artefact carries `N_PROBES` any more: it is a
-#' property of the imputation — how many positions of that sample survived the
-#' treatment of missing values — and it travels on `SAMPLE_SHEET_RESULT`.
+#' property of the imputation - how many positions of that sample survived the
+#' treatment of missing values - and it travels on `SAMPLE_SHEET_RESULT`.
 #' [util_signal_descriptors()] still reports it, because a caller reducing a
 #' vector legitimately wants to know how many finite values it had, but that is a
 #' description of the input, not a column of the output.

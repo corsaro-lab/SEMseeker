@@ -13,14 +13,14 @@ sem_delta_single_sample <- function(values, thresholds, sample_detail) {
 
   ssEnv <- core_get_session_info()
 
-  # Polars inner join on (CHR, START, END) — replaces sort-then-positional-zip.
+  # Polars inner join on (CHR, START, END) - replaces sort-then-positional-zip.
   # util_join_values_to_thresholds() handles type coercion and is shared with
   # sem_mutations_get() and sem_deltar_single_sample().
   joined <- util_join_values_to_thresholds(values, thresholds)
 
   if (nrow(joined) == 0L) {
     core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
-      " [sem_delta_single_sample] No overlapping positions — skipping delta",
+      " [sem_delta_single_sample] No overlapping positions - skipping delta",
       " for sample=", sample_detail$Sample_ID)
     return(invisible(NULL))
   }
@@ -29,7 +29,7 @@ sem_delta_single_sample <- function(values, thresholds, sample_detail) {
   low_thresholds  <- joined$signal_inferior_thresholds
 
   if (any(high_thresholds < low_thresholds))
-    stop("ERROR: I'm stopping here — some high thresholds have values less than low thresholds!")
+    stop("ERROR: I'm stopping here - some high thresholds have values less than low thresholds!")
 
   ### get deltas HYPER ###########################################################
   deltas_hyper <- data.frame(
@@ -74,5 +74,5 @@ sem_delta_single_sample <- function(values, thresholds, sample_detail) {
   deltas_to_check <- c(deltas_hypo$DELTA, deltas_hyper$DELTA)
   if (length(deltas_to_check) > 0)
     if (min(deltas_to_check) < 0)
-      stop("ERROR: I'm stopping here — deltas have negative values!")
+      stop("ERROR: I'm stopping here - deltas have negative values!")
 }

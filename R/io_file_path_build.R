@@ -12,7 +12,7 @@
 #' systems (macOS APFS/HFS, Windows NTFS) `file.exists()` finds either
 #' spelling; on case-SENSITIVE ones (Linux ext4) only the uppercase form
 #' resolves. Tests that hard-code an expected path must therefore use the
-#' uppercase form, or — preferably — discover the file via [list.files()]
+#' uppercase form, or - preferably - discover the file via [list.files()]
 #' or by re-calling `io_file_path_build()` with the same arguments.
 #'
 #' @param baseFolder Directory the file lives in.
@@ -28,7 +28,7 @@ io_file_path_build <- function(baseFolder, detailsFilename, extension, add_gz = 
 
   detailsFilename <- paste0(detailsFilename, collapse="_")
 
-  # core_name_cleaning() uppercases — see contract in this function's roxygen.
+  # core_name_cleaning() uppercases - see contract in this function's roxygen.
   detailsFilename <- core_name_cleaning(detailsFilename)
 
   if(extension!="")

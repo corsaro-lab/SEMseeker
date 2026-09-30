@@ -24,9 +24,9 @@ Sample sheet for \code{\link{test_signal_gse133774}} in the canonical
 SEMseeker three-class design (Reference / Control / Case).
 }
 \details{
-Control samples (CTRL01–CTRL06) appear twice: once as \code{Reference}
+Control samples (CTRL01-CTRL06) appear twice: once as \code{Reference}
 (population baseline for IQR threshold estimation) and once as
-\code{Control} (comparison group).  Family samples (L1–L4) are \code{Case};
+\code{Control} (comparison group).  Family samples (L1-L4) are \code{Case};
 L1 is the BWS proband.  This is the \emph{Reference-reuse pattern}
 documented in the getting-started vignette.
 }

@@ -158,7 +158,7 @@ anno_manhattan_plot_marker_per_probe <- function(probe_name_max = "cg11680158", 
   signal_pivot_lazy <- io_read_pivot("SIGNAL", io_signal_figure(), "PROBE", "WHOLE")
   if (is.null(signal_pivot_lazy))
     stop("SIGNAL PROBE pivot not found at ", fname,
-         " — manhattan plot requires the SEM signal pivot.")
+         " - manhattan plot requires the SEM signal pivot.")
   signal_data <- as.data.frame(signal_pivot_lazy$collect())
 
   # threshold_data <- fst::read_fst(io_file_path_build( ssEnv$result_folderData,"1_signal_thresholds","fst"))

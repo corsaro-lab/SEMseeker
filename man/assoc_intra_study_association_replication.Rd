@@ -9,7 +9,7 @@ assoc_intra_study_association_replication(
   inference_details,
   result_folder,
   maxResources = 90,
-  parallel_strategy = "multicore",
+  parallel_strategy = "multisession",
   start_fresh = FALSE,
   ...
 )
@@ -26,8 +26,12 @@ study on which the focused association analysis is performed.}
 \item{maxResources}{numeric. Maximum percentage of CPU cores to use (default 90).}
 
 \item{parallel_strategy}{character. Parallelisation backend passed to
-\code{future}; e.g. \code{"multicore"}, \code{"multisession"},
-\code{"sequential"} (default \code{"multicore"}).}
+\code{future}; one of \code{"multisession"}, \code{"sequential"},
+\code{"cluster"} (default \code{"multisession"}).
+Asking for \code{"multicore"} is accepted and converted to
+\code{"multisession"}: it means fork(), which is unsafe with this
+package's native thread pool on every platform that offers it, and
+absent on Windows. The conversion is logged.}
 
 \item{start_fresh}{logical. If \code{TRUE}, delete previous results before
 running (default \code{FALSE}).}

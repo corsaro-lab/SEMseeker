@@ -64,8 +64,8 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
       }
 
       # AI-257: order by the widest level, named outright. It used to be
-      # `grepl(multiple_test_adj, colnames)[1]` — the first column whose name
-      # merely CONTAINS the method — which with three adjusted levels picks
+      # `grepl(multiple_test_adj, colnames)[1]` - the first column whose name
+      # merely CONTAINS the method - which with three adjusted levels picks
       # whichever one happens to come first in the frame.
       pvalue_adj_colname <- core_name_cleaning(paste0("PVALUE_ADJ_ALL_", multiple_test_adj))
 
@@ -80,13 +80,13 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
     # AI-255: DEPTH is not stamped any more. It was a number standing in for
     # what SCOPE, AREA and SUBAREA now say outright, and it stood in badly: the
     # 1/2/3 ladder projected a partial order onto a line, and its rung 2 marked
-    # rows produced by composing aggregates — a quantity that no longer exists.
+    # rows produced by composing aggregates - a quantity that no longer exists.
     # Nothing reads it to decide anything, so writing it would only invite
     # someone to start.
     #
     # Gone with it: `results[is.na(results$SUBAREA), "SUBAREA"] <- "TOTAL"`.
     # TOTAL was the label of that synthesis, and it is not a value of the
-    # SUBAREA vocabulary — filling a missing coordinate with an invented one
+    # SUBAREA vocabulary - filling a missing coordinate with an invented one
     # hides the defect inside the key instead of showing it.
     # replace empty with NA
     results[results == ""] <- NA
@@ -103,7 +103,7 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
   # That predicate matched every column whose name merely CONTAINS the method
   # string, so adding PVALUE_ADJ_KEY_BH and PVALUE_ADJ_SCOPE_BH next to
   # PVALUE_ADJ_ALL_BH would silently turn this flag into "significant at all
-  # three levels at once" — a change of meaning invisible in the diff, and one
+  # three levels at once" - a change of meaning invisible in the diff, and one
   # nobody asked for. The flag answers for the widest family, and now says so.
   results$SIGNIFICATIVE_ADJ_ALL <- .assoc_all_below(
     results, .assoc_level_columns(results, "ALL", multiple_test_adj), ssEnv$alpha)
@@ -112,7 +112,7 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
                                  !grepl("_ADJ", colnames(results))], ssEnv$alpha)
 
   # AI-257: this used to read SIGNIFICATIVE_ADJ, a column this function never
-  # creates — it is built by assoc_results_get() on the way out, not on the way
+  # creates - it is built by assoc_results_get() on the way out, not on the way
   # in. `filter_p_value` defaults to TRUE (assoc_analysis.R:124-125), so the
   # filter either stopped the run or was never reached. It filters on the flag
   # that exists here.
@@ -126,7 +126,7 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
   # below would fuse the median and the mean of the same scope into one row.
   # AI-255: SCOPE belongs here too. Without it the collapsed row and the
   # per-instance row of the same region class would be fused by the summarise
-  # below — the very thing the aggregation axis was added to prevent, one
+  # below - the very thing the aggregation axis was added to prevent, one
   # coordinate further along.
   group_column <- c("MARKER", "FIGURE", "SCOPE", "AGGREGATION", "AREA", "SUBAREA", "AREA_OF_TEST", "FAMILY_TEST",
                     "TRANSFORMATION_Y", "R_MODEL", "TRANSFORMATION_X",
@@ -157,7 +157,7 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
 #'
 #' \itemize{
 #'   \item `assoc_apply_stat_model()` adjusted whatever `result_temp` it was
-#'     handed, and at `SCOPE = INSTANCE` that is one chunk of the pivot — the
+#'     handed, and at `SCOPE = INSTANCE` that is one chunk of the pivot - the
 #'     family was the memory split;
 #'   \item the single `PVALUE_ADJ` said nothing about its family, and at
 #'     `SCOPE = SAMPLE` that family holds **one row**, so the column was equal to
@@ -167,7 +167,7 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
 #' Three columns now, three families, nested, each named after its own:
 #'
 #' \preformatted{
-#' PVALUE_ADJ_KEY_<m>    the identity key — MARKER, FIGURE, SCOPE, AREA,
+#' PVALUE_ADJ_KEY_<m>    the identity key - MARKER, FIGURE, SCOPE, AREA,
 #'                       SUBAREA, AGGREGATION. Members: the instances.
 #' PVALUE_ADJ_SCOPE_<m>  every row of the same SCOPE. Members: the region
 #'                       classes, figures and aggregations of that scope.
@@ -181,7 +181,7 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
 #' answers "how many things did I test on this sample"; `SCOPE` does.
 #'
 #' **Why each family is defined the same way on every row.** The tempting design
-#' is a single column whose family adapts — the instances where there are
+#' is a single column whose family adapts - the instances where there are
 #' instances, something else where there are none. That is one name meaning two
 #' things depending on the row, which is what `depth` did and what AI-255 removed
 #' it for. Each of the three is one rule, applied uniformly; at
@@ -210,7 +210,7 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
   # column matching "PVALUE". A file already carries one adjusted column per
   # p-value column at the ALL level, and these files reach 600-880 MB on a
   # 485k-probe run (AI-078); tripling that width to adjust the intercept's
-  # p-value buys nothing. PVALUE is the model's own p-value — the one the
+  # p-value buys nothing. PVALUE is the model's own p-value - the one the
   # taxonomy is about and the one the enrichment reads.
   levels <- list(
     list(name = "KEY",
@@ -250,7 +250,7 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
 #' sibling and computed as BH, with nothing to show for it.
 #'
 #' `qvalue()` needs enough p-values to estimate pi0, and the narrow families are
-#' small by construction — a `SCOPE = SAMPLE` key holds one row. When it cannot
+#' small by construction - a `SCOPE = SAMPLE` key holds one row. When it cannot
 #' estimate, the answer is `NA` and a line in the log: a family too small for the
 #' estimator is a fact about the request, and substituting a different estimator
 #' would make the column name a lie.
@@ -275,7 +275,7 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
     if (inherits(estimated, "try-error")) {
       core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
                 " ", what, ": qvalue could not estimate pi0 on a family of ",
-                length(pvalues), " — left NA rather than substituting another ",
+                length(pvalues), " - left NA rather than substituting another ",
                 "estimator, which would make the column name wrong.")
       return(rep(NA_real_, length(pvalues)))
     }
@@ -305,7 +305,7 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
 #' Is every one of these columns below alpha, row by row (internal)
 #'
 #' AI-257. Returns `NA` when there is no column to answer with, instead of the
-#' `TRUE` that `all(logical(0))` yields — "every one of no columns is
+#' `TRUE` that `all(logical(0))` yields - "every one of no columns is
 #' significant" is how an empty selection used to pass for a positive result.
 #'
 #' @param results the results data.frame.
@@ -332,15 +332,15 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
 
 #' Put the taxonomy key first, and refuse a key with a hole in it (internal)
 #'
-#' AI-255. The six coordinates plus `AREA_OF_TEST` — the instance within the
-#' artefact — are the identity of a result row, so they lead the file. A reader
+#' AI-255. The six coordinates plus `AREA_OF_TEST` - the instance within the
+#' artefact - are the identity of a result row, so they lead the file. A reader
 #' opening the CSV sees what the row *is* before seeing what was measured on it,
 #' and the column order stops depending on the order in which the models happened
 #' to add their fields.
 #'
 #' The NA check is the other half. Filling a missing coordinate used to be normal
-#' here — `results[is.na(results$SUBAREA), "SUBAREA"] <- "TOTAL"` invented a
-#' value that is not in the SUBAREA vocabulary — and that is exactly how a defect
+#' here - `results[is.na(results$SUBAREA), "SUBAREA"] <- "TOTAL"` invented a
+#' value that is not in the SUBAREA vocabulary - and that is exactly how a defect
 #' hides inside a key: two rows that cannot be told apart, and nothing to show
 #' for it. With every coordinate composed by one function there is no legitimate
 #' NA left, so an NA means something upstream did not set what it was supposed
@@ -361,7 +361,7 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
   if (length(present) == 0)
     return(results)
 
-  # An empty SUBAREA has always meant "the whole area" — the same normalisation
+  # An empty SUBAREA has always meant "the whole area" - the same normalisation
   # io_pivot_file_name() applies. Settle it before the check, so the convention
   # is honoured and what remains missing is genuinely missing.
   if ("SUBAREA" %in% present) {
@@ -375,8 +375,8 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
   if (length(holed) > 0)
     stop("the taxonomy key of a result row is incomplete: ",
          paste(holed, collapse = ", "),
-         " carries missing values. The key is the identity of the row — two ",
-         "rows with a hole in the same place cannot be told apart — so this is ",
+         " carries missing values. The key is the identity of the row - two ",
+         "rows with a hole in the same place cannot be told apart - so this is ",
          "a coordinate that was never set upstream, not a value to fill in.",
          call. = FALSE)
 
