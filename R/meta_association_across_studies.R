@@ -1,97 +1,77 @@
 #' Cross-study meta-analysis of association results
 #'
-#' Combines inference results from multiple studies using a random-effects
-#' meta-analysis model (\code{\link[meta]{metagen}}).  For each unique
-#' combination of FIGURE, SUBAREA and AREA_OF_TEST, the function pools
-#' effect sizes (BETA) and standard errors across studies and reports
-#' fixed-effect and random-effect estimates with heterogeneity statistics.
+#' Pools the association results of several studies: for each region class
+#' (marker, figure, area, subarea) and each instance within it, it combines the
+#' per-study effect sizes and their standard errors and reports fixed-effect and
+#' random-effect estimates with heterogeneity statistics.
 #'
-#' Requires at least two studies per stratum; strata with fewer studies are
-#' silently skipped.
+#' @section Not implemented:
+#' This function refuses every call. It is exported and named because its
+#' contract is settled, but its body was never executed once: the step that
+#' reads the per-study results was missing, so every call died on an unbound
+#' variable before reaching the model. Rather than leave a function that fails
+#' on a missing object, or guess a body that cannot be run, it refuses at the
+#' door and says so.
 #'
-#' @param inference_details \code{data.frame} describing the inference
-#'   configuration (same format as used by \code{association_analysis}).
-#' @param statistic_parameter Character scalar: column name of the effect
-#'   size estimate in the inference results (default \code{"BETA"}).
-#' @param pvalue_column Character scalar: column name of the adjusted p-value
-#'   (default \code{"PVALUE_ADJ_ALL_BH"}).
-#' @param studies Character vector: study identifiers to include.
-#' @param studies_base_folder Character scalar: base directory containing
-#'   per-study result folders.
-#' @param result_folder Character scalar: output directory for the
-#'   meta-analysis results.
+#' The contract it will honour, so that a caller can be written against it:
 #'
-#' @return Invisibly returns a \code{data.frame} with one row per stratum
-#'   containing pooled effect estimates, confidence intervals, p-values, and
-#'   heterogeneity statistics (\eqn{\tau^2}, Q-test p-value).
+#' \itemize{
+#'   \item \code{studies} is a vector of paths, one per study. The label of a
+#'     study is the element's name when it has one, otherwise the final
+#'     component of its path. Studies are therefore not required to sit under a
+#'     common parent, and there is no second argument that can disagree with the
+#'     first. Two studies whose paths end in the same component are refused:
+#'     they would become one label and merge silently.
+#'   \item \code{result_folder} is where the meta-analysis writes. It is the
+#'     opposite direction from the study paths, which are read.
+#'   \item the space of the meta-analysis is the \strong{strict intersection} of
+#'     the region classes the studies have in common, read from each study's own
+#'     session and with no filter applied. Classes left out of the intersection
+#'     are reported, with how many and which studies lacked them.
+#'   \item \code{markers}, \code{figures}, \code{areas} and \code{subareas} are
+#'     the caller's selection, checked against that space one coordinate at a
+#'     time: a value no study measured is refused and named. The classes
+#'     analysed are the selection intersected with the space, and the number of
+#'     combinations that fell outside is reported. The selection is deliberately
+#'     not passed on to the per-study sessions: filtering them first would
+#'     compute the intersection over the narrowed space, and a class missing
+#'     from one study would vanish from the space instead of falling outside it.
+#'   \item estimates are pooled within one region class at a time. Combining
+#'     across markers or areas would average effects that are not the same
+#'     effect and return something with the shape of a meta-analysis.
+#' }
+#'
+#' @param studies Character vector of study result paths, optionally named. The
+#'   name, or else the final path component, labels the study.
+#' @param result_folder Directory the meta-analysis writes to.
+#' @param inference_detail One row of the inference specification, identifying
+#'   the request whose per-study results are pooled.
+#' @param markers,figures,areas,subareas Optional selection within the space of
+#'   the meta-analysis. \code{NULL} takes the whole space.
+#' @param statistic_parameter Name of the effect-size column to pool.
+#' @param pvalue_column Name of the adjusted p-value column carried alongside.
+#' @param alpha Significance threshold passed to the per-study readers.
+#' @param adjustment_method Multiple-testing correction passed to the per-study
+#'   readers.
+#' @param ... Passed to the per-study session setup.
+#'
+#' @return Nothing: the call stops. When implemented, one row per region class
+#'   and instance with the pooled estimate, its confidence intervals, the
+#'   p-values and the heterogeneity statistics, plus the coordinates that
+#'   identify the class the row came from.
 #'
 #' @export
 #' @examples
-#' # Stub: see vignette('imprinting-disorders', package = 'SEMseeker') for a
-#' # runnable Beckwith-Wiedemann workflow on the GSE133774 subset.
+#' # This function refuses every call; see the "Not implemented" section for the
+#' # contract it will honour.
 #' invisible(NULL)
-meta_association_across_studies <- function(inference_details,statistic_parameter="BETA", pvalue_column="PVALUE_ADJ_ALL_BH",studies,
-  studies_base_folder, result_folder)
+meta_association_across_studies <- function(studies, result_folder, inference_detail,
+  markers = NULL, figures = NULL, areas = NULL, subareas = NULL,
+  statistic_parameter = "BETA", pvalue_column = "PVALUE_ADJ_ALL_BH",
+  alpha = 0.05, adjustment_method = "BH", ...)
 {
-
-  if (!requireNamespace("meta", quietly = TRUE))
-    stop("Package 'meta' is required for cross-study meta-analysis. Install it with install.packages('meta').")
-  if (!requireNamespace("tidyverse", quietly = TRUE))
-    stop("Package 'tidyverse' is required for cross-study meta-analysis. Install it with install.packages('tidyverse').")
-  keys <- na.omit(unique(results_inference[,c("FIGURE","SUBAREA")]))
-  for (k in seq_len(nrow(keys)))
-  {
-    # k <- 1
-    results_inference_for <- subset(results_inference, FIGURE==keys[k,"FIGURE"] & SUBAREA==keys[k,"SUBAREA"])
-    results_inference_for <- na.omit(results_inference_for[,c("BETA","STD.ERROR","STUDY",pvalue_column,"AREA_OF_TEST")])
-    areas <- na.omit(unique(results_inference[, "AREA_OF_TEST"]))
-    for (g in seq_along(areas))
-    {
-      # g <- 1
-      first_area <- areas[g]
-      if(is.na(first_area))
-
-      results_inference_subset <- subset(results_inference_for, AREA_OF_TEST==first_area)
-      # if( is.null(results_inference_subset[,"STUDY"]))
-      #   next
-      studies_count <- length(unique(results_inference_subset[,"STUDY"]))
-      if(studies_count<2)
-        next
-      meta_model <- meta::metagen(
-        TE = results_inference_subset[,statistic_parameter],   # effect size for each study
-        seTE = results_inference_subset$STD.ERROR,  # standard error of the effect size for each study
-        studlab = results_inference_subset$STUDY,  # study label
-        data = results_inference_subset,  # data frame containing all data
-        comb.fixed = FALSE, # use random-effects model
-        hakn = FALSE, # do not apply Hartung-Knapp correction
-        TE.targ = 1, # target effect size is the regression coefficient
-        pval = results_inference_subset[,pvalue_column],  # p-value column in the data frame
-        ncpus = 9
-      )
-      meta_analysis_results <- summary(meta_model)
-      # pval <- meta_analysis_results$pval
-      beta <- meta_analysis_results$random$TE
-
-      common.ci.lower <- meta_analysis_results$common$lower
-      common.ci.upper <- meta_analysis_results$common$upper
-      common.pval <- meta_analysis_results$pval.common
-
-      random.ci.lower <- meta_analysis_results$random$lower
-      random.ci.upper <- meta_analysis_results$random$upper
-      random.pval <- meta_analysis_results$pval.random
-
-      # test of heterogeneity
-      pval.Q <- meta_analysis_results$pval.Q
-      pval.fixed <- meta_analysis_results$pval.fixed
-      k.study <- meta_analysis_results$k.study
-      tau2 <- meta_analysis_results$tau2
-
-      studies <- paste(sort(meta_analysis_results$studlab), collapse = " ")
-      result <- data.frame(tau2,beta,common.ci.lower,common.ci.upper, common.pval, random.ci.lower,random.ci.upper, random.pval, pval.Q, pval.fixed,k.study, studies, first_area, studies_count)
-      if (exists("final_result"))
-        final_result <- rbind(final_result, result)
-      else
-        final_result <- result
-    }
-  }
+  stop("meta_association_across_studies() is not implemented. Its previous body ",
+       "never read the per-study results, so it could not run; it was removed ",
+       "rather than left to fail on a missing object. See ?meta_association_across_studies ",
+       "for the contract it will honour.")
 }
