@@ -30,7 +30,7 @@ enrich_pathfindR_circlize <- function(
         suffix = "without_signal_"
 
       enrich_phenotype_analysis_name <- enrich_phenotype_analysis_name(inference_detail, keys[i,],prefix ="", suffix= suffix , pvalue_column, ssEnv$alpha, significance)
-      path <- io_dir_check_and_create(ssEnv$result_folderEnrichment,c("pathfindR",core_name_cleaning(inference_detail$areas_sql_condition),core_name_cleaning(inference_detail$samples_sql_condition), core_name_cleaning(inference_detail$association_results_sql_condition)))
+      path <- io_enrichment_folder(inference_detail, "pathfindR")
       pathway_report_path <- io_file_path_build(path,enrich_phenotype_analysis_name,"csv")
       message("Pathway report path: ", pathway_report_path)
       if(file.exists(pathway_report_path))

@@ -15,7 +15,7 @@ enrich_WebGestalt <- function(study,
   ssEnv <- core_get_session_info()
   pvalue_column <- core_name_cleaning(pvalue_column)
   keys <- unique(ssEnv$keys_for_pathway)
-  path <- io_dir_check_and_create(ssEnv$result_folderEnrichment,c("WebGestalt",core_name_cleaning(inference_detail$areas_sql_condition),core_name_cleaning(inference_detail$samples_sql_condition), core_name_cleaning(inference_detail$association_results_sql_condition)))
+  path <- io_enrichment_folder(inference_detail, "WebGestalt")
   tmp <- tempdir()
   tempFolder <- io_dir_check_and_create(tmp,c("/semseeker/",stringi::stri_rand_strings(1, 7, pattern = "[A-Za-z0-9]")))
 

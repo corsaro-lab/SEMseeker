@@ -26,12 +26,16 @@
 meta_studies_normalise <- function(studies)
 {
   if (is.data.frame(studies)) {
-    missing_cols <- setdiff(c("STUDY", "RESULT_FOLDER"), colnames(studies))
+    # Its own output is accepted, so the function is idempotent: several places
+    # in the family normalise, and one of them normalising twice must not be a
+    # question anyone has to think about.
+    folder_col <- if ("STUDY_FOLDER" %in% colnames(studies)) "STUDY_FOLDER" else "RESULT_FOLDER"
+    missing_cols <- setdiff(c("STUDY", folder_col), colnames(studies))
     if (length(missing_cols) > 0)
-      stop("studies given as a data.frame must have columns STUDY and RESULT_FOLDER; missing: ",
-           paste(missing_cols, collapse = ", "))
+      stop("studies given as a data.frame must have columns STUDY and RESULT_FOLDER ",
+           "(or STUDY_FOLDER); missing: ", paste(missing_cols, collapse = ", "))
     out <- data.frame(STUDY = as.character(studies$STUDY),
-                      STUDY_FOLDER = as.character(studies$RESULT_FOLDER),
+                      STUDY_FOLDER = as.character(studies[[folder_col]]),
                       stringsAsFactors = FALSE)
   } else {
     if (!is.character(studies))
@@ -71,7 +75,7 @@ meta_studies_normalise <- function(studies)
   #
   # And the inference results, in the place the readers look for them. Whether a
   # study holds the results of a PARTICULAR request is a sharper question, and
-  # meta_inference_files_check() answers it once the request is known; this only
+  # meta_artefact_files() answers it once the request is known; this only
   # establishes that it is a study at all.
   reasons <- vapply(out$STUDY_FOLDER, function(folder) {
     if (!dir.exists(folder)) return("the folder does not exist")

@@ -203,7 +203,7 @@ test_that("a selection whose every value exists but whose every combination is a
                "none of them")
 })
 
-# --- the request's files, study by study -------------------------------------
+# --- the request's artefacts, study by study -------------------------------------
 #
 # The file name is derived by the producer here rather than written by hand,
 # because the subject of these tests is the check and not the naming. What keeps
@@ -248,7 +248,7 @@ test_that("a study holding the request's file passes, and one that does not is n
   dir.create(dirname(wanted), recursive = TRUE, showWarnings = FALSE)
   writeLines("AREA;SUBAREA", wanted)
 
-  err <- tryCatch(SEMseeker:::meta_inference_files_check(studies, keys, detail),
+  err <- tryCatch(SEMseeker:::meta_artefact_files(studies, keys, detail),
                   error = function(e) conditionMessage(e))
   expect_match(err, "without_it")
   expect_match(err, "MUTATIONS")
@@ -260,7 +260,10 @@ test_that("a study holding the request's file passes, and one that does not is n
                                                  skip_dir_create = TRUE)
   dir.create(dirname(wanted_b), recursive = TRUE, showWarnings = FALSE)
   writeLines("AREA;SUBAREA", wanted_b)
-  expect_silent(SEMseeker:::meta_inference_files_check(studies, keys, detail))
+  files <- SEMseeker:::meta_artefact_files(studies, keys, detail)
+  expect_equal(nrow(files), 2L)                  # two studies, one marker
+  expect_setequal(files$STUDY, c("with_it", "without_it"))
+  expect_true(all(file.exists(files$PATH)))
 })
 
 test_that("a file present for one marker does not satisfy the check for another", {
@@ -282,17 +285,17 @@ test_that("a file present for one marker does not satisfy the check for another"
   dir.create(dirname(wanted), recursive = TRUE, showWarnings = FALSE)
   writeLines("AREA;SUBAREA", wanted)
 
-  expect_silent(SEMseeker:::meta_inference_files_check(
-    studies, .keys(c("MUTATIONS", "HYPO", "GENE", "WHOLE")), detail))
-  expect_error(SEMseeker:::meta_inference_files_check(
+  expect_equal(nrow(SEMseeker:::meta_artefact_files(
+    studies, .keys(c("MUTATIONS", "HYPO", "GENE", "WHOLE")), detail)), 1L)
+  expect_error(SEMseeker:::meta_artefact_files(
     studies, .keys(c("DELTAS", "HYPO", "GENE", "WHOLE")), detail), "DELTAS")
 })
 
-test_that("keys with no marker is refused rather than passing vacuously", {
+test_that("empty keys are refused rather than passing vacuously", {
   empty <- data.frame(MARKER = character(), FIGURE = character(),
                       AREA = character(), SUBAREA = character(),
                       stringsAsFactors = FALSE)
-  expect_error(SEMseeker:::meta_inference_files_check(
+  expect_error(SEMseeker:::meta_artefact_files(
     data.frame(STUDY = "A", STUDY_FOLDER = ".", stringsAsFactors = FALSE),
-    empty, .inference_detail()), "no marker")
+    empty, .inference_detail()), "keys is empty")
 })
