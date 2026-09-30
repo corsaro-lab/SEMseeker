@@ -1,6 +1,6 @@
 #' Compare association results across subsamples of one study
 #'
-#' Same comparison as \code{\link{assoc_inter_study_association_overlaps}} but
+#' Same comparison as \code{\link{meta_association_overlaps_studies}} but
 #' within a single study, across the subsamples produced by a replication run.
 #' It joins the per-subsample inference results on the area taxonomy and writes,
 #' per area, which subsamples called it significant.
@@ -28,7 +28,7 @@
 #'   folder. Returns \code{NULL} invisibly, and early if no results are found.
 # compare inference associations of different sub samples
 #' @export
-assoc_intra_study_association_subsamples_overlaps <- function(inference_details,alpha = 0.05, adjust_per_area = FALSE,
+meta_association_overlaps_subsamples <- function(inference_details,alpha = 0.05, adjust_per_area = FALSE,
   adjust_globally = FALSE,pvalue_column="PVALUE_ADJ_ALL_BH",statistic_parameter, adjustment_method = "BH",
   old_label = NULL, new_label = NULL, run_prefix = "",
   result_folder, ...)

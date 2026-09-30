@@ -23,14 +23,14 @@
 #' @examples
 #' result_dir <- tempdir()
 #' \dontrun{
-#' assoc_intra_study_association_replication(
+#' meta_association_replication(
 #'   inference_details_origin = inference_study1,
 #'   inference_details        = inference_study2,
 #'   result_folder            = "~/semseeker_comparison/"
 #' )
 #' }
 #' @export
-assoc_intra_study_association_replication <- function(inference_details_origin, inference_details,result_folder,
+meta_association_replication <- function(inference_details_origin, inference_details,result_folder,
   maxResources = 90, parallel_strategy  = "multisession",start_fresh = FALSE, ...)
 {
 

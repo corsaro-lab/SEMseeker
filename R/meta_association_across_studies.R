@@ -30,7 +30,7 @@
 #' # Stub: see vignette('imprinting-disorders', package = 'SEMseeker') for a
 #' # runnable Beckwith-Wiedemann workflow on the GSE133774 subset.
 #' invisible(NULL)
-assoc_inter_study_association_meta_analysis <- function(inference_details,statistic_parameter="BETA", pvalue_column="PVALUE_ADJ_ALL_BH",studies,
+meta_association_across_studies <- function(inference_details,statistic_parameter="BETA", pvalue_column="PVALUE_ADJ_ALL_BH",studies,
   studies_base_folder, result_folder)
 {
 

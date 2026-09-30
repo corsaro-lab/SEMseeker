@@ -28,7 +28,7 @@
 #'   folder. Returns \code{NULL} invisibly, and early if no results are found.
 # compare inference associations of different studies
 #' @export
-assoc_inter_study_association_overlaps <- function(inference_detail, studies,alpha = 0.05, adjust_per_area = FALSE,
+meta_association_overlaps_studies <- function(inference_detail, studies,alpha = 0.05, adjust_per_area = FALSE,
   adjust_globally = FALSE,pvalue_column="PVALUE_ADJ_ALL_BH",statistic_parameter, adjustment_method = "BH",
   result_folder, ...)
 {
