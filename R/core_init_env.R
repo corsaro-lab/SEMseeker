@@ -289,6 +289,15 @@ core_init_env <- function(result_folder, maxResources = 90, ...) {
 
   arguments <- core_set_env_variable(arguments, "maxResources", maxResources)
   arguments <- core_set_env_variable(arguments, "parallel_strategy", "sequential")
+
+  # Flush BEFORE the workers exist, not after. core_set_env_variable() no longer
+  # writes to disk on every option (it used to, and that was most of the cost of
+  # this function), so the session file is stale at this point; multisession
+  # workers rebuild ssEnv by reading it, and core_parallel_session() is where
+  # they are spawned. The final flush at the end of this function is too late
+  # for them.
+  core_update_session_info(core_get_session_info())
+
   core_parallel_session()
   ssEnv <- core_get_session_info()
 
