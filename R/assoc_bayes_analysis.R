@@ -35,7 +35,7 @@ assoc_bayes_analysis <- function(
     result_folder,
     independent_variable    = "Sample_Group",
     maxResources            = 90,
-    parallel_strategy       = "multicore",
+    parallel_strategy       = "multisession",
     bayes_case_threshold    = 0.9,   # A-09 fix 9: exposed as parameter
     bayes_control_threshold = 0.1,   # A-09 fix 9: exposed as parameter
     ...)

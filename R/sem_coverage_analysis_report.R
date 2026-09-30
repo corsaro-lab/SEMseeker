@@ -27,7 +27,7 @@
 #' )
 #' }
 #' @export
-sem_coverage_analysis_report <- function (signal_data, result_folder, maxResources = 90, parallel_strategy  = "multicore", ...)
+sem_coverage_analysis_report <- function (signal_data, result_folder, maxResources = 90, parallel_strategy  = "multisession", ...)
 {
 
   ssEnv <- core_init_env( result_folder =  result_folder, maxResources =  maxResources, ...)

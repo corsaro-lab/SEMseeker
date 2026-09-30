@@ -100,15 +100,34 @@ LESIONS_BP <<- 5000L  # AI-092 + AI-044 merged: bp-based window, literature-alig
 bonferroni_threshold <<- 0.1
 batch_id <<- 1
 iqrTimes <<- 3
-# "multicore" (fork) is unsafe on macOS with Polars' C++ thread pool — forked
-# children can be killed by Mach exceptions.  Use "multisession" when the
-# package is installed (R CMD check, CI, devtools::install()).  Fall back to
-# "multicore" only when running under devtools::load_all() on non-macOS,
-# because multisession workers cannot see load_all()'d internals.
-if (Sys.info()[["sysname"]] == "Darwin") {
-  parallel_strategy <<- "multisession"
-} else {
-  parallel_strategy <<- "multicore"
+# The strategy follows HOW the package is loaded, not which platform we are on.
+#
+# fork() is unsafe with this package's native thread pool everywhere it is
+# available, not only on macOS: see the widened E-13 guard in
+# core_parallel_session(), which now converts any "multicore" request to
+# "multisession". So asking for "multicore" here would not even reach the
+# worker: it would be rewritten, and under load_all() that is exactly the wrong
+# answer, because multisession workers are fresh R processes that cannot see
+# internals loaded by load_all().
+#
+# That leaves "sequential" as the only coherent choice under load_all(): slower,
+# but it runs the code that is actually loaded. It is also the lesser loss,
+# because the parallel paths are verified against the INSTALLED package, which
+# is the configuration users run and the one CI measures.
+.dev_loaded <- requireNamespace("pkgload", quietly = TRUE) &&
+  isTRUE(try(pkgload::is_dev_package("SEMseeker"), silent = TRUE))
+parallel_strategy <<- if (isTRUE(.dev_loaded)) "sequential" else "multisession"
+
+# SEMSEEKER_TEST_PARALLEL overrides the choice above. It exists for
+# dev/parallel-ab.R, which runs the same tests under two strategies and compares
+# wall clock, because that comparison is the only way to find out whether the
+# parallel paths actually parallelise: user/real cannot answer it, since the CPU
+# of multisession workers is never attributed to this process.
+.forced <- Sys.getenv("SEMSEEKER_TEST_PARALLEL", "")
+if (nzchar(.forced)) {
+  parallel_strategy <<- .forced
+  message("setup.R: parallel_strategy forced to '", .forced,
+          "' by SEMSEEKER_TEST_PARALLEL")
 }
 markers <<- c("MUTATIONS","DELTAQ","DELTARQ","DELTAP","DELTARP","LESIONS")
 

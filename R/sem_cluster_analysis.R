@@ -1,5 +1,5 @@
 sem_cluster_analysis <- function(cluster_variables,ellipsis=TRUE, sql_sample_selection="", result_folder, maxResources = 90,
-  parallel_strategy  = "multicore",start_fresh = FALSE, ...)
+  parallel_strategy  = "multisession",start_fresh = FALSE, ...)
 {
   # AI-061+ (2026-06-09): propagate start_fresh to core_init_env (was previously
   # hardcoded to FALSE). Same name → same semantics: TRUE wipes the whole

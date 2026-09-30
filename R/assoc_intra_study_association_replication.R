@@ -27,7 +27,7 @@
 #' }
 #' @export
 assoc_intra_study_association_replication <- function(inference_details_origin, inference_details,result_folder,
-  maxResources = 90, parallel_strategy  = "multicore",start_fresh = FALSE, ...)
+  maxResources = 90, parallel_strategy  = "multisession",start_fresh = FALSE, ...)
 {
 
   ssEnv <- core_init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE, ...)

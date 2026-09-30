@@ -34,12 +34,31 @@ core_parallel_session <- function()
     }
   }
 
-  # E-13: multicore (fork) on macOS is unsafe with Polars' C++ thread pool —
-  # forked children are killed by Mach exceptions with no R-visible error.
-  # Force multisession (separate R processes) instead.
-  if (Sys.info()["sysname"] == "Darwin" && parallel_strategy == "multicore") {
+  # E-13, widened: multicore means fork(), and fork() is unsafe for this package
+  # on every platform that offers it. The hazard is not macOS, it is fork plus a
+  # native thread pool: fork duplicates the memory of the parent's threads but
+  # not the threads themselves, so a lock held at the moment of the fork stays
+  # marked as taken in the child by a thread that will never exist to release
+  # it. Polars builds a C++ thread pool on its first operation, so from then on
+  # every child inherits the pool's queues and locks with no workers behind
+  # them.
+  #
+  # The same cause shows two faces, which is why only one of them was guarded.
+  # On macOS the system libraries detect a fork without exec and abort, so it
+  # crashes loudly. On Linux nothing intervenes and the children wait forever:
+  # measured on the installed package, nine children at 0.0% CPU for eleven
+  # minutes on a test that takes 22 seconds under multisession.
+  #
+  # It is also order dependent. A fork before Polars has ever run is clean, so
+  # the failure is intermittent and cannot be relied on to show up in testing.
+  #
+  # multicore stays accepted, because substituting it is safe and refusing it
+  # would break existing scripts for nothing, but it is never honoured.
+  if (parallel_strategy == "multicore") {
     core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
-              " multicore (fork) is unsafe on macOS with Polars. Switching to multisession.")
+              " multicore uses fork(), which is unsafe with this package's",
+              " native thread pool: forked children crash on macOS and hang",
+              " on Linux. Switching to multisession.")
     parallel_strategy <- "multisession"
     ssEnv$parallel_strategy <- parallel_strategy
   }
@@ -59,10 +78,10 @@ core_parallel_session <- function()
     ssEnv$parallel_strategy <- parallel_strategy
   }
 
-  if(parallelly::supportsMulticore())
-    options(parallelly.fork.enable= TRUE)
-  else
-    options(parallelly.fork.enable= FALSE)
+  # Nothing here may fork, so do not leave the door open for anything else in
+  # the session either: enabling it only where it is available would let a
+  # dependency fork on Linux for the same reasons this package must not.
+  options(parallelly.fork.enable = FALSE)
 
   chk <- Sys.getenv("_R_CHECK_LIMIT_CORES_", "")
 

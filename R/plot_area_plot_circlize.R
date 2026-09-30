@@ -1,4 +1,4 @@
-plot_area_plot_circlize <- function(areas, circle_plot_path,result_folder, maxResources = 90, parallel_strategy  = "multicore", ...)
+plot_area_plot_circlize <- function(areas, circle_plot_path,result_folder, maxResources = 90, parallel_strategy  = "multisession", ...)
 {
   ssEnv <- core_init_env(result_folder = result_folder, maxResources = maxResources, parallel_strategy = parallel_strategy, start_fresh = FALSE, ...)
 

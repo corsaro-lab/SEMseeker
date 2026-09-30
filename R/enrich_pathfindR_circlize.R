@@ -3,7 +3,7 @@ enrich_pathfindR_circlize <- function(
   statistic_parameter="", adjust_per_area = FALSE, adjust_globally = FALSE,adjustment_method = "BH",
   pvalue_column="PVALUE_ADJ_ALL_BH",
   inference_details, significance = TRUE,
-  result_folder, maxResources = 90, parallel_strategy  = "multicore", ...)
+  result_folder, maxResources = 90, parallel_strategy  = "multisession", ...)
 {
 
   ssEnv <- core_init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE, ...)

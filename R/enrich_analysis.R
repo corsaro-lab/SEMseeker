@@ -66,7 +66,7 @@
 enrichment_analysis <- function(inference_details, adjust_per_area_s, adjust_globally_s, pvalue_columns, adjustment_methods,alphas,
   study, significance,statistic_parameter, path_dbs, phenolyzer_folder_bin,disease,
   phenolyzer=FALSE, WebGestalt=FALSE, pathfindr=FALSE,STRINGdb=FALSE,Phenolyzer_STRINGdb=FALSE,Phenolyzer_WebGestalt=FALSE,ctdR=FALSE,
-  result_folder, maxResources = 90, parallel_strategy  = "multicore", ...)
+  result_folder, maxResources = 90, parallel_strategy  = "multisession", ...)
 {
   start_fresh <- FALSE
   ssEnv <- core_init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy,

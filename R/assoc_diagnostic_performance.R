@@ -28,7 +28,7 @@
 #' }
 #' @export
 diagnostic_performance <-
-  function(samples_sql_selection="",combinations,result_folder,independent_variable = "Sample_Group",maxResources = 90,parallel_strategy  = "multicore",...)
+  function(samples_sql_selection="",combinations,result_folder,independent_variable = "Sample_Group",maxResources = 90,parallel_strategy  = "multisession",...)
   {
     j <- 0
     k <- 0
