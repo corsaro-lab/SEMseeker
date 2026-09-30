@@ -160,8 +160,7 @@ test_that("assoc_filter_sql returns data unchanged for empty conditions", {
 })
 
 test_that("assoc_filter_sql filters rows by numeric condition", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
@@ -175,8 +174,7 @@ test_that("assoc_filter_sql filters rows by numeric condition", {
 })
 
 test_that("assoc_filter_sql filters rows by character condition", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
@@ -194,8 +192,7 @@ test_that("assoc_filter_sql filters rows by character condition", {
 })
 
 test_that("assoc_filter_sql applies multiple conditions sequentially", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
@@ -209,8 +206,7 @@ test_that("assoc_filter_sql applies multiple conditions sequentially", {
 })
 
 test_that("assoc_filter_sql returns empty data.frame when no rows match", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 

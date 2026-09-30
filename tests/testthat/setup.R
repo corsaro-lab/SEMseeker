@@ -118,11 +118,17 @@ iqrTimes <<- 3
   isTRUE(try(pkgload::is_dev_package("SEMseeker"), silent = TRUE))
 parallel_strategy <<- if (isTRUE(.dev_loaded)) "sequential" else "multisession"
 
-# SEMSEEKER_TEST_PARALLEL overrides the choice above. It exists for
-# dev/parallel-ab.R, which runs the same tests under two strategies and compares
-# wall clock, because that comparison is the only way to find out whether the
-# parallel paths actually parallelise: user/real cannot answer it, since the CPU
-# of multisession workers is never attributed to this process.
+# SEMSEEKER_TEST_PARALLEL overrides the choice above, for two uses.
+#
+# Forcing "sequential" when a failure inside a worker arrives without a usable
+# stack trace, which is the ordinary way to debug a parallel path.
+#
+# And comparing the same tests under two strategies by wall clock, which is the
+# only way to find out whether the parallel paths actually pay off: the obvious
+# candidate, user/real from proc.time(), cannot answer it, because multisession
+# workers are separate R sessions and their CPU is never attributed to this
+# process. Measured on the whole suite: user 69m37s against real 70m3s, a ratio
+# of 1.0, while ten processes were busy a tenth of the time.
 .forced <- Sys.getenv("SEMSEEKER_TEST_PARALLEL", "")
 if (nzchar(.forced)) {
   parallel_strategy <<- .forced
@@ -136,7 +142,37 @@ markers <<- c("MUTATIONS","DELTAQ","DELTARQ","DELTAP","DELTARP","LESIONS")
 # core_recover session stored
 #
 tmp <- normalizePath(tempdir())
-tempFolders <<- paste(tmp,"/semseeker/",stringi::stri_rand_strings(50, 7, pattern = "[A-Za-z0-9]"),sep="")
+
+# One way to get a temporary folder, and only one.
+#
+# There used to be a shared vector of 50 pre-generated folders, read in two
+# incompatible ways at once: 53 places took the first element and 50 of them then
+# shortened the vector from the head, while 84 other places indexed it by fixed
+# position, from 1 to 53. Three consequences, all silent.
+#
+# Indices 51 to 53 did not exist, so those tests passed NA as a result folder.
+# A fixed index meant a different folder depending on how many tests had
+# already taken one, so which directory a test touched depended on the order
+# the suite happened to run in, and on any filter applied to it. And 137
+# accesses over 50 folders guaranteed that unrelated tests shared directories
+# without anyone deciding they should.
+#
+# It surfaced as a test asserting that a function had written no plots and
+# finding four, left there by whoever else had been handed the same folder.
+# The function was correct; the fixture was not. Only 72 of the 156
+# core_init_env() calls in the suite pass start_fresh = TRUE, so the other 84
+# inherit whatever the directory already contains.
+#
+# A fresh directory per call removes the sharing rather than managing it. Tests
+# that reuse a folder deliberately - resume paths, idempotency - keep doing so:
+# they hold it in a local variable, and only where that variable comes from has
+# changed.
+sem_test_folder <- function() {
+  d <- file.path(normalizePath(tempdir()), "semseeker",
+                 stringi::stri_rand_strings(1, 12, pattern = "[A-Za-z0-9]"))
+  dir.create(d, recursive = TRUE, showWarnings = FALSE)
+  d
+}
 
 
 check_execution_context <- function() {
@@ -158,4 +194,3 @@ check_execution_context()
 # core_recover session stored
 #
 tmp <- tempdir()
-tempFolders <<- paste(tmp,"/semseeker/",stringi::stri_rand_strings(50, 7, pattern = "[A-Za-z0-9]"),sep="")

@@ -6,7 +6,6 @@
 ##   assoc_results_save()             write inference CSV to canonical path
 ##   util_exploratory_analysis()      end-to-end exploratory report (215 lines)
 ##
-## Session tests use tempFolders indices 51-53.
 
 # ---------------------------------------------------------------------------
 # .core_bulk_model_memory_gate  (pure)
@@ -42,7 +41,7 @@ test_that(".core_bulk_model_memory_gate escalates away from monolithic when huge
 # ---------------------------------------------------------------------------
 
 test_that("io_plot_file_name builds a marker/figure plot path", {
-  tf <- tempFolders[51]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -68,7 +67,7 @@ test_that("io_plot_file_name builds a marker/figure plot path", {
 # ---------------------------------------------------------------------------
 
 test_that("assoc_results_save writes a readable inference CSV at the canonical path", {
-  tf <- tempFolders[52]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -98,7 +97,7 @@ test_that("assoc_results_save writes a readable inference CSV at the canonical p
 # ---------------------------------------------------------------------------
 
 test_that("util_exploratory_analysis runs end-to-end and writes an exploratory report", {
-  tf <- tempFolders[53]
+  tf <- sem_test_folder()
   on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE); unlink(tf, recursive = TRUE) },
           add = TRUE)
 

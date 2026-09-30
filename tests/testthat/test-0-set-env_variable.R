@@ -1,8 +1,7 @@
 test_that("set-env-variable", {
 
   # run this test as first other wise the reuse of session is not testable
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
 
   # sex_chromosome_remove is FALSE by default
   ssEnv <- SEMseeker:::core_init_env(result_folder= tempFolder, parallel_strategy = parallel_strategy, areas = c("GENE"), subareas= c("BODY"), start_fresh=TRUE)

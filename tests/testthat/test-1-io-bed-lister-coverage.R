@@ -2,10 +2,10 @@
 ##
 ## Lists per-sample BED/bedGraph files under
 ##   <result_folderData>/<sample_group>/<MARKER>_<FIGURE>/...
-## for a given marker+figure. Session test uses tempFolders index 47.
+## for a given marker+figure.
 
 test_that("io_list_bed_files_for_marker_figure finds only matching marker/figure beds", {
-  tf <- tempFolders[47]
+  tf <- sem_test_folder()
   ss <- SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 

@@ -16,7 +16,6 @@
 ##      array whatever the class, and every "restricted" burden came out equal to
 ##      the burden of the whole sample.
 ##
-## Session tests use tempFolders indices 18 and 19.
 
 .scope_details <- function(scope, family_test = "spearman", aggregation = "SUM") {
   data.frame(
@@ -130,7 +129,7 @@ test_that("a request whose model cannot be fitted stops the run", {
 # ---------------------------------------------------------------------------
 
 test_that("scope = SAMPLE tests the collapsed artefacts and leaves the instances alone", {
-  tempFolder <- tempFolders[18]
+  tempFolder <- sem_test_folder()
   unlink(tempFolder, recursive = TRUE)
   on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE) }, add = TRUE)
 
@@ -178,7 +177,7 @@ test_that("scope = SAMPLE tests the collapsed artefacts and leaves the instances
 })
 
 test_that("the collapsed burden is restricted to its own region class", {
-  tempFolder <- tempFolders[18]
+  tempFolder <- sem_test_folder()
   skip_if(!dir.exists(file.path(tempFolder, "Inference")),
           "scope = SAMPLE run did not complete")
   on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE) }, add = TRUE)
@@ -227,7 +226,7 @@ test_that("the collapsed burden is restricted to its own region class", {
 })
 
 test_that("scope = INSTANCE tests the per-instance artefacts and nothing else", {
-  tempFolder <- tempFolders[19]
+  tempFolder <- sem_test_folder()
   unlink(tempFolder, recursive = TRUE)
   on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE) }, add = TRUE)
 
@@ -257,7 +256,7 @@ test_that("scope = INSTANCE tests the per-instance artefacts and nothing else", 
 })
 
 test_that("a request that wants both branches writes two rows, and gets both", {
-  tempFolder <- tempFolders[19]
+  tempFolder <- sem_test_folder()
   skip_if(!dir.exists(file.path(tempFolder, "Data")), "INSTANCE run did not complete")
   on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE) }, add = TRUE)
 

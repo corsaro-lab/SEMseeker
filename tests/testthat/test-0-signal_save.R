@@ -1,7 +1,6 @@
 test_that("signal-save",{
 
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   ssEnv <- SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy, inpute="median")
 
   # In the normal pipeline sem_analyze_batch() calls core_get_meth_tech() before io_signal_save()

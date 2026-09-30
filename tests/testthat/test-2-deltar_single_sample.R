@@ -1,7 +1,6 @@
 test_that("sem_deltar_single_sample",{
 
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   ssEnv <- SEMseeker:::core_init_env(result_folder= tempFolder, bonferroni_threshold = 0.05, showprogress=showprogress, start_fresh = TRUE, inpute="median")
 
   ####################################################################################

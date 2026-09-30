@@ -1,9 +1,8 @@
 test_that("get-meth_tech", {
 
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   # start_fresh = TRUE ensures no stale session_info.rds from a previous test
-  # (all 0-* tests share tempFolders[1] in devtools::test()) affects tech detection.
+  # (all 0-* tests share sem_test_folder() in devtools::test()) affects tech detection.
   SEMseeker:::core_init_env(result_folder = tempFolder, parallel_strategy = parallel_strategy, maxResources = 90, figures = "HYPER", markers = "DELTAS", areas = "GENE", start_fresh = TRUE)
 
   ####################################################################################

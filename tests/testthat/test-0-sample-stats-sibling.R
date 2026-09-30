@@ -10,7 +10,6 @@
 ##   4. the sample sheet no longer carries the burden — it moved here;
 ##   5. the sibling joins back onto the sample sheet on Sample_ID.
 ##
-## Session test uses tempFolders index 13.
 
 # ---------------------------------------------------------------------------
 # naming helpers (pure)
@@ -76,7 +75,7 @@ test_that("descriptors degrade gracefully on degenerate input", {
 # ---------------------------------------------------------------------------
 
 test_that("semseeker() writes the statistics sibling and leaves the sample sheet lean", {
-  tempFolder <- tempFolders[13]
+  tempFolder <- sem_test_folder()
   unlink(tempFolder, recursive = TRUE)
   on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE)
             unlink(tempFolder, recursive = TRUE) }, add = TRUE)
@@ -165,7 +164,7 @@ test_that("semseeker() writes the statistics sibling and leaves the sample sheet
 # ---------------------------------------------------------------------------
 
 test_that("a region scope reaches the sibling and the depth=1 inference", {
-  tempFolder <- tempFolders[14]
+  tempFolder <- sem_test_folder()
   unlink(tempFolder, recursive = TRUE)
   on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE)
             unlink(tempFolder, recursive = TRUE) }, add = TRUE)
@@ -346,7 +345,7 @@ test_that("a region scope reaches the sibling and the depth=1 inference", {
 })
 
 test_that("a retired column stops the analysis instead of testing nothing", {
-  tempFolder <- tempFolders[15]
+  tempFolder <- sem_test_folder()
   unlink(tempFolder, recursive = TRUE)
   on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE)
             unlink(tempFolder, recursive = TRUE) }, add = TRUE)
@@ -402,7 +401,7 @@ test_that("a retired column stops the analysis instead of testing nothing", {
 })
 
 test_that("an unknown region class is refused at the door, not silently ignored", {
-  tempFolder <- tempFolders[16]
+  tempFolder <- sem_test_folder()
   unlink(tempFolder, recursive = TRUE)
   on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE)
             unlink(tempFolder, recursive = TRUE) }, add = TRUE)

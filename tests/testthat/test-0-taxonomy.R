@@ -150,7 +150,7 @@ test_that("io_signal_figure reports the scale, not an aggregation", {
 # ---------------------------------------------------------------------------
 
 test_that("the pivot name carries the aggregation, and the scale for SIGNAL", {
-  tempFolder <- tempFolders[17]
+  tempFolder <- sem_test_folder()
   unlink(tempFolder, recursive = TRUE)
   on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE)
             unlink(tempFolder, recursive = TRUE) }, add = TRUE)

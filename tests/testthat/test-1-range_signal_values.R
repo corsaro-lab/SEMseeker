@@ -1,7 +1,6 @@
 test_that("sem_signal_range_values", {
 
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
 
 
   # test range calculation with missed values: sem_signal_range_values must error when data has NAs

@@ -204,7 +204,7 @@ test_that("util_join_values_to_thresholds: multiple chromosomes handled correctl
 # ---------------------------------------------------------------------------
 
 test_that("sem_metrics_ranking: returns data.frame with SCORE and METRIC columns", {
-  tf <- tempFolders[43]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -216,7 +216,7 @@ test_that("sem_metrics_ranking: returns data.frame with SCORE and METRIC columns
 })
 
 test_that("sem_metrics_ranking: PVALUE is lower-is-better — lower p-value gets higher score", {
-  tf <- tempFolders[44]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -228,7 +228,7 @@ test_that("sem_metrics_ranking: PVALUE is lower-is-better — lower p-value gets
 })
 
 test_that("sem_metrics_ranking: R_SQUARED is higher-is-better — higher value gets higher score", {
-  tf <- tempFolders[45]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -243,7 +243,7 @@ test_that("sem_metrics_ranking: R_SQUARED is higher-is-better — higher value g
 })
 
 test_that("sem_metrics_ranking: uniform input → all scores equal 1", {
-  tf <- tempFolders[46]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -253,7 +253,7 @@ test_that("sem_metrics_ranking: uniform input → all scores equal 1", {
 })
 
 test_that("sem_metrics_ranking: METRIC column is set to the requested metric name", {
-  tf <- tempFolders[47]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -263,7 +263,7 @@ test_that("sem_metrics_ranking: METRIC column is set to the requested metric nam
 })
 
 test_that("sem_metrics_ranking: PVALUE_ADJ is recognised as lower-is-better via grep", {
-  tf <- tempFolders[48]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -276,7 +276,7 @@ test_that("sem_metrics_ranking: PVALUE_ADJ is recognised as lower-is-better via 
 })
 
 test_that("sem_metrics_ranking: Inf values are replaced before ranking (no infinite scores)", {
-  tf <- tempFolders[49]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 

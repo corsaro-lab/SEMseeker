@@ -1,4 +1,4 @@
-# No tempFolders here on purpose. It is a shared global built once in setup.R,
+# No session folder here on purpose.
 # and these tests need no session at all — they exercise pure vocabulary
 # functions. Re-assigning it truncated the vector for every file that runs
 # after this one alphabetically, which is how a change confined to the

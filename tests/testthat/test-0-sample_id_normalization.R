@@ -9,7 +9,6 @@
 ## "undefined columns selected". Invisible on the bundled fixtures because
 ## GSM\d+ identifiers make core_name_cleaning() a no-op.
 ##
-## Session test uses tempFolders index 9.
 
 # ---------------------------------------------------------------------------
 # core_normalize_sample_ids  (pure)
@@ -89,7 +88,7 @@ test_that("core_normalize_sample_ids fails loudly when the id column is missing"
 # ---------------------------------------------------------------------------
 
 test_that("util_exploratory_analysis keeps sample columns with non-alphanumeric Sample_IDs", {
-  tf <- tempFolders[9]
+  tf <- sem_test_folder()
   on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE); unlink(tf, recursive = TRUE) },
           add = TRUE)
 

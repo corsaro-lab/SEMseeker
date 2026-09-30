@@ -35,8 +35,7 @@ test_that("the backend behind every %dorng% distributes work across processes", 
   skip_if(is.na(future::availableCores()) || future::availableCores() < 2L,
           "a single core has nothing to distribute")
 
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   on.exit({
     SEMseeker:::core_close_env()
     unlink(tempFolder, recursive = TRUE)
@@ -64,8 +63,7 @@ test_that("sequential runs in the calling process, so the check above can fail",
   skip_if_not_installed("doRNG")
   skip_if_not_installed("foreach")
 
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   on.exit({
     SEMseeker:::core_close_env()
     unlink(tempFolder, recursive = TRUE)
@@ -93,8 +91,7 @@ test_that("a multicore request is honoured as multisession, not as one worker", 
   skip_if(is.na(future::availableCores()) || future::availableCores() < 2L,
           "a single core has nothing to distribute")
 
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   on.exit({
     SEMseeker:::core_close_env()
     unlink(tempFolder, recursive = TRUE)

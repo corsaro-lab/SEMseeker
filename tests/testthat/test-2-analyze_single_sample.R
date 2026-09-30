@@ -1,7 +1,6 @@
 test_that("sem_analyze_single_sample", {
 
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   ssEnv <- SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy, inpute = "mean")
 
   tt <- SEMseeker:::core_get_meth_tech(signal_data)

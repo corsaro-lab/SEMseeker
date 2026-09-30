@@ -9,14 +9,13 @@
 ## empty-input early returns. Full happy-path behaviour stays covered by the
 ## end-to-end tests (test-6/7/8-*).
 ##
-## Session tests use tempFolders indices 48-50.
 
 # ---------------------------------------------------------------------------
 # assoc_results_get — missing inference file -> empty data.frame
 # ---------------------------------------------------------------------------
 
 test_that("assoc_results_get returns an empty frame when the inference file is absent", {
-  tf <- tempFolders[48]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -70,7 +69,7 @@ test_that("assoc_results_get refuses to guess which region class and which exten
 # ---------------------------------------------------------------------------
 
 test_that("assoc_data_extractor returns an empty frame for zero inference rows", {
-  tf <- tempFolders[49]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -88,7 +87,7 @@ test_that("assoc_data_extractor returns an empty frame for zero inference rows",
 # ---------------------------------------------------------------------------
 
 test_that("sem_available_metrics is a no-op (NULL) when there are no inference rows", {
-  tf <- tempFolders[50]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 

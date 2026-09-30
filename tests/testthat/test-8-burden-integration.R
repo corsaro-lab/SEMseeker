@@ -29,8 +29,7 @@
 # (MUTATIONS + DELTA*) set exercises the whole derive-and-aggregate path.
 
 test_that("sample_sheet_result.csv has populated burden columns for all discrete + continuous markers (AI-086, canary for AI-083)", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   unlink(tempFolder, recursive = TRUE)
 
   syn <- .burden_setup_signal_with_outliers(
@@ -220,8 +219,7 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
 # ---------------------------------------------------------------------------
 
 test_that("burden survives mixed-case Sample_IDs and a polluted global temp_result (AI-083)", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   unlink(tempFolder, recursive = TRUE)
   on.exit({
     try(SEMseeker:::core_close_env(), silent = TRUE)

@@ -31,8 +31,7 @@ minimal_inf_details <- function() {
 }
 
 test_that("enrichment_analysis rejects mismatched array lengths", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
 
   expect_error(
     SEMseeker::enrichment_analysis(
@@ -58,8 +57,7 @@ test_that("enrichment_analysis rejects mismatched array lengths", {
 })
 
 test_that("enrichment_analysis error lists each array's actual length", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
 
   err <- tryCatch(
     SEMseeker::enrichment_analysis(
@@ -98,8 +96,7 @@ test_that("enrichment_analysis accepts matched array lengths (does not throw on 
   # We pass matched lengths and EXPECT the length check to pass. The function
   # will of course fail later (no real Inference CSV on disk) so we tolerate
   # any non-"length"-related error.
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
 
   err <- tryCatch(
     SEMseeker::enrichment_analysis(
