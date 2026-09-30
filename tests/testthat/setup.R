@@ -1,3 +1,80 @@
+# =============================================================================
+# Shared setup for the whole suite, and how to size the bench that runs it.
+#
+# Read this before changing anything here, and before concluding that the suite
+# is slow, stuck, or broken. The rules for writing a test are in
+# engineering-decisions.md 5.16, the traps that cost days are in 5.18, and
+# tests/testthat/test_template.R is the executable skeleton.
+#
+# -----------------------------------------------------------------------------
+# TWO PLANES OF PARALLELISM, AND THEY DO NOT COMPOSE
+# -----------------------------------------------------------------------------
+# The PRODUCT parallelises areas inside a model, through foreach %dorng% on a
+# future plan set by core_parallel_session(). It serves the user.
+#
+# The BENCH parallelises test FILES, through Config/testthat/parallel in
+# DESCRIPTION, one process per file. It serves whoever is waiting.
+#
+# Multiply them and they divide: nine package workers inside each of ten
+# concurrent files is ninety processes on ten cores, contending rather than
+# computing. So every test runs SEQUENTIAL inside, and the files run in
+# parallel outside. The one exception is the test whose subject IS parallelism:
+# it asks for a strategy explicitly and does not read the global below.
+#
+# -----------------------------------------------------------------------------
+# HOW MUCH MEMORY THE BENCH NEEDS, WHICH IS THE BINDING CONSTRAINT
+# -----------------------------------------------------------------------------
+# Not the cores. Measured on this suite:
+#
+#   one operation in a fresh process          ~1.2 GB
+#   a process that has been working            4.0 - 4.7 GB   <- it plateaus
+#   cost assumed per worker (dev/run-suite.R)  4.6 GB
+#
+# It plateaus rather than growing: five processes doing eighteen files each
+# reach the same figure as one process doing eighty-eight. It is STRUCTURE, not
+# payload - the memoised probe annotation is 226 MB per process, the native
+# query engine keeps its own pool, the loaded namespaces are the same whatever
+# the fixture size. Do not expect it to shrink because the data is small.
+#
+# Therefore, for the Docker VM:
+#
+#   VM memory   workers that fit   outcome observed
+#   ---------   ----------------   ----------------------------------------
+#     8 GB            1            nine workers were killed by the OOM killer
+#    24 GB            4            four workers also killed, at 65 of 88 files
+#    48 GB           10            completes
+#
+# A VM sized for the cores instead of the memory is what killed three runs. And
+# a host is not free either: 48 GB of 64 leaves macOS compressing. 32 GB is the
+# sensible daily setting, at six or seven workers.
+#
+# -----------------------------------------------------------------------------
+# READ THE ALLOWANCE, NOT THE MACHINE
+# -----------------------------------------------------------------------------
+# Inside a container these disagree, and only one pair is right. Measured with
+# `docker run --memory=6g --cpus=3`:
+#
+#   parallelly::availableCores()          3    <- honours the cgroup
+#   parallel::detectCores(), nproc       10    <- reports the host
+#   /sys/fs/cgroup/memory.max            6 GB  <- honours the cgroup
+#   /proc/meminfo MemTotal              49 GB  <- reports the host
+#
+# dev/run-suite.R derives the worker count from the first of each pair. Nothing
+# here should use the second.
+#
+# -----------------------------------------------------------------------------
+# WHY A LOCAL GREEN IS NOT A CI GREEN
+# -----------------------------------------------------------------------------
+# Under R CMD check, R sets _R_CHECK_LIMIT_CORES_ and everything sees 2 cores,
+# so CI runs two package workers and two test processes whatever the runner has.
+# That is why the OOM never appears there: not a healthier environment, a
+# blocked knob. CI also runs vignettes and examples, which the local bench does
+# not, and on amd64 plus Windows, which the local bench does not.
+#
+# The bench is therefore HARSHER on memory and BLINDER on portability. Neither
+# result substitutes for the other, and their timings are not comparable.
+# =============================================================================
+
 # num_rows <- 3e^6
 # num_cols <- 5200
 # populationMatrix <- as.data.frame(matrix(runif(num_rows * num_cols), nrow = num_rows, ncol = num_cols))
@@ -6,12 +83,18 @@
 Sys.setenv(OBJC_DISABLE_INITIALIZE_FORK_SAFETY='YES')
 
 rm(list = ls())
-# DEBUG: trace setup.R progress so we can see (in the macOS run log) at
-# which step GEOquery / tcltk loading is triggered. AI-017 tracking.
+# DEBUG: trace setup.R progress so we can see, in a run log, at which step the
+# annotation and its dependency chain get loaded.
+#
+# flush.console() is guarded. There is no console in the subprocesses testthat
+# starts to run test files in parallel, and calling it there raises: the whole
+# run then dies with "testthat subprocess failed to start", pointing at this
+# line and saying nothing about why. The flush only matters when a human is
+# watching output arrive, so it is skipped where nobody is.
 .trace_step <- function(msg) {
   cat(sprintf("[SETUP-TRACE %s] %s\n",
               format(Sys.time(), "%H:%M:%OS3"), msg))
-  flush.console()
+  if (interactive()) try(flush.console(), silent = TRUE)
 }
 .trace_step("setup.R BEGIN")
 loadNamespace("future")
@@ -100,23 +183,26 @@ LESIONS_BP <<- 5000L  # AI-092 + AI-044 merged: bp-based window, literature-alig
 bonferroni_threshold <<- 0.1
 batch_id <<- 1
 iqrTimes <<- 3
-# The strategy follows HOW the package is loaded, not which platform we are on.
+# Sequential inside a test, parallel across test files.
 #
-# fork() is unsafe with this package's native thread pool everywhere it is
-# available, not only on macOS: see the widened E-13 guard in
-# core_parallel_session(), which now converts any "multicore" request to
-# "multisession". So asking for "multicore" here would not even reach the
-# worker: it would be rewritten, and under load_all() that is exactly the wrong
-# answer, because multisession workers are fresh R processes that cannot see
-# internals loaded by load_all().
+# The files run in parallel now (Config/testthat/parallel in DESCRIPTION), which
+# is where the independent units are: sixty of them, none dominating except one.
+# Inside a test there is nothing to gain and something to lose. The tests are
+# small - a Wilcoxon over all 18,089 probes of the fixture takes 1.1 s - so
+# starting nine workers costs more than the work, and nine workers per file
+# times ten concurrent files would put ninety processes on ten cores, where they
+# would contend rather than compute.
 #
-# That leaves "sequential" as the only coherent choice under load_all(): slower,
-# but it runs the code that is actually loaded. It is also the lesser loss,
-# because the parallel paths are verified against the INSTALLED package, which
-# is the configuration users run and the one CI measures.
-.dev_loaded <- requireNamespace("pkgload", quietly = TRUE) &&
-  isTRUE(try(pkgload::is_dev_package("SEMseeker"), silent = TRUE))
-parallel_strategy <<- if (isTRUE(.dev_loaded)) "sequential" else "multisession"
+# Two tests ask for something else, explicitly, because parallelism is their
+# subject: the backend test and the libPaths propagation test. They pass the
+# strategy as an argument and are unaffected by this default. Twenty other files
+# already passed "sequential" by hand before this was the default, which is why
+# the change here moves nineteen callers and not sixty.
+#
+# fork() is not among the options at all: it is unsafe with this package's
+# native thread pool on every platform that offers it, and core_parallel_session()
+# converts any request for it.
+parallel_strategy <<- "sequential"
 
 # SEMSEEKER_TEST_PARALLEL overrides the choice above, for two uses.
 #

@@ -62,6 +62,120 @@ invisible(gc(reset = TRUE))
 .branch <- .first(.git("rev-parse", "--abbrev-ref", "HEAD"))
 .dirty  <- any(nzchar(.git("status", "--porcelain")))
 
+## How many test files to run at once.
+##
+## testthat does not use the machine: testthat:::default_num_cpus() returns
+## getOption("Ncpus"), then TESTTHAT_CPUS, and failing both a hardcoded 2. So
+## enabling parallelism in DESCRIPTION bought two processes on a ten-core
+## machine, and the run announced "Starting 2 test processes" while the Mac sat
+## idle at 200% of 1000%.
+##
+## Replacing that with a number of our own would be the same mistake one layer
+## up. The count is derived from the environment instead, and from BOTH limits,
+## because cores alone is what put nine package workers into eight gigabytes and
+## had the suite killed:
+##
+##   workers = min(cores available, memory available / cost of a worker)
+##
+## This adapts without special-casing the environment. Under R CMD check,
+## availableCores() already honours _R_CHECK_LIMIT_CORES_ and returns 2, so CI
+## gets two processes from the same formula that gives ten here.
+##
+## Measured, after two attempts that were not.
+##
+## The first figure was 2048 MB, taken from a single test file run on its own,
+## which peaked at 1232 MB resident. It was wrong by more than a factor of two:
+## a process that has done real work settles far above what one file costs, and
+## the worker count it produced had the run killed at 73 of 88 files.
+##
+## The figure below comes from a run with four workers, where the container
+## peaked at 22.66 GiB across five processes: 4.53 GB each. That run was also
+## killed - four workers do not fit in 23.4 GB either - but the peak it reached
+## before dying is the demand, not the ceiling, because with four processes none
+## of them was throttled until the very end.
+##
+## What the number is made of, and why it does not shrink with the fixture: the
+## memoised probe annotation is 226 MB per process, the native query engine keeps
+## its own pool, and the loaded namespaces are the same whatever the data size.
+## It is structure, not payload. A process running one operation costs about
+## 1.2 GB; one that has been working settles at 4 to 4.7 GB regardless of how
+## many operations it has run.
+.MB_PER_WORKER <- 4608
+
+## The cgroup limit first, and /proc/meminfo only as a fallback.
+##
+## Inside a container /proc/meminfo reports the HOST's memory, not the limit the
+## container was given. Measured with `docker run --memory=6g`: memory.max says
+## 6442450944, while MemTotal says 49 GB and MemAvailable 47.7 GB. A count
+## derived from those would put ten workers into six gigabytes.
+##
+## Worth noting that the CPU side does not have this problem, but only because
+## of which function is used: under `--cpus=3`, parallelly::availableCores()
+## returns 3 while parallel::detectCores() and nproc both return 10. Reading the
+## machine instead of the allowance is the same mistake on either axis.
+.available_mb <- function() {
+  for (f in c("/sys/fs/cgroup/memory.max",                       # cgroup v2
+              "/sys/fs/cgroup/memory/memory.limit_in_bytes")) {  # cgroup v1
+    if (!file.exists(f)) next
+    v <- suppressWarnings(as.numeric(readLines(f, warn = FALSE)[1]))
+    # "max", or the sentinel a v1 kernel uses for "no limit", come back as NA or
+    # as a number larger than any real machine: fall through to the host figure.
+    if (is.finite(v) && v > 0 && v < 2^53) return(v / 1024^2)
+  }
+  f <- "/proc/meminfo"                                   # Linux, no cgroup cap
+  if (file.exists(f)) {
+    l <- grep("^MemAvailable:", readLines(f, warn = FALSE), value = TRUE)
+    if (length(l)) return(as.numeric(sub("[^0-9]*([0-9]+).*", "\\1", l[1])) / 1024)
+  }
+  out <- suppressWarnings(tryCatch(                      # macOS
+    system2("sysctl", c("-n", "hw.memsize"), stdout = TRUE, stderr = FALSE),
+    error = function(e) character(0)))
+  if (length(out) && grepl("^[0-9]+$", out[1])) return(as.numeric(out[1]) / 1024^2 / 2)
+  NA_real_
+}
+
+## No "leave one core for the parent" here, which is the right rule on the other
+## plane and the wrong one on this. The package's workers run alongside a parent
+## that computes with them; testthat's parent is an event loop that waits, so a
+## core reserved for it is a core idle. Under R CMD check availableCores() is 2,
+## and subtracting one would give a single worker - fewer than the hardcoded
+## default this is meant to replace, and no parallelism at all on CI.
+## A margin on the memory, because the formula otherwise picks the largest count
+## that fits and therefore always lands at 95 per cent of the ceiling. Measured:
+## at 24 GB it chose 4 workers needing 22.5 of 23.4, at 48 GB it chose 10 needing
+## 45 of 47. Both runs were killed, and both died in the TAIL - the last six
+## files are the six heaviest and the ones that ask for most, so the moment of
+## peak demand is exactly the moment with no room left.
+##
+## Using 70 per cent leaves a worker's worth of headroom at any size. It costs
+## workers, which costs time, and the alternative costs the whole run.
+.MEMORY_HEADROOM <- 0.70
+
+.n_workers <- function() {
+  by_core <- max(1L, as.integer(future::availableCores()))
+  mb <- .available_mb()
+  by_mem <- if (is.finite(mb))
+    max(1L, as.integer(floor(mb * .MEMORY_HEADROOM / .MB_PER_WORKER))) else by_core
+  min(by_core, by_mem)
+}
+
+## Derive it only when nobody has asked for a number. A default that overwrites
+## an explicit request is the same defect this code exists to remove, one layer
+## up - and it defeated the first attempt to measure the cost per worker, since
+## TESTTHAT_CPUS=4 passed to the container was silently replaced by the derived
+## 10. An override is also how the measurement gets taken at all: the
+## coefficient above has to come from a run with few enough workers that none of
+## them is throttled.
+.asked <- Sys.getenv("TESTTHAT_CPUS", "")
+if (nzchar(.asked)) {
+  .workers <- suppressWarnings(as.integer(.asked))
+  .from <- "TESTTHAT_CPUS"
+} else {
+  .workers <- .n_workers()
+  .from <- "derived"
+  Sys.setenv(TESTTHAT_CPUS = .workers)
+}
+
 .t0 <- Sys.time()
 res <- testthat::test_dir("tests/testthat",
                           package        = "SEMseeker",
@@ -109,6 +223,10 @@ emit("commit        : ", .commit, if (.dirty) " (DIRTY: uncommitted changes)" el
      "   on ", .branch)
 if (!is.null(filter)) emit("filter        : ", filter)
 emit("tests         : ", nrow(df), " in ", length(unique(df$file)), " files")
+emit("test processes: ", .workers, " (", .from, ")   (cores ", future::availableCores(),
+     ", available memory ",
+     if (is.finite(.available_mb())) sprintf("%.1f GB", .available_mb() / 1024) else "unknown",
+     ", ", .MB_PER_WORKER, " MB budgeted each)")
 emit("wall clock    : ", sprintf("%.0f s  (%.1f min)", .wall, .wall / 60))
 emit("PASS          : ", sum(df$passed))
 emit("FAIL          : ", sum(df$failed))
