@@ -137,6 +137,19 @@ RUN Rscript -e "\
     ask = FALSE, update = FALSE\
   )"
 
+# ── Install the CRAN Suggests the test suite exercises.
+#    The image installs only Imports/Depends/LinkingTo, which is right for a
+#    build but not for running the suite: several tests reach a Suggests package
+#    and a missing one does not skip, it errors. Measured on the full run before
+#    this layer existed: 'car' absent took out three tests of
+#    test-0-math-stats.R and the covariates path of
+#    test-7-association_analysis.R, and test-0-suggests-installed.R reported
+#    Rfast missing, which is exactly the job that meta-test exists to do.
+#    The set mirrors what the GitHub workflows install, and the meta-test keeps
+#    the two in step: if a test starts depending on something else, it fails
+#    here rather than skipping in silence.
+RUN Rscript -e "install.packages(c('Rfast', 'mockery', 'ggpubr', 'car'))"
+
 # ── Copy full package source (only invalidates the layer above when R code changes)
 COPY . .
 
