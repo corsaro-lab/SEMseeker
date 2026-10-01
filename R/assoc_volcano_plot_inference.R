@@ -49,6 +49,22 @@
 #' # Stub: see vignette('imprinting-disorders', package = 'SEMseeker') for a
 #' # runnable Beckwith-Wiedemann workflow on the GSE133774 subset.
 #' invisible(NULL)
+# The marker an inference file name begins with.
+#
+# io_inference_file_name() composes the name as the marker, then the independent
+# variable, the transformation and the family, so the marker is the leading token.
+#
+# This was read as the part before "_DEPTH_" until the taxonomy stopped saying the
+# granularity of an artefact with an integer. The names have not carried that token
+# since, so strsplit() found no separator and handed back the whole name: the marker
+# became the file name, and the lookup that follows matched nothing, which is a
+# function that draws nothing and says it found no match.
+.assoc_volcano_marker_from_name <- function(file_name) {
+  # The extension comes off first, so a name with no other token still answers the
+  # marker rather than the marker with ".csv" stuck to it.
+  sub("_.*$", "", tools::file_path_sans_ext(basename(as.character(file_name))))
+}
+
 assoc_volcano_plot_inference <- function(inference_detail,
                                     result_folder,
                                     markers       = NULL,
@@ -136,9 +152,7 @@ assoc_volcano_plot_inference <- function(inference_detail,
                 " family=", family_test, " in ", inference_folder)
       return(invisible(character(0)))
     }
-    markers <- unique(vapply(matches, function(fn) {
-      strsplit(fn, "_DEPTH_", fixed = TRUE)[[1]][1]
-    }, character(1)))
+    markers <- unique(vapply(matches, .assoc_volcano_marker_from_name, character(1)))
   }
 
   written <- character(0)

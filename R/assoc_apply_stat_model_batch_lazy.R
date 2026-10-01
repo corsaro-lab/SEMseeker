@@ -2,7 +2,7 @@
 #
 # Why a separate function: apply_stat_model_batch.R receives a fully
 # materialised, transposed, sample-merged tempDataFrame that the caller
-# (sem_run_depth_n_marker) builds with the standard
+# (assoc_run_marker) builds with the standard
 #   tempDataFrame <- as.data.frame(pivot_lazy$collect())
 #   ... t() ... merge(sample_sheet, ...)
 # pipeline. Even at GENE/WHOLE scale (~17 k genes × ~500 samples
