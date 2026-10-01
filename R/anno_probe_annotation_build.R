@@ -38,7 +38,7 @@
 #' @param group_str Character vector: \code{UCSC_RefGene_Group} (";"-joined).
 #' @param name_str Character vector: \code{UCSC_RefGene_Name} (";"-joined).
 #' @return Named list of GENE_BODY, GENE_TSS200, GENE_TSS1500, GENE_1STEXON,
-#'   GENE_5UTR, GENE_3UTR, GENE_EXONBND, GENE_WHOLE.
+#'   GENE_5UTR, GENE_3UTR, GENE_EXONBND, GENE_WHOLE, GENE_PROMOTER.
 #' @keywords internal
 #' @noRd
 .anno_gene_columns <- function(group_str, name_str) {
@@ -50,10 +50,13 @@
   gene_groups <- strsplit(as.character(group_str), ";", fixed = TRUE)
   gene_names  <- strsplit(as.character(name_str),  ";", fixed = TRUE)
 
-  extract <- function(region) {
+  # `regions` takes one window or several: with several, the gene is named once
+  # however many of them it is annotated to, which is what makes a multi-window
+  # class a union rather than a sum.
+  extract <- function(regions) {
     vapply(seq_along(gene_groups), function(i) {
       g <- gene_groups[[i]]; n <- gene_names[[i]]
-      hits <- unique(n[g == region & n != ""])
+      hits <- unique(n[g %in% regions & n != ""])
       if (length(hits) == 0L) NA_character_ else paste(hits, collapse = ";")
     }, character(1))
   }
@@ -63,6 +66,17 @@
     hits <- unique(genes[genes != "" & !is.na(genes)])
     if (length(hits) == 0L) NA_character_ else paste(hits, collapse = ";")
   }, character(1))
+
+  # The three RefGene groups that sit at the transcription start, as one class.
+  # A union like GENE_WHOLE and not a partition: a probe annotated TSS200 for one
+  # transcript and TSS1500 for another is in the promoter of both genes and names
+  # each of them once, so nothing is counted twice when the class is masked.
+  #
+  # The regulatory column of the same manifest was considered and set aside: it
+  # agrees with this definition for about a third of the probes, is empty for
+  # three quarters of them, and is not a rule about position relative to the TSS,
+  # so it cannot be reproduced without the manifest in hand.
+  out$GENE_PROMOTER <- extract(c("TSS200", "TSS1500", "1stExon"))
   out
 }
 
@@ -255,7 +269,7 @@ anno_probe_annotation_build <- function(tech, force = FALSE) {
   keep <- c(
     "PROBE", "CHR", "START", "END", tech,
     "GENE_BODY", "GENE_TSS200", "GENE_TSS1500", "GENE_1STEXON",
-    "GENE_5UTR", "GENE_3UTR", "GENE_EXONBND", "GENE_WHOLE",
+    "GENE_5UTR", "GENE_3UTR", "GENE_EXONBND", "GENE_WHOLE", "GENE_PROMOTER",
     "ISLAND_WHOLE", "ISLAND_ISLAND",
     "ISLAND_N_SHORE", "ISLAND_S_SHORE",
     "ISLAND_N_SHELF", "ISLAND_S_SHELF", "ISLAND_OPENSEA",
