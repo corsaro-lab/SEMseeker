@@ -24,7 +24,7 @@
 # which are handled inline in anno_probe_features_get() without annotation.
 #
 # Supported area/subarea values:
-#   GENE:    TSS200, TSS1500, 1STEXON, 5UTR, 3UTR, BODY, EXONBND, WHOLE
+#   GENE:    TSS200, TSS1500, 1STEXON, 5UTR, 3UTR, BODY, EXONBND, PROMOTER, WHOLE
 #   ISLAND:  WHOLE, ISLAND, N_SHORE, S_SHORE, N_SHELF, S_SHELF, OPENSEA
 #   CHR:     WHOLE, CYTOBAND
 #   DMR:     WHOLE, DMR
@@ -279,6 +279,32 @@
       bnds     <- c(starts, ends)
       bnds + 50L  # expand symmetrically by 50 bp on each side
     },
+    PROMOTER = {
+      # The union of the three windows at the transcription start, as one class.
+      # Built by asking this function for each of them and putting the results
+      # together: the three label by different routes - two from the per-gene
+      # symbols below, the first exon through its parent transcript - and asking
+      # is what gets each one labelled the way it labels itself.
+      #
+      # Deliberately NOT reduce(): that is what WHOLE does, and it is why WHOLE
+      # ends up carrying coordinates instead of gene symbols. Here the per-gene
+      # identity is the point, so overlapping ranges of one gene are left
+      # standing. They cost nothing: anno_probe_features_get() de-duplicates
+      # (position, label) rows, so a position lying in two windows of the same
+      # gene is counted once, and one lying in windows of two genes is counted
+      # for each, which is the difference the class has to keep.
+      #
+      # mcols are cut down to the label and the names dropped before combining,
+      # because the three arrive with different metadata columns - the first exon
+      # brings its rank and id - and c() on GRanges requires them to agree.
+      parts <- lapply(c("TSS200", "TSS1500", "1STEXON"), function(window) {
+        g <- .anno_build_gene_area(window, txdb)
+        GenomicRanges::mcols(g) <- GenomicRanges::mcols(g)[, "label", drop = FALSE]
+        names(g) <- NULL
+        g
+      })
+      return(do.call(c, parts))
+    },
     WHOLE = {
       # Full gene span = BODY + TSS1500 upstream
       tss1500 <- GenomicRanges::setdiff(
@@ -288,7 +314,8 @@
       GenomicRanges::reduce(c(all_genes, tss1500))
     },
     stop("Unknown GENE subarea: '", subarea, "'. ",
-         "Supported: TSS200, TSS1500, 1STEXON, 5UTR, 3UTR, BODY, EXONBND, WHOLE")
+         "Supported: TSS200, TSS1500, 1STEXON, 5UTR, 3UTR, BODY, EXONBND, ",
+         "PROMOTER, WHOLE")
   )
 
   # For subareas that retain the per-gene structure, attach gene symbols

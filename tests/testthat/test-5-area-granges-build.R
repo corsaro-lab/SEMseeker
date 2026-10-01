@@ -244,3 +244,51 @@ test_that(".anno_entrez_to_symbol refuses identifiers of the wrong kind", {
   expect_length(res, length(ok))
   expect_identical(utils::tail(res, 1L), "900000001")
 })
+
+# ---------------------------------------------------------------------------
+# GENE_PROMOTER on the coordinate backend
+#
+# The class is the union of TSS200, TSS1500 and 1STEXON, and the thing that can
+# go wrong is losing the gene. GENE_WHOLE shows how: it reduce()s overlapping
+# ranges, which merges across genes, so its labels are coordinates and no
+# consumer can join them to a gene. A promoter labelled that way would be
+# useless for the question it exists to answer, which is per gene.
+# ---------------------------------------------------------------------------
+
+test_that("GENE_PROMOTER is the union of its three windows, still named by gene", {
+  skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
+  skip_if_not_installed("GenomicRanges")
+  skip_if_not_installed("GenomicFeatures")
+
+  gr <- SEMseeker:::anno_area_granges_build("GENE_PROMOTER", genome_build = "hg19")
+
+  expect_s4_class(gr, "GRanges")
+  expect_true(length(gr) > 0L)
+  expect_true("label" %in% names(GenomicRanges::mcols(gr)))
+
+  labels_of <- function(area_subarea) {
+    g <- SEMseeker:::anno_area_granges_build(area_subarea, genome_build = "hg19")
+    l <- unique(as.character(GenomicRanges::mcols(g)$label))
+    l[!is.na(l) & nzchar(l)]
+  }
+
+  promoter <- labels_of("GENE_PROMOTER")
+  windows  <- unique(c(labels_of("GENE_TSS200"), labels_of("GENE_TSS1500"),
+                       labels_of("GENE_1STEXON")))
+
+  # Union, in both directions: nothing arrives that no window named, and no
+  # window's genes are dropped on the way in.
+  expect_setequal(promoter, windows)
+
+  # The gene survived. Two ways it would not have: the coordinate label that
+  # reduce() leaves behind, and the positional placeholder used when names(gr)
+  # carries no parent gene.
+  expect_false(any(grepl("^(chr)?[0-9XYMT]+:[0-9]+-[0-9]+$", promoter)),
+               info = "labels are coordinates, so per-gene identity was reduced away")
+  expect_false(any(grepl("^GENE_PROMOTER_[0-9]+$", promoter)),
+               info = "labels fell back to the positional placeholder")
+
+  # Concatenated and not merged: one gene keeps a range per window it is in, and
+  # the duplicate (position, gene) rows are removed downstream, not here.
+  expect_gt(length(gr), length(promoter))
+})

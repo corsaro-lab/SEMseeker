@@ -373,6 +373,20 @@
   comparison against an earlier analysis therefore holds on the raw p-values and on
   the per-key adjusted ones, and does not hold on the adjusted values whose scope
   spans region classes.
+
+  The class is built on both annotation paths. On the array it is a column of the
+  per-probe table, read from the RefGene groups of the manifest. On the
+  coordinate path it is the three windows of the gene model put together and kept
+  labelled by gene, which is the part that matters: the whole-gene class reduces
+  its overlapping ranges and therefore carries coordinates instead of gene names,
+  and a promoter labelled that way would answer nothing. Overlaps between the
+  three windows of one gene are left standing on purpose, because a position is
+  counted once per gene downstream.
+
+  On the enrichment side `gene_region = "PROMOTER"` now stands for the single
+  window of the same name instead of naming the three. The grouping it used to do
+  when reading results is what the class removes: it reached one gene from three
+  families, and the backends that need one p-value per gene could not be used.
 - **Descriptors on any scope.** The signal descriptors are no longer a separate
   path: `SIGNAL` is a marker like the others, so `sample_stats_scopes` now
   produces its median, mean, variance, IQR and — on the beta scale — its two

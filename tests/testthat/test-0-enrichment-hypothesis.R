@@ -27,13 +27,18 @@ test_that("neither question has a default, and the refusal is the question", {
 
   region_msg <- tryCatch(SEMseeker:::util_gene_region_expand(),
                          error = function(e) conditionMessage(e))
-  expect_match(region_msg, "TSS200")
+  # The message names the alias and the biology behind it. It no longer names the
+  # windows, because the promoter is one region class now and not three of them.
+  expect_match(region_msg, "PROMOTER")
   expect_match(region_msg, "gates")
 })
 
 test_that("an alias expands to the windows it is documented to mean", {
+  # One window, not three: the promoter is masked as a class while the analysis
+  # runs, so there is nothing left to group on the way out. Grouping here put one
+  # gene into three families, which is how a gene ended up with no p-value at all.
   expect_equal(as.character(SEMseeker:::util_gene_region_expand("PROMOTER")),
-               c("TSS200", "TSS1500", "1STEXON"))
+               "PROMOTER")
   expect_equal(as.character(SEMseeker:::util_gene_region_expand("GENE_BODY")),
                "BODY")
   expect_equal(as.character(SEMseeker:::util_gene_region_expand("WHOLE_GENE")),

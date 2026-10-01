@@ -33,13 +33,20 @@ NULL
 #' passes the windows explicitly instead.
 #'
 #' \itemize{
-#'   \item `PROMOTER` - `TSS200`, `TSS1500`, `1STEXON`. The promoter-proximal
-#'     windows, where methylation gates transcription.
+#'   \item `PROMOTER` - `PROMOTER`. One window, not three. The promoter is a
+#'     region class of its own now, masked over `TSS200`, `TSS1500` and the first
+#'     exon while the analysis runs, so a gene has one measure of its promoter and
+#'     one p-value. Naming the three windows here instead put the gene in three
+#'     families, and a gene with three p-values has none.
 #'   \item `GENE_BODY` - `BODY`. The transcribed region, where the association
 #'     between methylation and expression runs the other way.
 #'   \item `WHOLE_GENE` - `WHOLE`. Every position of the gene, one window: the
 #'     hypothesis is that the locus is affected, without saying where.
 #' }
+#'
+#' All three stand for a single window, so none of them is a union any more. A
+#' caller can still create one by passing several windows explicitly, and what
+#' that costs is stated where it is chosen.
 #'
 #' @param gene_region one alias, or an explicit vector of windows.
 #' @return character vector of `SUBAREA` values, and the alias as an attribute.
@@ -52,7 +59,7 @@ util_gene_region_expand <- function(gene_region) {
     stop(
       "gene_region has no default, because the answer changes what the result ",
       "means:\n",
-      "  \"PROMOTER\"   - TSS200, TSS1500, 1STEXON. Methylation here gates\n",
+      "  \"PROMOTER\"   - the promoter region class. Methylation here gates\n",
       "                 transcription, so the enrichment speaks about\n",
       "                 transcriptional dysregulation.\n",
       "  \"GENE_BODY\"  - BODY. The association between methylation and\n",
@@ -62,7 +69,11 @@ util_gene_region_expand <- function(gene_region) {
       "Or pass the windows explicitly, e.g. c(\"TSS200\", \"TSS1500\").",
       call. = FALSE)
 
-  aliases <- list(PROMOTER   = c("TSS200", "TSS1500", "1STEXON"),
+  # Each alias stands for one window. PROMOTER named three until the promoter
+  # became a region class of its own: the three are masked together while the
+  # analysis runs, so the grouping that used to happen here, on the way out, is
+  # not needed and is not wanted - it reached the same gene from three families.
+  aliases <- list(PROMOTER   = "PROMOTER",
                   GENE_BODY  = "BODY",
                   WHOLE_GENE = "WHOLE")
 
@@ -71,10 +82,10 @@ util_gene_region_expand <- function(gene_region) {
   if (length(asked) == 1L && asked %in% names(aliases)) {
     windows <- aliases[[asked]]
     core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
-              " gene_region = ", asked, " expands to ",
+              " gene_region = ", asked, " stands for ",
               paste(windows, collapse = " + "),
-              ". This expansion is stamped on the result; pass the windows ",
-              "explicitly to use a different definition.")
+              ". This is stamped on the result; pass the windows explicitly to ",
+              "use a different definition.")
     return(structure(windows, alias = asked))
   }
 
