@@ -48,8 +48,6 @@
 
 test_that("annotation_concordance: CHR_CYTOBAND is 100% identical (bundled)", {
   skip_on_cran()
-  # Illumina anno -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
-  skip_on_os("mac")
   skip_if_not_installed(.req_illumina)
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
@@ -68,8 +66,6 @@ test_that("annotation_concordance: CHR_CYTOBAND is 100% identical (bundled)", {
 
 test_that("annotation_concordance: DMR_WHOLE is 100% identical (bundled)", {
   skip_on_cran()
-  # Illumina anno -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
-  skip_on_os("mac")
   skip_if_not_installed(.req_illumina)
   skip_if_not_installed("GenomicRanges")
 
@@ -86,8 +82,6 @@ test_that("annotation_concordance: DMR_WHOLE is 100% identical (bundled)", {
 
 test_that("annotation_concordance: DMR_DMR is 100% identical (bundled)", {
   skip_on_cran()
-  # Illumina anno -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
-  skip_on_os("mac")
   skip_if_not_installed(.req_illumina)
   skip_if_not_installed("GenomicRanges")
 
@@ -109,8 +103,6 @@ test_that("annotation_concordance: DMR_DMR is 100% identical (bundled)", {
 
 test_that("anno_concordance_report returns correct structure", {
   skip_on_cran()
-  # Illumina anno -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
-  skip_on_os("mac")
   skip_if_not_installed(.req_illumina)
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")

@@ -16,8 +16,6 @@ test_that("anno_area_granges_build errors on unknown area", {
 })
 
 test_that("anno_area_granges_build errors on unknown GENE subarea", {
-  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
-  skip_on_os("mac")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("GenomicFeatures")
@@ -28,8 +26,6 @@ test_that("anno_area_granges_build errors on unknown GENE subarea", {
 })
 
 test_that("anno_area_granges_build errors on unknown ISLAND subarea", {
-  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
-  skip_on_os("mac")
   skip_if_not_installed("AnnotationHub")
   skip_if_not_installed("GenomicRanges")
   expect_error(
@@ -39,8 +35,6 @@ test_that("anno_area_granges_build errors on unknown ISLAND subarea", {
 })
 
 test_that("anno_area_granges_build appends _WHOLE when no underscore", {
-  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
-  skip_on_os("mac")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("GenomicFeatures")
@@ -57,8 +51,6 @@ test_that("anno_area_granges_build appends _WHOLE when no underscore", {
 # ---------------------------------------------------------------------------
 
 test_that("anno_area_granges_build DMR_WHOLE returns GRanges with label", {
-  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
-  skip_on_os("mac")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("IRanges")
   gr <- SEMseeker:::anno_area_granges_build("DMR_WHOLE", genome_build = "hg19")
@@ -73,8 +65,6 @@ test_that("anno_area_granges_build DMR_WHOLE returns GRanges with label", {
 # ---------------------------------------------------------------------------
 
 test_that("anno_area_granges_build GENE_BODY returns valid GRanges", {
-  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
-  skip_on_os("mac")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("GenomicFeatures")
@@ -85,8 +75,6 @@ test_that("anno_area_granges_build GENE_BODY returns valid GRanges", {
 })
 
 test_that("anno_area_granges_build GENE_TSS200 ranges are ≤ 200bp wide", {
-  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
-  skip_on_os("mac")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("GenomicFeatures")
@@ -95,8 +83,6 @@ test_that("anno_area_granges_build GENE_TSS200 ranges are ≤ 200bp wide", {
 })
 
 test_that("GENE_TSS1500 and GENE_TSS200 do not overlap within the same gene", {
-  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
-  skip_on_os("mac")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("GenomicFeatures")
@@ -119,8 +105,6 @@ test_that("GENE_TSS1500 and GENE_TSS200 do not overlap within the same gene", {
 })
 
 test_that("anno_area_granges_build result is cached on second call", {
-  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
-  skip_on_os("mac")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("GenomicFeatures")
@@ -134,8 +118,6 @@ test_that("anno_area_granges_build result is cached on second call", {
 # ---------------------------------------------------------------------------
 
 test_that("anno_area_granges_build CHR_CYTOBAND returns GRanges with label", {
-  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
-  skip_on_os("mac")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
   gr <- SEMseeker:::anno_area_granges_build("CHR_CYTOBAND", genome_build = "hg19")
@@ -176,8 +158,6 @@ for (.subarea in c("1STEXON", "5UTR", "3UTR", "EXONBND")) {
 
   test_that(paste0("anno_area_granges_build GENE_", .subarea,
                    " labels name genes of the same model as GENE_BODY"), {
-    # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
-    skip_on_os("mac")
     skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
     skip_if_not_installed("GenomicRanges")
     skip_if_not_installed("GenomicFeatures")
@@ -208,8 +188,6 @@ for (.subarea in c("1STEXON", "5UTR", "3UTR", "EXONBND")) {
 }
 
 test_that("GENE labels are gene symbols, not the Entrez ids TxDb keys on", {
-  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
-  skip_on_os("mac")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("GenomicFeatures")
@@ -233,8 +211,6 @@ test_that("GENE labels are gene symbols, not the Entrez ids TxDb keys on", {
 })
 
 test_that(".anno_entrez_to_symbol refuses identifiers of the wrong kind", {
-  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
-  skip_on_os("mac")
   skip_if_not_installed("org.Hs.eg.db")
   skip_if_not_installed("AnnotationDbi")
 
