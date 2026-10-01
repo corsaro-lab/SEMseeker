@@ -177,7 +177,7 @@ head(sample_sheet[, c("Sample_ID", "Sample_Name", "Sample_Group")])
 ## Step 2 — Detect epimutations
 
 The main entry point is
-[`semseeker()`](https://drake69.github.io/semseeker/reference/semseeker.md).
+[`semseeker()`](https://corsaro-lab.github.io/SEMseeker/reference/semseeker.md).
 A single call runs the full pipeline: normalisation → mutation calling →
 lesion aggregation → delta metric computation.
 
@@ -357,7 +357,7 @@ signal** per region via the `SIGNAL_MEAN` marker:
 
 This pivot table has exactly the same structure as the mutation/delta
 tables and can be passed directly to
-[`association_analysis()`](https://drake69.github.io/semseeker/reference/association_analysis.md)
+[`association_analysis()`](https://corsaro-lab.github.io/SEMseeker/reference/association_analysis.md)
 — allowing you to test whether mean methylation differs by phenotype,
 without any mutation-calling step.
 
@@ -471,7 +471,7 @@ SEMseeker::semseeker(
 ```
 
 **Pre-processing checklist** before running
-[`semseeker()`](https://drake69.github.io/semseeker/reference/semseeker.md):
+[`semseeker()`](https://corsaro-lab.github.io/SEMseeker/reference/semseeker.md):
 
 Cohort normalisation (SWAN / BMIQ / Functional Normalisation)
 
@@ -500,11 +500,11 @@ in older cohorts and whole-blood studies.
 
 - **Association analysis** (all statistical models): see the
   [Association analysis
-  vignette](https://drake69.github.io/semseeker/articles/association-analysis.md).
+  vignette](https://corsaro-lab.github.io/SEMseeker/articles/association-analysis.md).
 - **Pathway and enrichment analysis**: see the [Pathway analysis
-  vignette](https://drake69.github.io/semseeker/articles/pathway-analysis.md).
+  vignette](https://corsaro-lab.github.io/SEMseeker/articles/pathway-analysis.md).
 - **Full function reference**: see the
-  [Reference](https://drake69.github.io/semseeker/reference/index.md)
+  [Reference](https://corsaro-lab.github.io/SEMseeker/reference/index.md)
   page.
 
 ------------------------------------------------------------------------

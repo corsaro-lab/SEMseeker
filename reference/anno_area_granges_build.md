@@ -22,7 +22,7 @@ anno_area_granges_build(area_subarea, genome_build = NULL)
 
   Character scalar: reference assembly. Defaults to `ssEnv$genome_build`
   (set by
-  [`core_init_env`](https://drake69.github.io/semseeker/reference/core_init_env.md)),
+  [`core_init_env`](https://corsaro-lab.github.io/SEMseeker/reference/core_init_env.md)),
   or `"hg19"` if the session is not initialised.
 
 ## Value
@@ -41,7 +41,7 @@ are also cached on disk in `tools::R_user_dir("SEMseeker", "cache")`.
 
 `PROBE_WHOLE` is **not** handled by this function. It is resolved inline
 by
-[`anno_probe_features_get`](https://drake69.github.io/semseeker/reference/anno_probe_features_get.md):
+[`anno_probe_features_get`](https://corsaro-lab.github.io/SEMseeker/reference/anno_probe_features_get.md):
 
 - **Illumina**: one row per array probe (manufacturer ID, e.g.
   `cg00000029`). Probe identity is meaningful and cross-study comparable

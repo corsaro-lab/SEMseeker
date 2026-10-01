@@ -2,9 +2,9 @@
 
 ## Overview
 
-[`association_analysis()`](https://drake69.github.io/semseeker/reference/association_analysis.md)
+[`association_analysis()`](https://corsaro-lab.github.io/SEMseeker/reference/association_analysis.md)
 is the downstream statistical engine of semseeker. After
-[`semseeker()`](https://drake69.github.io/semseeker/reference/semseeker.md)
+[`semseeker()`](https://corsaro-lab.github.io/SEMseeker/reference/semseeker.md)
 has computed epimutation counts, lesion counts and delta metrics
 (`DELTAS`, `DELTAR`, and their ranked variants `DELTAP`/`DELTARP` and
 `DELTAQ`/`DELTARQ`), this function tests whether any of those values are
@@ -23,7 +23,7 @@ Multiple comparisons are adjusted with the Benjamini-Hochberg FDR
 procedure (Benjamini and Hochberg 1995). All analyses are run across
 every combination of genomic area, marker and sample group defined
 during the
-[`semseeker()`](https://drake69.github.io/semseeker/reference/semseeker.md)
+[`semseeker()`](https://corsaro-lab.github.io/SEMseeker/reference/semseeker.md)
 call.
 
 ------------------------------------------------------------------------
@@ -31,9 +31,9 @@ call.
 ## Prerequisites
 
 You need a completed semseeker run (see the [Getting started
-vignette](https://drake69.github.io/semseeker/articles/getting-started.md)).
+vignette](https://corsaro-lab.github.io/SEMseeker/articles/getting-started.md)).
 The sample sheet used in the original
-[`semseeker()`](https://drake69.github.io/semseeker/reference/semseeker.md)
+[`semseeker()`](https://corsaro-lab.github.io/SEMseeker/reference/semseeker.md)
 call must already contain the clinical variable(s) you want to test:
 
 ``` r
@@ -549,7 +549,7 @@ abline(h = 0, lty = 2)
 ## Cross-study and cross-subsample analyses
 
 After running
-[`association_analysis()`](https://drake69.github.io/semseeker/reference/association_analysis.md)
+[`association_analysis()`](https://corsaro-lab.github.io/SEMseeker/reference/association_analysis.md)
 on two or more independent cohorts stored in separate `result_folder`s,
 semseeker provides functions to compare and meta-analyse results across
 studies:
@@ -582,9 +582,9 @@ assoc_intra_study_association_subsamples_overlaps(
 ## Complementary: Bayesian posterior probability
 
 While
-[`association_analysis()`](https://drake69.github.io/semseeker/reference/association_analysis.md)
+[`association_analysis()`](https://corsaro-lab.github.io/SEMseeker/reference/association_analysis.md)
 reports frequentist p-values / q-values for each region,
-[`assoc_bayes_analysis()`](https://drake69.github.io/semseeker/reference/assoc_bayes_analysis.md)
+[`assoc_bayes_analysis()`](https://corsaro-lab.github.io/SEMseeker/reference/assoc_bayes_analysis.md)
 provides the *probabilistic complement*: per-region posterior
 probabilities computed via empirical Bayes.
 
@@ -622,7 +622,7 @@ frequentist and a Bayesian view of the same data.
 ## Diagnostic performance: sensitivity and specificity
 
 For binary outcomes (case vs control),
-[`diagnostic_performance()`](https://drake69.github.io/semseeker/reference/diagnostic_performance.md)
+[`diagnostic_performance()`](https://corsaro-lab.github.io/SEMseeker/reference/diagnostic_performance.md)
 computes per-region sensitivity, specificity, Jensen-Shannon distance,
 and a combined diagnostic score — treating each SEM mutation as a
 candidate diagnostic marker.
@@ -645,7 +645,7 @@ cohort. CSV files are written to `<result_folder>/Euristic/`.
 
 ## Cross-study replication
 
-[`assoc_intra_study_association_replication()`](https://drake69.github.io/semseeker/reference/assoc_intra_study_association_replication.md)
+[`assoc_intra_study_association_replication()`](https://corsaro-lab.github.io/SEMseeker/reference/assoc_intra_study_association_replication.md)
 reruns the association on a target study restricted to the regions that
 were already significant in a reference study, then merges the two
 result sets. It’s the standard “replication / validation” workflow when
@@ -666,7 +666,7 @@ assoc_intra_study_association_replication(
 ## Downstream: pathway and enrichment analysis
 
 Significant genomic regions from
-[`association_analysis()`](https://drake69.github.io/semseeker/reference/association_analysis.md)
+[`association_analysis()`](https://corsaro-lab.github.io/SEMseeker/reference/association_analysis.md)
 can be fed directly into pathway enrichment tools:
 
 ``` r
@@ -695,7 +695,7 @@ enrich_pathfindR(
 ```
 
 See the [Pathway and enrichment analysis
-vignette](https://drake69.github.io/semseeker/articles/pathway-analysis.md)
+vignette](https://corsaro-lab.github.io/SEMseeker/articles/pathway-analysis.md)
 for full details.
 
 ------------------------------------------------------------------------

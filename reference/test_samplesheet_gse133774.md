@@ -1,7 +1,7 @@
 # test_samplesheet_gse133774
 
 Sample sheet for
-[`test_signal_gse133774`](https://drake69.github.io/semseeker/reference/test_signal_gse133774.md)
+[`test_signal_gse133774`](https://corsaro-lab.github.io/SEMseeker/reference/test_signal_gse133774.md)
 in the canonical SEMseeker three-class design (Reference / Control /
 Case).
 
@@ -18,7 +18,7 @@ A data frame with 16 rows and 2 columns:
 - Sample_ID:
 
   Sample identifier matching column names of
-  [`test_signal_gse133774`](https://drake69.github.io/semseeker/reference/test_signal_gse133774.md)
+  [`test_signal_gse133774`](https://corsaro-lab.github.io/SEMseeker/reference/test_signal_gse133774.md)
   (e.g. `"CTRL01"`, `"L1"`).
 
 - Sample_Group:

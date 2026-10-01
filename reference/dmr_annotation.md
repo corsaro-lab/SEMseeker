@@ -5,7 +5,7 @@ Illumina methylation arrays. Contains only probes that overlap at least
 one known imprinted or disease-associated DMR. This lightweight table
 (~1,600 rows) supplements the Bioconductor array annotation packages
 used by
-[`anno_probe_annotation_build`](https://drake69.github.io/semseeker/reference/anno_probe_annotation_build.md),
+[`anno_probe_annotation_build`](https://corsaro-lab.github.io/SEMseeker/reference/anno_probe_annotation_build.md),
 which do not carry DMR-level annotations.
 
 ## Usage

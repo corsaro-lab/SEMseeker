@@ -24,4 +24,4 @@ A data frame with rownames = probe IDs (real or synthetic).
 ## Details
 
 Called inside `sem_analyze_batch()` before
-[`core_get_meth_tech()`](https://drake69.github.io/semseeker/reference/core_get_meth_tech.md).
+[`core_get_meth_tech()`](https://corsaro-lab.github.io/SEMseeker/reference/core_get_meth_tech.md).

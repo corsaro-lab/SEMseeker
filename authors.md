@@ -2,8 +2,9 @@
 
 ## Authors
 
-- **[Luigi Corsaro](https://drake69.github.io/)**. Author, maintainer.
-  [](https://orcid.org/0000-0003-1218-230X)
+- **[Luigi
+  Corsaro](https://luigicorsaro.com/?utm_source=semseeker-docs)**.
+  Author, maintainer. [](https://orcid.org/0000-0003-1218-230X)
 
 ## Citation
 

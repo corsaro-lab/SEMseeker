@@ -3,9 +3,9 @@
 Internal helper. Assembles the per-probe annotation (genomic position,
 cytoband and DMR/area membership) for an Illumina methylation array
 platform, joining the bundled
-[`cytoband_hg19`](https://drake69.github.io/semseeker/reference/cytoband_hg19.md)
+[`cytoband_hg19`](https://corsaro-lab.github.io/SEMseeker/reference/cytoband_hg19.md)
 and
-[`dmr_annotation`](https://drake69.github.io/semseeker/reference/dmr_annotation.md)
+[`dmr_annotation`](https://corsaro-lab.github.io/SEMseeker/reference/dmr_annotation.md)
 reference data.
 
 ## Usage

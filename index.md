@@ -18,7 +18,7 @@ Supported input technologies:
   automatically
 - **Bisulfite sequencing (WGBS / RRBS)** and **long-read sequencing (ONT
   / PacBio)**: planned (see
-  [documents/requirements.md](https://drake69.github.io/semseeker/documents/requirements.md))
+  [documents/requirements.md](https://corsaro-lab.github.io/SEMseeker/documents/requirements.md))
 
 ------------------------------------------------------------------------
 

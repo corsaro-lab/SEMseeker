@@ -3,7 +3,7 @@
 ## Overview
 
 After
-[`association_analysis()`](https://drake69.github.io/semseeker/reference/association_analysis.md)
+[`association_analysis()`](https://corsaro-lab.github.io/SEMseeker/reference/association_analysis.md)
 has identified genomic regions whose SEM metrics (ΔRP, mutation counts,
 …) are statistically associated with a phenotype, the next step is to
 ask: **which biological pathways and molecular networks are enriched
@@ -11,7 +11,7 @@ among those regions?**
 
 semseeker provides six pathway/enrichment functions that all accept the
 output of
-[`association_analysis()`](https://drake69.github.io/semseeker/reference/association_analysis.md)
+[`association_analysis()`](https://corsaro-lab.github.io/SEMseeker/reference/association_analysis.md)
 as input and run the enrichment for every combination of genomic area,
 marker type and sample group that was analysed:
 
@@ -26,7 +26,7 @@ marker type and sample group that was analysed:
 
 All functions are **session-aware**: they read the active semseeker
 session (initialised by
-[`association_analysis()`](https://drake69.github.io/semseeker/reference/association_analysis.md))
+[`association_analysis()`](https://corsaro-lab.github.io/SEMseeker/reference/association_analysis.md))
 and therefore do **not** require passing `result_folder` again — they
 pick it up automatically via `core_get_session_info()`.
 
@@ -45,7 +45,7 @@ pick it up automatically via `core_get_session_info()`.
 
 The `inference_details` object passed to the pathway functions is the
 **same** data frame used in
-[`association_analysis()`](https://drake69.github.io/semseeker/reference/association_analysis.md).
+[`association_analysis()`](https://corsaro-lab.github.io/SEMseeker/reference/association_analysis.md).
 It tells the pathway functions which statistical results to use as the
 gene list for enrichment.
 
@@ -481,8 +481,8 @@ enrich_intra_study_enrichment_subsamples_overlaps(
 | Partial pathway activation (sparse hits) | `enrich_pathfindR()` |
 | Environmental/chemical exposure study | `enrich_ctdR()` |
 | Known disease hypothesis | `enrich_Phenolyzer_WebGestalt()` or `enrich_Phenolyzer_STRINGdb()` |
-| Replication across cohorts | [`enrich_inter_study_enrichment_compare()`](https://drake69.github.io/semseeker/reference/enrich_inter_study_enrichment_compare.md) |
-| Bootstrap stability check | [`enrich_intra_study_enrichment_subsamples_overlaps()`](https://drake69.github.io/semseeker/reference/enrich_intra_study_enrichment_subsamples_overlaps.md) |
+| Replication across cohorts | [`enrich_inter_study_enrichment_compare()`](https://corsaro-lab.github.io/SEMseeker/reference/enrich_inter_study_enrichment_compare.md) |
+| Bootstrap stability check | [`enrich_intra_study_enrichment_subsamples_overlaps()`](https://corsaro-lab.github.io/SEMseeker/reference/enrich_intra_study_enrichment_subsamples_overlaps.md) |
 
 ## Session info
 

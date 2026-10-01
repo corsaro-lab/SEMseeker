@@ -1,7 +1,7 @@
 # cytoband_hg19
 
 Cytogenetic band coordinates for the hg19 human genome assembly. Used by
-[`anno_probe_annotation_build`](https://drake69.github.io/semseeker/reference/anno_probe_annotation_build.md)
+[`anno_probe_annotation_build`](https://corsaro-lab.github.io/SEMseeker/reference/anno_probe_annotation_build.md)
 to assign a `CHR_CYTOBAND` label (e.g. `"q12.2"`) to each CpG probe
 based on its chromosomal position. Band boundaries are derived from
 probe positions in the full Illumina EPIC annotation and cover all

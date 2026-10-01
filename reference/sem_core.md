@@ -1,11 +1,11 @@
 # Core SEMseeker pipeline (internal)
 
 Internal entry point used by the public
-[`semseeker`](https://drake69.github.io/semseeker/reference/semseeker.md)
+[`semseeker`](https://corsaro-lab.github.io/SEMseeker/reference/semseeker.md)
 dispatcher. Accepts already-normalised signal data (matrix or data frame
 with probe-ID rownames) and runs the full SEM analysis. Users should
 call
-[`semseeker`](https://drake69.github.io/semseeker/reference/semseeker.md)
+[`semseeker`](https://corsaro-lab.github.io/SEMseeker/reference/semseeker.md)
 instead, which handles input normalisation, M-value conversion, and
 tech/genome_build validation.
 

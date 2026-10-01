@@ -44,7 +44,7 @@ A data frame with 20,000 rows and 6 columns:
 ## Source
 
 Built from
-[`dmr_annotation`](https://drake69.github.io/semseeker/reference/dmr_annotation.md)
+[`dmr_annotation`](https://corsaro-lab.github.io/SEMseeker/reference/dmr_annotation.md)
 and the `IlluminaHumanMethylationEPICanno.ilm10b4.hg19` Bioconductor
 annotation package with `set.seed(20210713)` (date of the v.0.1.9 Zenodo
 software-archive release, DOI
@@ -56,7 +56,7 @@ Re-generate with `Rscript data-raw/build_test_master_features.R`.
 Construction strategy (see `data-raw/build_test_master_features.R`):
 
 1.  All unique probe IDs in
-    [`dmr_annotation`](https://drake69.github.io/semseeker/reference/dmr_annotation.md)
+    [`dmr_annotation`](https://corsaro-lab.github.io/SEMseeker/reference/dmr_annotation.md)
     are kept as the biological *signal* layer (~820 probes labelled with
     their parent DMR in `DMR_LABEL`).
 

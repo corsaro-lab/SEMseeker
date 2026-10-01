@@ -26,13 +26,13 @@ requested feature column.
 
 For **Illumina** data (K850/K450/K27), annotations are built from
 Bioconductor array annotation packages (see
-[`anno_probe_annotation_build`](https://drake69.github.io/semseeker/reference/anno_probe_annotation_build.md))
+[`anno_probe_annotation_build`](https://corsaro-lab.github.io/SEMseeker/reference/anno_probe_annotation_build.md))
 and cached in the session environment.
 
 For **WGBS** and **LONGREAD** data, coordinates are read directly from
 the saved POSITION pivot parquet; semantic areas (GENE\_\*, ISLAND\_\*,
 CHR_CYTOBAND, DMR\_\*) are resolved via
-[`anno_area_granges_build`](https://drake69.github.io/semseeker/reference/anno_area_granges_build.md)
+[`anno_area_granges_build`](https://corsaro-lab.github.io/SEMseeker/reference/anno_area_granges_build.md)
 and
 [`GenomicRanges::findOverlaps()`](https://rdrr.io/pkg/IRanges/man/findOverlaps-methods.html).
 

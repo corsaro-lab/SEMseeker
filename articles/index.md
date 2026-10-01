@@ -3,8 +3,8 @@
 ### All vignettes
 
 - [Association analysis — statistical models, correlation and group
-  tests](https://drake69.github.io/semseeker/articles/association-analysis.md):
+  tests](https://corsaro-lab.github.io/SEMseeker/articles/association-analysis.md):
 - [Getting started — epimutations and delta
-  metrics](https://drake69.github.io/semseeker/articles/getting-started.md):
+  metrics](https://corsaro-lab.github.io/SEMseeker/articles/getting-started.md):
 - [Pathway and enrichment
-  analysis](https://drake69.github.io/semseeker/articles/pathway-analysis.md):
+  analysis](https://corsaro-lab.github.io/SEMseeker/articles/pathway-analysis.md):

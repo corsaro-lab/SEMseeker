@@ -61,7 +61,7 @@ sem_manhattan_plot_marker_per_sample(
 - ...:
 
   Additional arguments passed to
-  [`core_init_env()`](https://drake69.github.io/semseeker/reference/core_init_env.md).
+  [`core_init_env()`](https://corsaro-lab.github.io/SEMseeker/reference/core_init_env.md).
 
 ## Value
 

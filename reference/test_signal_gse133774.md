@@ -3,7 +3,7 @@
 Real EPIC methylation beta-value matrix from GEO series GSE133774
 (Infinium MethylationEPIC 850k, GPL21145), filtered to the probe IDs
 present in
-[`test_master_features`](https://drake69.github.io/semseeker/reference/test_master_features.md).
+[`test_master_features`](https://corsaro-lab.github.io/SEMseeker/reference/test_master_features.md).
 Contains 10 samples from a Beckwith-Wiedemann Syndrome (BWS) /
 Multi-Locus Imprinting Disturbance (MLID) family study: 6 unrelated
 controls and 4 family members (L1 = BWS proband, L2–L4 = siblings/parent

@@ -1,10 +1,10 @@
 # Cross-pipeline annotation concordance report (Illumina manifest vs WGBS)
 
 Validates
-[`anno_area_granges_build`](https://drake69.github.io/semseeker/reference/anno_area_granges_build.md)
+[`anno_area_granges_build`](https://corsaro-lab.github.io/SEMseeker/reference/anno_area_granges_build.md)
 (the WGBS / long-read annotation path) against the Illumina manifest
 annotation used by
-[`anno_probe_annotation_build`](https://drake69.github.io/semseeker/reference/anno_probe_annotation_build.md).
+[`anno_probe_annotation_build`](https://corsaro-lab.github.io/SEMseeker/reference/anno_probe_annotation_build.md).
 The two pipelines are expected to assign CpGs to the same semantic areas
 (`GENE_*`, `ISLAND_*`, `CHR_CYTOBAND`, `DMR_*`). This function takes a
 subset of Illumina probes of known annotation, runs the WGBS pipeline on
@@ -89,5 +89,5 @@ and excluded from the rate denominators to avoid inflating the score.
 
 ## See also
 
-[`anno_probe_annotation_build`](https://drake69.github.io/semseeker/reference/anno_probe_annotation_build.md),
-[`anno_area_granges_build`](https://drake69.github.io/semseeker/reference/anno_area_granges_build.md).
+[`anno_probe_annotation_build`](https://corsaro-lab.github.io/SEMseeker/reference/anno_probe_annotation_build.md),
+[`anno_area_granges_build`](https://corsaro-lab.github.io/SEMseeker/reference/anno_area_granges_build.md).
