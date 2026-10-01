@@ -122,3 +122,23 @@ test_that(".anno_probe_schema names the columns the builder selects", {
   expect_false("K450" %in% s)
   expect_true("K450" %in% SEMseeker:::.anno_probe_schema("K450"))
 })
+
+test_that("the cache file name carries the shape of what it holds", {
+  # The schema inside the file settles one direction: a build reading a file written
+  # for other columns rebuilds it. The other direction cannot be settled from
+  # inside, because the build that gets it wrong is one that already shipped: it
+  # reads the file and uses the result as a table, so a file holding anything else
+  # stops it on an undefined column. The defence is the name, which is all it reads
+  # before opening.
+  f <- basename(SEMseeker:::.anno_probe_cache_file("K850_hg19"))
+
+  expect_match(f, "^probe_annotation_v2_K850_hg19\\.rds$")
+
+  # And explicitly not the name an earlier build goes looking for, which is the
+  # whole point: the two never meet.
+  expect_false(identical(f, "probe_annotation_K850_hg19.rds"))
+
+  # The key still separates technology and genome build within the format.
+  expect_false(identical(f, basename(SEMseeker:::.anno_probe_cache_file("K450_hg19"))))
+  expect_false(identical(f, basename(SEMseeker:::.anno_probe_cache_file("K850_hg38"))))
+})
