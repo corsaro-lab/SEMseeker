@@ -201,6 +201,18 @@ test_that("no two (region class, aggregation) pairs answer with the same numbers
     showprogress      = showprogress,
     verbosity         = verbosity)
 
+  # semseeker() closes the session it opened, so reading its artefacts needs the
+  # session back, and the reopen has to name the same coordinates as the run: an
+  # option the reopen leaves out is filled with its default, not with what the run
+  # asked for. Before the close emptied the session these reads were answered by
+  # the one it had left standing in memory, which is why they named nothing.
+  SEMseeker:::core_init_env(result_folder = tempFolder,
+                            parallel_strategy = "sequential",
+                            areas = c("GENE", "PROBE"),
+                            subareas = c("WHOLE", "TSS1500"),
+                            markers = c("MUTATIONS"),
+                            start_fresh = FALSE)
+
   classes <- list(c("PROBE", "WHOLE"), c("GENE", "WHOLE"), c("GENE", "TSS1500"))
   aggs    <- SEMseeker:::util_aggregations_allowed("MUTATIONS", "HYPER",
                                                    discrete = TRUE, default = FALSE,

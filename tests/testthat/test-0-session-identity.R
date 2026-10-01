@@ -66,3 +66,35 @@ test_that("asking for a folder that never held a session gives a session, not th
   recovered <- SEMseeker:::core_get_session_info(elsewhere)
   expect_true(is.null(recovered$LESIONS_BP) || length(recovered) == 0L)
 })
+
+test_that("after a close there is no session, so reading one without a folder fails", {
+  folder <- sem_test_folder()
+  on.exit(unlink(folder, recursive = TRUE), add = TRUE)
+
+  SEMseeker:::core_init_env(folder, parallel_strategy = "sequential",
+                            start_fresh = TRUE, LESIONS_BP = 2468L)
+  # Both ends pinned, as above: the value has to have taken effect before the
+  # close, or the assertion after it would pass on an option that never arrived.
+  expect_equal(as.integer(SEMseeker:::core_get_session_info()$LESIONS_BP), 2468L)
+
+  SEMseeker:::core_close_env()
+
+  # No folder named and nothing left in memory: there is no session to answer
+  # with. Answering with the closed one is how a caller that forgot to
+  # initialise received a stale session instead of a failure.
+  expect_error(SEMseeker:::core_get_session_info(),
+               "called without result folder")
+})
+
+test_that("closing a session that is already closed is not an error", {
+  folder <- sem_test_folder()
+  on.exit(unlink(folder, recursive = TRUE), add = TRUE)
+
+  SEMseeker:::core_init_env(folder, parallel_strategy = "sequential",
+                            start_fresh = TRUE)
+  SEMseeker:::core_close_env()
+
+  # Reachable only once a close empties the session, and reached often: the
+  # on.exit() idiom in these tests closes again after the body already did.
+  expect_silent(SEMseeker:::core_close_env())
+})

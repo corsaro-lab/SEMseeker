@@ -99,6 +99,17 @@ test_that("semseeker() writes the statistics sibling and leaves the sample sheet
     verbosity         = verbosity
   )
 
+  # semseeker() closes the session it opened, so reading its artefacts needs the
+  # session back, and the reopen has to name the same coordinates as the run: an
+  # option the reopen leaves out is filled with its default, not with what the run
+  # asked for. Before the close emptied the session these reads were answered by
+  # the one it had left standing in memory, which is why they named nothing.
+  SEMseeker:::core_init_env(result_folder = tempFolder,
+                            parallel_strategy = "sequential",
+                            areas = c("POSITION"),
+                            markers = c("MUTATIONS", "DELTAP", "DELTAS"),
+                            start_fresh = FALSE)
+
   # AI-255: the statistics are SCOPE = SAMPLE artefacts, composed on read.
   sheet_csv <- file.path(tempFolder, "Data", "SAMPLE_SHEET_RESULT.csv")
   expect_true(file.exists(sheet_csv))
@@ -192,6 +203,14 @@ test_that("a region scope reaches the sibling and the depth=1 inference", {
     showprogress        = showprogress,
     verbosity           = verbosity
   )
+
+  # Same reopen as above, with this run's own coordinates.
+  SEMseeker:::core_init_env(result_folder = tempFolder,
+                            parallel_strategy = "sequential",
+                            areas = c("POSITION", "GENE"),
+                            subareas = c("WHOLE", "TSS1500"),
+                            markers = c("MUTATIONS", "SIGNAL"),
+                            start_fresh = FALSE)
 
   # AI-255: the region class is asked for at read time, not declared before the
   # run. This is the whole point — no rerun to change your mind.

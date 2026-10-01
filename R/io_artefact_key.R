@@ -48,7 +48,12 @@ io_artefact_key <- function(marker, figure, scope, area, subarea, aggregation,
   scope <- io_scope_validate(scope)
 
   if (is.null(genome_build) || !nzchar(as.character(genome_build))) {
-    ssEnv <- core_get_session_info()
+    # The session is consulted for one optional value that already has a default
+    # here, so the absence of a session is the same answer as the absence of the
+    # value: hg19. Reading it unguarded made a key impossible to compose outside
+    # an open analysis, which is more than this function needs to do its job -
+    # every other coordinate arrives as an argument.
+    ssEnv <- tryCatch(core_get_session_info(), error = function(e) NULL)
     genome_build <- if (!is.null(ssEnv$genome_build) && nzchar(ssEnv$genome_build))
       ssEnv$genome_build else "hg19"
   }
