@@ -149,9 +149,11 @@ test_that("util_data_frame_add_column preserves existing columns", {
 # ---------------------------------------------------------------------------
 # assoc_filter_sql uses sqldf internally and calls core_log_event (requires a session).
 # Tests that exercise the sqldf path are wrapped with core_init_env / close_env.
-# sqldf resolves table names from the calling frame; we therefore call
-# assoc_filter_sql via a thin wrapper so that the local variable name matches
-# what the function expects.
+#
+# sqldf looks its tables up by name in the environment it is handed, and the
+# function hands it one of its own holding nothing but the table. No wrapper is
+# needed here: an earlier version of this comment described one, from when the
+# table was registered in the caller's frame.
 
 test_that("assoc_filter_sql returns data unchanged for empty conditions", {
   df <- data.frame(x = 1:5, g = c("a","b","a","b","a"))
@@ -216,4 +218,74 @@ test_that("assoc_filter_sql returns empty data.frame when no rows match", {
 
   SEMseeker:::core_close_env()
   unlink(tempFolder, recursive = TRUE)
+})
+
+# ---------------------------------------------------------------------------
+# assoc_filter_sql and the user's workspace
+#
+# The table used to be registered in the global environment under a fixed name and
+# removed afterwards. A package may not write to the workspace of whoever is using
+# it, and the cost was not only formal: an object of that name belonging to the
+# user was overwritten and then deleted, and the removal was not protected against
+# an error, so the one case that left the workspace dirty was the case where the
+# query had already failed.
+# ---------------------------------------------------------------------------
+
+test_that("assoc_filter_sql leaves an object of the user's alone", {
+  tempFolder <- sem_test_folder()
+  SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
+                            showprogress = showprogress, verbosity = verbosity)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tempFolder, recursive = TRUE) },
+          add = TRUE)
+
+  # Under the very name the function used to borrow.
+  sentinel <- "this belongs to the caller"
+  assign("ssdf_tmp", sentinel, envir = globalenv())
+  on.exit(suppressWarnings(rm("ssdf_tmp", envir = globalenv())), add = TRUE)
+
+  result <- SEMseeker:::assoc_filter_sql("x > 7", data.frame(x = 1:10))
+
+  # The filter did its job...
+  expect_equal(nrow(result), 3)
+  # ...and the caller's object is still there, with its value.
+  expect_true(exists("ssdf_tmp", envir = globalenv(), inherits = FALSE))
+  expect_identical(get("ssdf_tmp", envir = globalenv(), inherits = FALSE), sentinel)
+})
+
+test_that("assoc_filter_sql writes nothing to the workspace, failing or not", {
+  tempFolder <- sem_test_folder()
+  SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
+                            showprogress = showprogress, verbosity = verbosity)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tempFolder, recursive = TRUE) },
+          add = TRUE)
+
+  skip_if(exists("ssdf_tmp", envir = globalenv(), inherits = FALSE),
+          "the workspace already holds that name")
+
+  # A query that succeeds.
+  SEMseeker:::assoc_filter_sql("x > 2", data.frame(x = 1:5))
+  expect_false(exists("ssdf_tmp", envir = globalenv(), inherits = FALSE))
+
+  # And one that cannot: the column is not there. Reached only because nothing is
+  # written in the first place, which is why there is nothing to clean up.
+  try(suppressWarnings(
+    SEMseeker:::assoc_filter_sql("no_such_column > 1", data.frame(x = 1:5))),
+    silent = TRUE)
+  expect_false(exists("ssdf_tmp", envir = globalenv(), inherits = FALSE))
+})
+
+test_that("a condition carrying a sub-statement finds the table", {
+  tempFolder <- sem_test_folder()
+  SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
+                            showprogress = showprogress, verbosity = verbosity)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tempFolder, recursive = TRUE) },
+          add = TRUE)
+
+  # TABLE is the placeholder the function documents by refusing anything else. It
+  # was replaced with the name of a local variable rather than the name the table
+  # is registered under, so this branch asked for a table nobody had registered.
+  df <- data.frame(x = 1:10)
+  result <- SEMseeker:::assoc_filter_sql("x IN (SELECT x FROM TABLE WHERE x > 6)", df)
+
+  expect_equal(sort(result$x), 7:10)
 })
