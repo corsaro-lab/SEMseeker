@@ -48,8 +48,7 @@ test_that("util_split_and_clean respects a custom split delimiter", {
 # ---------------------------------------------------------------------------
 
 test_that("assoc_validate_family_test accepts standard parametric families", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
@@ -67,8 +66,7 @@ test_that("assoc_validate_family_test accepts standard parametric families", {
 })
 
 test_that("assoc_validate_family_test accepts parametric family variants", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
@@ -86,8 +84,7 @@ test_that("assoc_validate_family_test accepts parametric family variants", {
 })
 
 test_that("assoc_validate_family_test rejects NULL, NA, and unknown strings", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
@@ -108,8 +105,7 @@ test_that("assoc_validate_family_test rejects NULL, NA, and unknown strings", {
 # ---------------------------------------------------------------------------
 
 test_that("association_analysis at scope SAMPLE runs without error and writes inference CSV", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   unlink(tempFolder, recursive = TRUE)
 
   # ── Step 0: build synthetic data WITH guaranteed mutations ────────────────
@@ -210,8 +206,7 @@ test_that("association_analysis at scope SAMPLE runs without error and writes in
 # ---------------------------------------------------------------------------
 
 .aa_setup_result_folder <- function(seed = 777, n_probes = 200L, areas = c("GENE", "POSITION")) {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   unlink(tempFolder, recursive = TRUE)
 
   set.seed(seed)
@@ -442,8 +437,7 @@ test_that("association_analysis is idempotent: second run on same folder does no
 # ---------------------------------------------------------------------------
 
 test_that("association_analysis skips gracefully when independent_variable absent from sample sheet", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   unlink(tempFolder, recursive = TRUE)
 
   # Reuse the same bimodal injected-outlier signal as test 3

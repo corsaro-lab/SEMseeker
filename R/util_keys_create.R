@@ -32,7 +32,7 @@ util_keys_create <- function(ssEnv, arguments)
   rm(keys_figures_default_continuos, keys_markers_default_continuos)
 
   # AI-248: the figure of SIGNAL is the SCALE of the value (BETA / MVALUE), not
-  # a way of aggregating it — "MEAN" used to sit here as a placeholder that made
+  # a way of aggregating it - "MEAN" used to sit here as a placeholder that made
   # the key unique. The scale is unknown at init (no data read yet), so this is
   # the bounded default; core_get_meth_tech() realigns it via
   # util_keys_signal_figure_refresh() as soon as the first batch is seen.

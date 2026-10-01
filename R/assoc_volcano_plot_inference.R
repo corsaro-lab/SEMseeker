@@ -8,13 +8,13 @@
 #' convention so the visual artifact is one-to-one traceable to the
 #' analytic output:
 #'
-#'   `{MARKER}_{IV}_{transformation_y}_{family}_{covariates}_{areas_sql_condition}_{AREA}_{SUBAREA}.png`
+#'   `<MARKER>_<IV>_<transformation_y>_<family>_<covariates>_<areas_sql_condition>_<AREA>_<SUBAREA>.png`
 #'
 #' (passed through `core_name_cleaning()` which uppercases + replaces
 #' comparison operators with `_GT_` / `_LT_` / `_EQ_` etc.)
 #'
 #' @param inference_detail A single row of `inference_details` (data.frame
-#'   or list) — the same shape consumed by `association_analysis()`. Must
+#'   or list) - the same shape consumed by `association_analysis()`. Must
 #'   carry `independent_variable`, `family_test`, `covariates`,
 #'   `covariates_dummy`, `transformation_y`,
 #'   `areas_sql_condition`, `samples_sql_condition`.
@@ -37,6 +37,8 @@
 #' @param dpi Plot resolution. Defaults to `ssEnv$plot_resolution_ppi`
 #'   (typically 600).
 #' @param overwrite If FALSE (default) skip PNGs that already exist.
+#' @param pvalue_column Name of the p-value column to plot on the y axis. NULL
+#'   lets the function pick the adjusted column matching the inference request
 #'
 #' @return Invisibly, a character vector of the PNG paths written
 #'   (or that would have been written, when `overwrite = FALSE` and
@@ -93,9 +95,9 @@ assoc_volcano_plot_inference <- function(inference_detail,
 
   # AI-044 (2026-06-09): pvalue_column resolution order:
   #   1. explicit `pvalue_column` argument (caller override)
-  #   2. `inference_detail$pvalue_column` (forward-compat — not yet in
+  #   2. `inference_detail$pvalue_column` (forward-compat - not yet in
   #      assoc_validate_inference_schema but accepted if user supplies)
-  #   3. default `PVALUE_ADJ_ALL_FDR` — the one column SEMseeker writes
+  #   3. default `PVALUE_ADJ_ALL_FDR` - the one column SEMseeker writes
   #      for every association run regardless of family/engine.
   if (is.null(pvalue_column) || !nzchar(pvalue_column)) {
     pvalue_column <- if (!is.null(inference_detail$pvalue_column) &&
@@ -152,7 +154,7 @@ assoc_volcano_plot_inference <- function(inference_detail,
         core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
                   " assoc_volcano_plot_inference: io_inference_file_name failed for ",
                   marker, ": ", conditionMessage(e),
-                  " — falling back to manual list.files() scan.")
+                  " - falling back to manual list.files() scan.")
         NULL
       }
     )
@@ -167,7 +169,7 @@ assoc_volcano_plot_inference <- function(inference_detail,
 
     if (is.null(csv_path) || !file.exists(csv_path)) {
       # Permissive fallback: scan Inference/ for a file starting with
-      # `{MARKER}_{IV}_` and matching family. Useful when
+      # `<MARKER>_<IV>_` and matching family. Useful when
       # the inference_detail row has changed slightly since the CSV was
       # written (e.g. additional dummy covariates added downstream).
       prefix <- core_name_cleaning(paste(c(marker, iv), collapse = "_"))
@@ -185,13 +187,13 @@ assoc_volcano_plot_inference <- function(inference_detail,
       } else if (length(candidates) > 1L) {
         core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
                   " assoc_volcano_plot_inference: ambiguous match for marker '",
-                  marker, "' — ", length(candidates),
+                  marker, "' - ", length(candidates),
                   " CSVs share the prefix. Skipping.")
         next
       } else {
         core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
                   " assoc_volcano_plot_inference: no CSV for marker '", marker,
-                  "' in ", inference_folder, " — skipping.")
+                  "' in ", inference_folder, " - skipping.")
         next
       }
     }
@@ -214,7 +216,7 @@ assoc_volcano_plot_inference <- function(inference_detail,
       core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
                 " assoc_volcano_plot_inference: ", csv_path,
                 " missing columns: ", paste(missed, collapse = ", "),
-                " (pvalue_column='", pvalue_column, "') — skipping.")
+                " (pvalue_column='", pvalue_column, "') - skipping.")
       next
     }
 
@@ -227,7 +229,7 @@ assoc_volcano_plot_inference <- function(inference_detail,
     if (is.null(estimate_col)) {
       core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
                 " assoc_volcano_plot_inference: ", csv_path,
-                " — could not identify primary ESTIMATE column. Skipping.")
+                " - could not identify primary ESTIMATE column. Skipping.")
       next
     }
 
@@ -269,7 +271,7 @@ assoc_volcano_plot_inference <- function(inference_detail,
             name = NULL) +
           ggplot2::labs(
             title = util_pretty_label(sprintf(
-              "%s — %s / %s — %s vs %s",
+              "%s - %s / %s - %s vs %s",
               marker, area, subarea, iv, family_test)),
             subtitle = util_pretty_label(sprintf(
               "areas_sql=%s | covariates=%s",

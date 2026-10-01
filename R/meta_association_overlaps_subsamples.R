@@ -1,6 +1,34 @@
+#' Compare association results across subsamples of one study
+#'
+#' Same comparison as \code{\link{meta_association_overlaps_studies}} but
+#' within a single study, across the subsamples produced by a replication run.
+#' It joins the per-subsample inference results on the area taxonomy and writes,
+#' per area, which subsamples called it significant.
+#'
+#' @param inference_details Inference specification rows identifying the
+#'   requests whose results are compared.
+#' @param alpha Significance threshold applied to \code{pvalue_column}.
+#' @param adjust_per_area Adjust p-values within each area separately.
+#' @param adjust_globally Adjust p-values across the whole result set.
+#' @param pvalue_column Name of the p-value column to test against
+#'   \code{alpha}. Defaults to the all-scope BH-adjusted column.
+#' @param statistic_parameter Name of the effect-size column carried into the
+#'   comparison table alongside the p-value.
+#' @param adjustment_method Multiple-testing correction passed to
+#'   \code{stats::p.adjust()}.
+#' @param old_label,new_label Optional relabelling of the subsample names in
+#'   the output table.
+#' @param run_prefix Prefix prepended to the output file names, to keep the
+#'   results of several runs side by side.
+#' @param result_folder Folder holding the subsamples' results and receiving
+#'   the comparison output.
+#' @param ... Passed through to the session setup.
+#'
+#' @return Called for its side effect: CSV files written under the inference
+#'   folder. Returns \code{NULL} invisibly, and early if no results are found.
 # compare inference associations of different sub samples
 #' @export
-assoc_intra_study_association_subsamples_overlaps <- function(inference_details,alpha = 0.05, adjust_per_area = FALSE,
+meta_association_overlaps_subsamples <- function(inference_details,alpha = 0.05, adjust_per_area = FALSE,
   adjust_globally = FALSE,pvalue_column="PVALUE_ADJ_ALL_BH",statistic_parameter, adjustment_method = "BH",
   old_label = NULL, new_label = NULL, run_prefix = "",
   result_folder, ...)

@@ -15,6 +15,10 @@
 assoc_glm_model <- function(family_test, tempDataFrame, sig.formula, transformation_y, plot, samples_sql_condition=samples_sql_condition, key)
 {
 
+  # The plotting branches below read ssEnv$color_palette. The lookup was
+  # missing, so every plot = TRUE call died on an unbound ssEnv.
+  ssEnv <- core_get_session_info()
+
   area <- as.character(key$AREA)
   subarea <- as.character(key$SUBAREA)
   marker <- as.character(key$MARKER)

@@ -1,5 +1,5 @@
 core_recover <- function(result_folder, maxResources = 90,
-  parallel_strategy  = "multicore",start_fresh = FALSE, ...)
+  parallel_strategy  = "multisession",start_fresh = FALSE, ...)
 {
 
   arguments <- list(...)

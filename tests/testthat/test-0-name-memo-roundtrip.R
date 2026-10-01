@@ -120,7 +120,7 @@ test_that("assoc_apply_stat_model carries the sanitize+memo+counter-rename patte
   )
   # Memo
   expect_true(
-    grepl("safe_to_real\\s*<-\\s*setNames\\(real_cols,\\s*safe_cols\\)", src),
+    grepl("safe_to_real\\s*<-\\s*(stats::)?setNames\\(real_cols,\\s*safe_cols\\)", src),
     info = "Per-gene path must memoise safe_to_real"
   )
   # Counter-rename when assigning AREA_OF_TEST
@@ -137,7 +137,7 @@ test_that("diagnostic_performance carries the same sanitize+memo+counter-rename 
     info = "diagnostic_performance must build safe_cols from real_cols"
   )
   expect_true(
-    grepl("safe_to_real\\s*<-\\s*setNames\\(real_cols,\\s*safe_cols\\)", src),
+    grepl("safe_to_real\\s*<-\\s*(stats::)?setNames\\(real_cols,\\s*safe_cols\\)", src),
     info = "diagnostic_performance must memoise safe_to_real"
   )
   expect_true(

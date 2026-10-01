@@ -76,7 +76,7 @@ plot_create_heatmap <- function() {
                 ggplot2::geom_tile() +
                 ggplot2::scale_fill_gradientn(colours = grDevices::cm.colors(256)) +
                 ggplot2::theme_minimal(base_size = 15) +
-                ggplot2::theme(axis.text.x = element_text(angle = 90, hjust = 1), plot.margin = unit(c(2.5, 2.5, 2.5, 2.5), "cm")) +
+                ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, hjust = 1), plot.margin = unit(c(2.5, 2.5, 2.5, 2.5), "cm")) +
                 ggplot2::labs(title = mainTitle, x = "", y = "")
 
               # Save the plot

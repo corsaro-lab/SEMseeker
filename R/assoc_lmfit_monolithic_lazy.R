@@ -18,15 +18,15 @@
 #'   `area_to_remove` and transformed by `io_data_preparation_lazy()`.
 #'   First column MUST be `AREA` (probe / position identifier); the
 #'   remaining columns are samples.
-#' @param sample_cols_kept Character vector — sample column names that
+#' @param sample_cols_kept Character vector - sample column names that
 #'   survived the IV / covariates complete-cases filter. Used to subset
 #'   the pivot lazily before materialisation.
-#' @param design Numeric matrix — the design passed to `limma::lmFit()`.
-#' @param engine Character — `"limma"` or `"voom"`. Selects whether to
+#' @param design Numeric matrix - the design passed to `limma::lmFit()`.
+#' @param engine Character - `"limma"` or `"voom"`. Selects whether to
 #'   run `limma::voom()` first.
-#' @param key List with `MARKER`/`FIGURE`/`AREA`/`SUBAREA` — for log lines.
-#' @param family_test Character — the inference_detail family identifier
-#'   (`"limma_2"`, `"voom_2"`, …). Passed through to log lines.
+#' @param key List with `MARKER`/`FIGURE`/`AREA`/`SUBAREA` - for log lines.
+#' @param family_test Character - the inference_detail family identifier
+#'   (`"limma_2"`, `"voom_2"`, ...). Passed through to log lines.
 #'
 #' @return The pre-eBayes `MArrayLM` fit object, or NULL on failure
 #'   (NULL is silently propagated by the dispatcher).

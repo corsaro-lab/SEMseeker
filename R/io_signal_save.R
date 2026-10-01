@@ -27,7 +27,7 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
   signal_data <- signal_data[, unique(sample_sheet$Sample_ID), drop = FALSE]
 
   # ------------------------------------------------------------------
-  # WGBS / LONGREAD path — coordinates are encoded in synthetic probe IDs.
+  # WGBS / LONGREAD path - coordinates are encoded in synthetic probe IDs.
   # No Bioconductor annotation join is needed.
   # ------------------------------------------------------------------
   if (ssEnv$tech %in% c("WGBS", "LONGREAD")) {
@@ -69,7 +69,7 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
   }
 
   # ------------------------------------------------------------------
-  # Illumina path — join with Bioconductor annotation to get CHR/START/END
+  # Illumina path - join with Bioconductor annotation to get CHR/START/END
   # ------------------------------------------------------------------
   signal_data$AREA <- rownames(signal_data)
   signal_data      <- signal_data[, c(ncol(signal_data), seq_len(ncol(signal_data) - 1))]
@@ -135,7 +135,7 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
     # viene interpretato come nomi di colonna invece che valori → "not found".
     sd_chr <- pp_lazy$filter(polars::pl$col("CHR") == ch)$
                       join(sd_lazy, on = "PROBE", how = "inner")$
-                      drop(c("PROBE", "AREA"))$  # pf already slim to CHR/START/END/PROBE — no PROBE_WHOLE to strip here
+                      drop(c("PROBE", "AREA"))$  # pf already slim to CHR/START/END/PROBE - no PROBE_WHOLE to strip here
                       sort(c("START", "END"), descending = FALSE)
     sd_chr$sink_parquet(chunk_file)
     # Defensive cleanup: rilascia R-side reference, forza gc() per evitare
@@ -146,7 +146,7 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
             " post-chunked-sort mem_MB=", round(sum(gc()[, "(Mb)"]), 1),
             " (wrote ", length(chrs), " chunks)")
 
-  # Libera pp_lazy + sd_lazy + pf prima del concat — la lazy frame del concat
+  # Libera pp_lazy + sd_lazy + pf prima del concat - la lazy frame del concat
   # streamerà i chunk dal filesystem, non serve mantenere queste references.
   rm(sd_lazy, pp_lazy, pf); invisible(gc(verbose = FALSE))
 

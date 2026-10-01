@@ -1,0 +1,18 @@
+# The build context is what COPY . . carries into the image. Without this file
+# it was 2.2 GB, of which about 1.6 GB is neither source nor test: an RStudio
+# session directory, the saved output of a previous local check, and the git
+# history. Copying them makes every build slower and every layer bigger, and
+# ci-check-output in particular feeds the output of this very tool back in as
+# its own input.
+.git
+.Rproj.user
+ci-check-output
+dev/test-reports
+*.Rcheck
+.Rhistory
+.RData
+.Ruserdata
+
+# NOTE: data/ is NOT excluded. In an R package it is a source directory holding
+# the bundled datasets (LazyData), not a place for raw input. Excluding it made
+# setup.R fail with "object 'test_master_features' not found".

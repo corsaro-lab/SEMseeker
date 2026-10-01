@@ -573,20 +573,20 @@ meta-analyse results across studies:
 
 ```{r cross_study, eval=FALSE}
 # Overlap significant hits across two studies
-assoc_inter_study_association_overlaps(
+meta_association_overlaps_studies(
   studies       = list("~/study_A/", "~/study_B/"),
   result_folder = "~/meta_results/",
   pvalue_column = "PVALUE_ADJ_ALL_BH"
 )
 
 # Meta-analysis (combines p-values / effect sizes)
-assoc_inter_study_association_meta_analysis(
+meta_association_across_studies(
   studies       = list("~/study_A/", "~/study_B/"),
   result_folder = "~/meta_results/"
 )
 
 # Subsample stability analysis (bootstrap cohort sub-sampling)
-assoc_intra_study_association_subsamples_overlaps(
+meta_association_overlaps_subsamples(
   result_folder = "~/semseeker_results/",
   n_subsamples  = 100,
   fraction      = 0.8
@@ -652,13 +652,13 @@ files are written to `<result_folder>/Euristic/`.
 
 ## Cross-study replication
 
-`assoc_intra_study_association_replication()` reruns the association on a target study restricted
+`meta_association_replication()` reruns the association on a target study restricted
 to the regions that were already significant in a reference study, then merges
 the two result sets. It's the standard "replication / validation" workflow when
 you have a discovery cohort and a validation cohort.
 
 ```{r cross_study_replication, eval=FALSE}
-assoc_intra_study_association_replication(
+meta_association_replication(
   inference_details_origin = inference_discovery,
   inference_details        = inference_validation,
   result_folder            = "~/semseeker_replication/",

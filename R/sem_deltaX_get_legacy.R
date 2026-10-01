@@ -1,7 +1,7 @@
 #' Legacy R-loop implementation of derived-marker computation.
 #'
 #' Superseded by \code{\link{sem_deltaX_get}} (polars-native, ~14x faster on
-#' ewas_data_hub). Kept for reference and possible A/B testing — call sites
+#' ewas_data_hub). Kept for reference and possible A/B testing - call sites
 #' have been migrated to the new \code{sem_deltaX_get()} (sem_core,
 #' core_recover). This legacy function still writes per-sample bedgraph dumps
 #' which the new path avoids.

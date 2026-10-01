@@ -29,7 +29,7 @@
   opencl                 = list(value = FALSE),
   bonferroni_threshold   = list(value = 0.05),
   iqrTimes               = list(value = 3),
-  LESIONS_BP             = list(value = 5000L),  # AI-092 + AI-044 merged: bp-based window radius. Default 5000 bp = 5 kbp (literature-aligned; AI-048 review pending — Bock 2012, Jaffe 2012 bumphunter, Aryee 2014 minfi DMR).
+  LESIONS_BP             = list(value = 5000L),  # AI-092 + AI-044 merged: bp-based window radius. Default 5000 bp = 5 kbp (literature-aligned; AI-048 review pending - Bock 2012, Jaffe 2012 bumphunter, Aryee 2014 minfi DMR).
   tech                   = list(value = ""),
   genome_build           = list(value = "hg19", choices = c("hg19","hg38","mm10","legacy")),
   showprogress           = list(value = FALSE),
@@ -243,7 +243,7 @@
 #'       \code{"cluster"}}
 #'     \item{\code{genome_build}}{reference genome assembly: \code{"hg19"} (default,
 #'       matches Illumina array annotation), \code{"hg38"} (GRCh38, typical for
-#'       long-read / Nanopore data), \code{"mm10"} (mouse — requires C-05).
+#'       long-read / Nanopore data), \code{"mm10"} (mouse - requires C-05).
 #'       Stored in \code{ssEnv$genome_build} and written to session provenance
 #'       metadata (C-06).}
 #'     \item{\code{tech}}{override technology auto-detection: \code{"K850"},
@@ -289,13 +289,22 @@ core_init_env <- function(result_folder, maxResources = 90, ...) {
 
   arguments <- core_set_env_variable(arguments, "maxResources", maxResources)
   arguments <- core_set_env_variable(arguments, "parallel_strategy", "sequential")
+
+  # Flush BEFORE the workers exist, not after. core_set_env_variable() no longer
+  # writes to disk on every option (it used to, and that was most of the cost of
+  # this function), so the session file is stale at this point; multisession
+  # workers rebuild ssEnv by reading it, and core_parallel_session() is where
+  # they are spawned. The final flush at the end of this function is too late
+  # for them.
+  core_update_session_info(core_get_session_info())
+
   core_parallel_session()
   ssEnv <- core_get_session_info()
 
   .core_init_env_log_focus(ssEnv)
   .core_init_env_validate_args(arguments)
   # AI-060: one-line WARNING when R is linked against a single-thread BLAS.
-  # Hot for the AI-040 batch families (limma_/voom_) — solve()/crossprod()
+  # Hot for the AI-040 batch families (limma_/voom_) - solve()/crossprod()
   # inside lmFit scale ~linearly with cores on Accelerate/OpenBLAS/MKL.
   .core_warn_blas_single_thread()
   if (dry_run) .core_init_env_handle_dry_run(ssEnv)

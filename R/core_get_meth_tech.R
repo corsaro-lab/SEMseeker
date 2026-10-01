@@ -4,11 +4,11 @@
 #' or EPIC 850k array (or WGBS data).  Detection runs in priority order:
 #'
 #' \enumerate{
-#'   \item \strong{Annotation-package overlap} — probe IDs are matched against
+#'   \item \strong{Annotation-package overlap} - probe IDs are matched against
 #'     each installed \code{IlluminaHumanMethylation*anno} package; the
 #'     technology with the most matching probes wins.  Accurate for any subset
 #'     size (e.g. 20 k probes out of 866 k).
-#'   \item \strong{Row-count heuristics} — last resort for WGBS or unknown
+#'   \item \strong{Row-count heuristics} - last resort for WGBS or unknown
 #'     probe naming schemes.
 #' }
 #'
@@ -58,7 +58,7 @@ core_get_meth_tech <- function(signal_data) {
               "probe count matches EPIC 850k dataset.")
   if (n_probes > 866562)
     core_log_event("INFO:", format(Sys.time(), "%a %b %d %X %Y"),
-              "probe count exceeds EPIC 850k — treating as WGBS.")
+              "probe count exceeds EPIC 850k - treating as WGBS.")
 
   # Resolve probe identifiers
   probe_ids <- if ("PROBE" %in% colnames(signal_data))
@@ -126,7 +126,7 @@ core_get_meth_tech <- function(signal_data) {
     paste("INFO:", format(Sys.time(), "%a %b %d %X %Y"), "values appear to be M-values."))
 
   # AI-248: the figure of SIGNAL is the scale, and the scale is only knowable
-  # here — the keys were built before any data was read.
+  # here - the keys were built before any data was read.
   ssEnv <- util_keys_signal_figure_refresh(ssEnv)
 
   ssEnv$probes_count <- n_probes

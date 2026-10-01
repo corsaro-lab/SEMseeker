@@ -1,4 +1,4 @@
-# NOTE: naming convention — `adjustment_method` (singular) is used in internal
+# NOTE: naming convention - `adjustment_method` (singular) is used in internal
 # helpers and result-retrieval functions where a single method string is expected.
 # High-level public functions (e.g. enrichment_analysis()) use `adjustment_methods`
 # (plural) because they accept a vector to iterate over multiple corrections.
@@ -7,17 +7,17 @@
 # and a default is the wrong shape for this: which region class a caller wants is
 # never obvious from the outside, and a caller that forgot to say got the genes
 # and no indication that it had chosen anything. Every call site now declares
-# what it reads. The enrichment does not call this directly at all — it goes
+# what it reads. The enrichment does not call this directly at all - it goes
 # through enrich_gene_set_get(), where GENE and INSTANCE are invariants rather
 # than arguments.
 #
 # AI-257: `adjust_per_area` and `adjust_globally` are gone. They re-ran
-# p.adjust() at READ time, on top of a column that is already adjusted —
+# p.adjust() at READ time, on top of a column that is already adjusted -
 # `pvalue_column` defaults to PVALUE_ADJ_ALL_BH, so switching one on meant BH
 # over BH. No call site in the package ever passed TRUE. `adjust_per_area`
 # additionally reused the name `area` as its loop counter, shadowing the
 # parameter, so the final `subset(AREA == area)` filtered on the last area of
-# the loop instead of the requested one — the function would have returned a
+# the loop instead of the requested one - the function would have returned a
 # different region class than the one asked for.
 assoc_results_get <- function (inference_detail, marker,
   pvalue_column="PVALUE_ADJ_ALL_BH", adjustment_method = "BH", area, scope,
@@ -25,11 +25,11 @@ assoc_results_get <- function (inference_detail, marker,
 {
 
   if (missing(area) || is.null(area) || !nzchar(as.character(area)))
-    stop("assoc_results_get(): 'area' is required — name the region class to ",
+    stop("assoc_results_get(): 'area' is required - name the region class to ",
          "read (e.g. \"GENE\"). It used to default to GENE, which is how a ",
          "caller could read one class while meaning another.", call. = FALSE)
   if (missing(scope) || is.null(scope) || !nzchar(as.character(scope)))
-    stop("assoc_results_get(): 'scope' is required — \"INSTANCE\" for one row ",
+    stop("assoc_results_get(): 'scope' is required - \"INSTANCE\" for one row ",
          "per gene, island or probe, \"SAMPLE\" for the collapsed artefact. ",
          "The two are different quantities and no default can pick between ",
          "them.", call. = FALSE)
@@ -72,11 +72,11 @@ assoc_results_get <- function (inference_detail, marker,
   results_inference <- results_inference[!is.infinite(results_inference[,pvalue_column]),]
 
   # AI-257: sem_metrics_name_collect() removed from here. Its body is commented
-  # out in full, so the call did nothing — but what it used to do is the reason
+  # out in full, so the call did nothing - but what it used to do is the reason
   # it does not belong on a read path: it wrote a metrics registry to disk while
   # a consumer was reading. A reader reads.
   multiple_test_adj <- core_name_cleaning(ssEnv$multiple_test_adj)
-  # AI-255: this reader is free — it returns the artefacts the caller asks for.
+  # AI-255: this reader is free - it returns the artefacts the caller asks for.
   # It replaces `subset(DEPTH == 3)`, which said "per instance" through a number
   # whose meaning had to be remembered, with the coordinates that say it.
   #
@@ -86,7 +86,7 @@ assoc_results_get <- function (inference_detail, marker,
   # made that visible.
   #
   # The invariant SCOPE = INSTANCE & AREA = GENE belongs to enrichment, and is
-  # enforced where enrichment enters — not here, where the cross-study overlaps
+  # enforced where enrichment enters - not here, where the cross-study overlaps
   # legitimately iterate over every area of the registry.
   results_inference <- subset(results_inference, AREA == area)
   if (!is.null(scope) && "SCOPE" %in% colnames(results_inference))
@@ -109,7 +109,7 @@ assoc_results_get <- function (inference_detail, marker,
   results_inference[results_inference$AREA==area,"AREA_OF_TEST"] <- gsub(results_inference[results_inference$AREA==area,"AREA_OF_TEST"] , pattern="_", replacement="-")
 
   # AI-257: the re-adjustment at read time is gone, and with it the second
-  # `subset(AREA == area)` that used to follow it — the first one, above, is the
+  # `subset(AREA == area)` that used to follow it - the first one, above, is the
   # filter, and repeating it here only mattered because the loop in between had
   # overwritten `area`.
 
@@ -153,7 +153,7 @@ assoc_results_get <- function (inference_detail, marker,
     lost_gene <- unique(results_inference$AREA_OF_TEST[is.na(entrez_ids)])
   }
 
-  results_inference <- assoc_filter_sql(inference_details$association_results_sql_condition, results_inference)
+  results_inference <- assoc_filter_sql(inference_detail$association_results_sql_condition, results_inference)
 
   core_log_event("DEBUG: ",format(Sys.time(), "%a %b %d %X %Y")," inference file loaded:", inferenceFile)
   return(results_inference)

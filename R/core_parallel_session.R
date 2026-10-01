@@ -5,12 +5,12 @@ core_parallel_session <- function()
   parallel_strategy <- ssEnv$parallel_strategy
 
   # NOTE: `multicore` on macOS uses fork() and is known to be unsafe in
-  # combination with Polars' C++ thread pool — forked children can be
+  # combination with Polars' C++ thread pool - forked children can be
   # killed by a Mach exception with no R-visible error. Tests on macOS
   # now default to `multisession` (see setup.R). End users on macOS
   # should use `multisession` or `sequential`.
   #
-  # E-14: `multisession` workers are fresh R processes — .pkgglobalenv$ssEnv
+  # E-14: `multisession` workers are fresh R processes - .pkgglobalenv$ssEnv
   # starts empty. Every %dorng% foreach body must call
   # core_update_session_info(ssEnv) as its first statement to populate the
   # worker's namespace. See engineering-decisions.md §1.3.
@@ -34,12 +34,31 @@ core_parallel_session <- function()
     }
   }
 
-  # E-13: multicore (fork) on macOS is unsafe with Polars' C++ thread pool —
-  # forked children are killed by Mach exceptions with no R-visible error.
-  # Force multisession (separate R processes) instead.
-  if (Sys.info()["sysname"] == "Darwin" && parallel_strategy == "multicore") {
+  # E-13, widened: multicore means fork(), and fork() is unsafe for this package
+  # on every platform that offers it. The hazard is not macOS, it is fork plus a
+  # native thread pool: fork duplicates the memory of the parent's threads but
+  # not the threads themselves, so a lock held at the moment of the fork stays
+  # marked as taken in the child by a thread that will never exist to release
+  # it. Polars builds a C++ thread pool on its first operation, so from then on
+  # every child inherits the pool's queues and locks with no workers behind
+  # them.
+  #
+  # The same cause shows two faces, which is why only one of them was guarded.
+  # On macOS the system libraries detect a fork without exec and abort, so it
+  # crashes loudly. On Linux nothing intervenes and the children wait forever:
+  # measured on the installed package, nine children at 0.0% CPU for eleven
+  # minutes on a test that takes 22 seconds under multisession.
+  #
+  # It is also order dependent. A fork before Polars has ever run is clean, so
+  # the failure is intermittent and cannot be relied on to show up in testing.
+  #
+  # multicore stays accepted, because substituting it is safe and refusing it
+  # would break existing scripts for nothing, but it is never honoured.
+  if (parallel_strategy == "multicore") {
     core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
-              " multicore (fork) is unsafe on macOS with Polars. Switching to multisession.")
+              " multicore uses fork(), which is unsafe with this package's",
+              " native thread pool: forked children crash on macOS and hang",
+              " on Linux. Switching to multisession.")
     parallel_strategy <- "multisession"
     ssEnv$parallel_strategy <- parallel_strategy
   }
@@ -59,10 +78,10 @@ core_parallel_session <- function()
     ssEnv$parallel_strategy <- parallel_strategy
   }
 
-  if(parallelly::supportsMulticore())
-    options(parallelly.fork.enable= TRUE)
-  else
-    options(parallelly.fork.enable= FALSE)
+  # Nothing here may fork, so do not leave the door open for anything else in
+  # the session either: enabling it only where it is available would let a
+  # dependency fork on Linux for the same reasons this package must not.
+  options(parallelly.fork.enable = FALSE)
 
   chk <- Sys.getenv("_R_CHECK_LIMIT_CORES_", "")
 
@@ -113,7 +132,7 @@ core_parallel_session <- function()
   # workers start with the SYSTEM .libPaths() (or have renv reset them on
   # startup) and therefore cannot see SEMseeker or its dependencies, which
   # live in the renv project library. The result is a silent death right
-  # after "I will work in multisession..." — workers fail at the first
+  # after "I will work in multisession..." - workers fail at the first
   # library() lookup with no R-visible error in the parent log.
   #
   # Fix: capture the parent .libPaths() (which includes the renv project

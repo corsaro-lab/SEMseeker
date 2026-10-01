@@ -30,7 +30,7 @@ from the saved POSITION pivot parquet; semantic areas (GENE_*, ISLAND_*,
 CHR_CYTOBAND, DMR_*) are resolved via \code{\link{anno_area_granges_build}} and
 \code{GenomicRanges::findOverlaps()}.
 }
-\section{PROBE_WHOLE vs POSITION_WHOLE — technology semantics}{
+\section{PROBE_WHOLE vs POSITION_WHOLE - technology semantics}{
 
 The area \code{PROBE_WHOLE} has different meanings depending on technology:
 \describe{
@@ -44,7 +44,7 @@ The area \code{PROBE_WHOLE} has different meanings depending on technology:
     its genomic coordinate (\code{CHR\_START}, e.g. \code{"1\_10000"}).
     The statistical test is performed at the individual-position level.
     Two WGBS datasets can be compared only if they share the same reference
-    genome (\code{ssEnv\$genome_build}) — mismatches are detected by the
+    genome (\code{ssEnv\$genome_build}) - mismatches are detected by the
     session provenance guard (C-06).}
 }
 In both cases the downstream analysis pipeline is identical; the distinction

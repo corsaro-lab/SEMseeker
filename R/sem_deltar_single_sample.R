@@ -13,14 +13,14 @@ sem_deltar_single_sample <- function(values, thresholds, sample_detail) {
 
   ssEnv <- core_get_session_info()
 
-  # Polars inner join on (CHR, START, END) — replaces sort-then-positional-zip.
+  # Polars inner join on (CHR, START, END) - replaces sort-then-positional-zip.
   # util_join_values_to_thresholds() handles type coercion and is shared with
   # sem_mutations_get() and sem_delta_single_sample().
   joined <- util_join_values_to_thresholds(values, thresholds)
 
   if (nrow(joined) == 0L) {
     core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
-      " [sem_deltar_single_sample] No overlapping positions — skipping deltar",
+      " [sem_deltar_single_sample] No overlapping positions - skipping deltar",
       " for sample=", sample_detail$Sample_ID)
     return(invisible(NULL))
   }
@@ -29,13 +29,13 @@ sem_deltar_single_sample <- function(values, thresholds, sample_detail) {
   low_thresholds  <- joined$signal_inferior_thresholds
 
   if (any(is.na(high_thresholds)) || any(is.na(low_thresholds))) {
-    # NAs present — logged but not fatal; downstream subset(DELTA > 0) handles them
+    # NAs present - logged but not fatal; downstream subset(DELTA > 0) handles them
   }
 
   dividend <- high_thresholds - low_thresholds
 
   if (any(is.na(dividend)) || any(dividend < 0))
-    stop("ERROR: I'm stopping here — dividend has NA or negative values!")
+    stop("ERROR: I'm stopping here - dividend has NA or negative values!")
 
   # Avoid division by zero
   dividend[dividend == 0] <- 0.000000001
@@ -85,6 +85,6 @@ sem_deltar_single_sample <- function(values, thresholds, sample_detail) {
     if (min(deltar_to_check) < 0) {
       core_log_event(min(deltar_hypo$DELTA))
       core_log_event(min(deltar_hyper$DELTA))
-      stop("ERROR: I'm stopping here — deltar have negative values!")
+      stop("ERROR: I'm stopping here - deltar have negative values!")
     }
 }

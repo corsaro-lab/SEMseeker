@@ -5,7 +5,7 @@
 # read + filter only. Transforms (p-adjust, category enrichment,
 # PHENOTYPE flag, annotation join) belong in a separate pipeline
 # step, NOT here. enrich_result_save() currently does mix transform
-# with write — that violation is tracked for cleanup in AI-020 and
+# with write - that violation is tracked for cleanup in AI-020 and
 # kept as-is for now to avoid behaviour drift.
 #
 # The only label-aware read tweak is `dec = "."` for phenolyzer

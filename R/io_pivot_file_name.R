@@ -15,13 +15,13 @@
 #' The aggregation is in the name because before AI-248 the name did **not** say
 #' which operator had produced the file: an existing pivot was reused on trust.
 #' With one operator per marker that trust was justified; with several it is the
-#' worst kind of bug — silent, because the file is there and the run does not
+#' worst kind of bug - silent, because the file is there and the run does not
 #' complain while a mean is consumed as if it were a sum.
 #'
 #' The scope is in the name because AI-255 made it a coordinate: a burden over
 #' the whole sample and a burden per gene are the same marker reduced over
-#' different extents, and used to live in files of different *shape* — a CSV
-#' sibling and a pivot — which is what hid the difference.
+#' different extents, and used to live in files of different *shape* - a CSV
+#' sibling and a pivot - which is what hid the difference.
 #'
 #' @param marker,figure,area,subarea the region class and the quantity.
 #' @param aggregation the AGGREGATION axis. `NULL` is resolved to `"VALUE"` when
@@ -81,10 +81,10 @@ io_pivot_file_name_parquet <- function(marker, figure, area, subarea,
 
   # No normalisation of an empty subarea. There is nothing to normalise: the
   # registry assigns every area an explicit subarea, WHOLE at minimum
-  # (util_keys_create(): PROBE/WHOLE, POSITION/WHOLE, DMR/WHOLE, …), so "" is not
+  # (util_keys_create(): PROBE/WHOLE, POSITION/WHOLE, DMR/WHOLE, ...), so "" is not
   # a value the system produces. Where it used to appear it came from a caller
   # writing it by hand, and turning it into WHOLE here would accept a hole in a
-  # coordinate — the same thing as filling a missing SUBAREA with "TOTAL", which
+  # coordinate - the same thing as filling a missing SUBAREA with "TOTAL", which
   # is how a defect hides inside a key. io_artefact_key() refuses it instead, and
   # the message names the caller's mistake.
   aggregation <- .io_aggregation_resolve(aggregation, scope, area)

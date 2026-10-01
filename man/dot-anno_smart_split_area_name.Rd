@@ -39,7 +39,7 @@ start with the recovered prefix (avoids double-prepending on inputs
 like `"HLA-A/HLA-B"` or `"HBA1/HBA2"`).
 }
 \examples{
-# Internal helper — not exported. Reach it via ::: so R CMD check --as-cran
+# Internal helper - not exported. Reach it via ::: so R CMD check --as-cran
 # can run the examples block under CheckExEnv (which only sees exports).
 SEMseeker:::.anno_smart_split_area_name("HLA-A/B/C")    # c("HLA-A","HLA-B","HLA-C")
 SEMseeker:::.anno_smart_split_area_name("HBA1/HBA2")    # c("HBA1","HBA2")

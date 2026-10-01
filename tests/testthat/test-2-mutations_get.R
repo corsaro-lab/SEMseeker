@@ -37,7 +37,7 @@
 }
 
 test_that("sem_mutations_get (A-10): HYPO full overlap — correct mutation count", {
-  tf <- tempFolders[37]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -64,7 +64,7 @@ test_that("sem_mutations_get (A-10): HYPO full overlap — correct mutation coun
 })
 
 test_that("sem_mutations_get (A-10): HYPER full overlap — correct mutation count", {
-  tf <- tempFolders[38]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -87,7 +87,7 @@ test_that("sem_mutations_get (A-10): HYPER full overlap — correct mutation cou
 })
 
 test_that("sem_mutations_get (A-10): values has extra positions → only intersection returned", {
-  tf <- tempFolders[39]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -116,7 +116,7 @@ test_that("sem_mutations_get (A-10): values has extra positions → only interse
 })
 
 test_that("sem_mutations_get (A-10): thresholds has extra positions → only intersection returned", {
-  tf <- tempFolders[40]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -142,7 +142,7 @@ test_that("sem_mutations_get (A-10): thresholds has extra positions → only int
 })
 
 test_that("sem_mutations_get (A-10): zero overlap → empty data.frame, no crash", {
-  tf <- tempFolders[41]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -173,8 +173,7 @@ test_that("sem_mutations_get (A-10): zero overlap → empty data.frame, no crash
 
 test_that("sem_mutations_get", {
 
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   ssEnv <- SEMseeker:::core_init_env(result_folder = tempFolder, inpute = "median")
 
   if (!exists("signal_thresholds")) {

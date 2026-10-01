@@ -35,7 +35,7 @@
   total_GB <- .sem_total_ram_GB()
   if (is.na(total_GB) || total_GB <= 0) {
     core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
-              " sem_inpute_missing_values: could not detect total RAM — skipping KNN memory gate.")
+              " sem_inpute_missing_values: could not detect total RAM - skipping KNN memory gate.")
     return(invisible(NULL))
   }
   available_GB <- total_GB * mem_frac

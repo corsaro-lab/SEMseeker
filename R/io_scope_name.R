@@ -14,12 +14,12 @@
 #' left with no caller in `R/` (the tests still exercise it). On a region class
 #' the two agree, because `combine_not_empty()` in [util_keys_create()] joins
 #' `AREA` and `SUBAREA` by the same rule and cleans the result the same way; the
-#' `SAMPLE` case they do *not* share — `COMBINED` gives `""` for an empty pair
+#' `SAMPLE` case they do *not* share - `COMBINED` gives `""` for an empty pair
 #' and `.sem_regions_resolve()` intercepts `"SAMPLE"` before it reaches the
 #' registry. So the agreement holds by construction, not by contract, which is
 #' the arrangement this helper was written to prevent. Tracked in AI-259.
 #'
-#' The name of a scope is the region class it covers — `GENE_TSS1500` — or
+#' The name of a scope is the region class it covers - `GENE_TSS1500` - or
 #' `SAMPLE` when there is no restriction at all. It used to be derived from
 #' `depth`, with `depth <= 1` meaning SAMPLE, `2` meaning the area alone and `3`
 #' the area with its subarea. That mapping is gone with depth itself: the class

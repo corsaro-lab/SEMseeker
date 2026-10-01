@@ -23,19 +23,19 @@
 #' (AI-255). A *column* of the summary table is a narrower thing: its rows are
 #' samples, so the artefact behind it is fixed at `SCOPE = SAMPLE` and there is
 #' nothing left to say about the extent. What the reader needs to see in the
-#' prefix is the region class the number covers — `GENE_TSS1500` — so `AREA` and
+#' prefix is the region class the number covers - `GENE_TSS1500` - so `AREA` and
 #' `SUBAREA` collapse into the first segment, and `SAMPLE` names the absence of
 #' any restriction. One taxonomy, two projections of it; the four segments here
 #' are what survives of the six once the row is a sample.
 #'
-#' Until AI-248 the aggregation was implicit — one operator per marker, so
+#' Until AI-248 the aggregation was implicit - one operator per marker, so
 #' `MARKER`/`FIGURE` identified the value. With several aggregations over the
 #' same scope it no longer does, hence the fourth segment.
 #'
 #' Axes left `NULL` are dropped, so a quantity that is not the aggregation of a
 #' marker can still be named through the same compositor:
 #' `io_feature_colname("SAMPLE", aggregation = "N_PROBES")` gives
-#' `SAMPLE_N_PROBES`. That mechanism outlived its original occasion — since
+#' `SAMPLE_N_PROBES`. That mechanism outlived its original occasion - since
 #' AI-255 **no artefact carries `N_PROBES`** (see [io_signal_stats()]): the
 #' count is a property of the imputation and travels on `SAMPLE_SHEET_RESULT`.
 #'

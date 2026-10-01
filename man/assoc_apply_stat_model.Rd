@@ -37,6 +37,10 @@ assoc_apply_stat_model(
 
 \item{samples_sql_condition}{SQL condition string to filter samples}
 
+\item{inference_detail}{one row of the inference specification, carrying the
+per-request fields (scope, aggregation, transformation_x) that the model
+call needs; NULL falls back to the defaults}
+
 \item{...}{extra parameters}
 }
 \value{

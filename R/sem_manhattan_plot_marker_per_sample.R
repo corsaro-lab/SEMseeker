@@ -15,7 +15,11 @@
 #' @param maxResources numeric. Maximum percentage of CPU cores to use
 #'   (default 90).
 #' @param parallel_strategy character. Parallelisation backend
-#'   (default \code{"multicore"}).
+#'   (default \code{"multisession"}).
+#'   Asking for \code{"multicore"} is accepted and converted to
+#'   \code{"multisession"}: it means fork(), which is unsafe with this
+#'   package's native thread pool on every platform that offers it, and
+#'   absent on Windows. The conversion is logged.
 #' @param ... Additional arguments passed to \code{core_init_env()}.
 #'
 #' @return Invisibly \code{NULL}. A PNG plot is saved under
@@ -51,10 +55,15 @@ sem_manhattan_plot_marker_per_sample <- function( sample_name = "NAME", probes_r
   tempKeys <- localKeys
   for(k in seq_along(localKeys)){
     marker <- as.character(localKeys[k])
-    pivot_subfolder <- io_dir_check_and_create(result_folderPivot,marker)
-    fname_both <- io_file_path_build( pivot_subfolder ,c(marker, "BOTH", "PROBE","WHOLE"),"csv", add_gz = TRUE)
-    fname_hypo <- io_file_path_build( pivot_subfolder ,c(marker, "HYPO", "PROBE","WHOLE"),"csv", add_gz = TRUE)
-    fname_hyper <- io_file_path_build( pivot_subfolder ,c(marker, "HYPER", "PROBE","WHOLE"),"csv", add_gz = TRUE)
+    # The names come from io_pivot_file_name(), the single place that knows both
+    # the Pivots folder and the artefact key. They used to be built by hand from
+    # four components under a folder called result_folderPivot: that name was
+    # never an ssEnv field, and a four-part name cannot match files written with
+    # the six-coordinate key, scope and aggregation included. scope = "INSTANCE"
+    # because this is a per-probe plot: one row per probe, not one per sample.
+    fname_both  <- io_pivot_file_name(marker, "BOTH",  "PROBE", "WHOLE", scope = "INSTANCE")
+    fname_hypo  <- io_pivot_file_name(marker, "HYPO",  "PROBE", "WHOLE", scope = "INSTANCE")
+    fname_hyper <- io_pivot_file_name(marker, "HYPER", "PROBE", "WHOLE", scope = "INSTANCE")
 
     if (!file.exists(fname_both) | !file.exists(fname_hypo) | !file.exists(fname_hyper))
       tempKeys <- tempKeys[-k]
@@ -67,8 +76,7 @@ sem_manhattan_plot_marker_per_sample <- function( sample_name = "NAME", probes_r
   {
 
     marker <- as.character(tempKeys[j])
-    pivot_subfolder <- io_dir_check_and_create(result_folderPivot,marker)
-    fname_both <- io_file_path_build( pivot_subfolder ,c(marker, "BOTH", "PROBE","WHOLE"),"csv", add_gz = TRUE)
+    fname_both <- io_pivot_file_name(marker, "BOTH", "PROBE", "WHOLE", scope = "INSTANCE")
     if(!file.exists(fname_both))
       next
 
@@ -94,7 +102,7 @@ sem_manhattan_plot_marker_per_sample <- function( sample_name = "NAME", probes_r
     sample_marker_both <- as.numeric(as.vector(t(sample_marker_both)))
     probes <- marker_data_both$SAMPLEID
 
-    fname_hypo <- io_file_path_build( pivot_subfolder ,c(marker, "HYPO", "PROBE","WHOLE"),"csv", add_gz = TRUE)
+    fname_hypo <- io_pivot_file_name(marker, "HYPO", "PROBE", "WHOLE", scope = "INSTANCE")
     if(!file.exists(fname_hypo))
       next
 
@@ -118,7 +126,7 @@ sem_manhattan_plot_marker_per_sample <- function( sample_name = "NAME", probes_r
     sample_marker_hypo <- as.numeric(as.vector(t(sample_marker_hypo)))
     sample_marker_hypo <- ifelse(sample_marker_hypo!=0,"Hypo","")
 
-    fname_hyper <- io_file_path_build( pivot_subfolder ,c(marker, "HYPER", "PROBE","WHOLE"),"csv", add_gz = TRUE)
+    fname_hyper <- io_pivot_file_name(marker, "HYPER", "PROBE", "WHOLE", scope = "INSTANCE")
     if(!file.exists(fname_hyper))
       next
     marker_data_hyper <- utils::read.csv2(fname_hyper, sep  =  ";")

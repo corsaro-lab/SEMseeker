@@ -1,9 +1,8 @@
 test_that("anno_create_position_pivots", {
 
-  tempFolder <- tempFolders[1]
+  tempFolder <- sem_test_folder()
   unlink(tempFolder, recursive = TRUE, force = TRUE)
   # message(tempFolder)
-  tempFolders <<- tempFolders[-1]
   ssEnv <- SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy, inpute="median", start_fresh =TRUE)
 
   ####################################################################################

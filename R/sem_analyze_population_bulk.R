@@ -1,4 +1,4 @@
-#' sem_analyze_population_bulk — vectorized population analysis (AI-042, 2026-06-08)
+#' sem_analyze_population_bulk - vectorized population analysis (AI-042, 2026-06-08)
 #'
 #' Drop-in replacement per sem_analyze_population() che SOSTITUISCE il per-sample
 #' loop (con dump bedgraph per ogni sample x marker x figure) con operazioni
@@ -52,8 +52,8 @@ sem_analyze_population_bulk <- function(signal_data, sample_sheet,
   # AI-061+ (2026-06-09): EARLY-RETURN if every destination pivot already
   # exists. The per-figure skip checks further down inside this function
   # do guard the actual compute, but the SETUP between [start] and the
-  # first per-figure block — io_read_pivot SIGNAL + collect_schema(4014
-  # cols) + with_columns(cast Categorical→String) + lazy join — still
+  # first per-figure block - io_read_pivot SIGNAL + collect_schema(4014
+  # cols) + with_columns(cast Categorical→String) + lazy join - still
   # runs every call. On ewas-scale (367k × 4013) that setup alone
   # peaked ~30 GB R+Polars even in pure-resume mode (v25/v26/v27/v28
   # all crashed there with all downstream pivots already on disk).
@@ -69,7 +69,7 @@ sem_analyze_population_bulk <- function(signal_data, sample_sheet,
   if (length(all_destinations) > 0L && all(file.exists(all_destinations))) {
     core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
               " [sem_analyze_population_bulk] ALL ", length(all_destinations),
-              " destination pivots already exist — skipping bulk pass entirely.")
+              " destination pivots already exist - skipping bulk pass entirely.")
     return(invisible(NULL))
   }
 
@@ -77,17 +77,17 @@ sem_analyze_population_bulk <- function(signal_data, sample_sheet,
   if (!file.exists(signal_pivot_path)) {
     stop("[sem_analyze_population_bulk] SIGNAL POSITION pivot mancante: ",
          signal_pivot_path,
-         " — io_signal_save() deve essere chiamato prima.")
+         " - io_signal_save() deve essere chiamato prima.")
   }
 
   # AI-061+ (2026-06-09): use the in-memory `signal_thresholds`
-  # data.frame DIRECTLY (it's the function argument — caller has it
+  # data.frame DIRECTLY (it's the function argument - caller has it
   # available, no need for disk I/O). The polars 1.11 quirk that
   # required the arrow tempfile workaround was: as_polars_df on a
   # data.frame with `CHR` as factor produced a Categorical column,
   # and `$with_columns($cast(String))` did not actually convert.
   # The simpler fix is to force CHR to character ON THE R-SIDE
-  # before as_polars_df — polars maps R character → polars String
+  # before as_polars_df - polars maps R character → polars String
   # directly. Same for START / END as integer.
   thr_lazy <- polars::as_polars_df(
     data.frame(
@@ -105,11 +105,11 @@ sem_analyze_population_bulk <- function(signal_data, sample_sheet,
   # after the data is copied into polars. signal_thresholds is the
   # function ARG (~50 MB on ewas 367k probes × 5 thresholds cols), and
   # without explicit cleanup R keeps it alive for the rest of the
-  # function while polars also holds its own copy in Rust heap — both
+  # function while polars also holds its own copy in Rust heap - both
   # heaps holding the same data is exactly what we tried to avoid
   # everywhere else (see AI-096 lazy passthrough).
   # NOTE: the CALLER's binding (analyze_batch.R: populationControlRange-
-  # BetaValues) is still alive in the parent frame — full release
+  # BetaValues) is still alive in the parent frame - full release
   # requires the caller to also rm() after this function returns.
   n_thr_positions <- nrow(signal_thresholds)   # cache before rm() (used in core_log_event below)
   rm(signal_thresholds)

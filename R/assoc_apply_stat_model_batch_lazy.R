@@ -6,7 +6,7 @@
 #   tempDataFrame <- as.data.frame(pivot_lazy$collect())
 #   ... t() ... merge(sample_sheet, ...)
 # pipeline. Even at GENE/WHOLE scale (~17 k genes × ~500 samples
-# ≈ 70 MB raw) that path peaks around 4×–5× the raw size in R memory
+# ≈ 70 MB raw) that path peaks around 4×-5× the raw size in R memory
 # alone, plus the polars Rust DataFrame that stays alive in parallel,
 # plus Arrow IPC buffers from the collect step.  Smoke SIGNAL@PROBE
 # (366 k × 500 ≈ 1.4 GB raw) ran to 45 GB before lmFit was even
@@ -20,7 +20,7 @@
 #   polars collect      ≈ 1×  raw  (in Rust heap, drops after rm+gc)
 #   R y_mat             ≈ 1×  raw  (the single matrix lmFit sees)
 #   design + lmFit work  small
-# i.e. ~3×–4× the raw size at peak vs ~30× on the legacy path.
+# i.e. ~3×-4× the raw size at peak vs ~30× on the legacy path.
 
 #' Polars-lazy batch fit for limma_<N> and voom_<N>.
 #'
@@ -74,7 +74,7 @@ assoc_apply_stat_model_batch_lazy <- function(pivot_lazy,
     suppressWarnings(as.numeric(parts[3])) else 1
   if (is.na(partition_percentage)) partition_percentage <- 1
 
-  # Drop genomic-coord and probe-metadata columns LAZILY — no
+  # Drop genomic-coord and probe-metadata columns LAZILY - no
   # materialisation yet.
   schema_names <- names(pivot_lazy$collect_schema())
   drop_cols <- intersect(schema_names,
@@ -86,11 +86,11 @@ assoc_apply_stat_model_batch_lazy <- function(pivot_lazy,
 
   # AI-043 resume: filter out areas already in the on-disk CSV.
   # AI-061+ (2026-06-09): no more gsub("-","_") normalisation on either
-  # side — names stay pass-through from the upstream annotation. The
+  # side - names stay pass-through from the upstream annotation. The
   # downstream CSV and the pivot AREA column carry identical raw names,
   # so $is_in() matches exactly.
   # NB: $is_in() must receive a polars Expression / Series, NOT a bare R
-  # character vector — otherwise polars 1.x parses each string as a column
+  # character vector - otherwise polars 1.x parses each string as a column
   # reference and fails with "Column(s) not found: '<first value>' not found".
   # Wrap via pl$lit()$implode() so the values are treated as a literal set.
   if (length(area_to_remove) > 0L) {
@@ -125,7 +125,7 @@ assoc_apply_stat_model_batch_lazy <- function(pivot_lazy,
   # AI-061+ (2026-06-09): SEPARATE LAZY PREP FROM FIT.
   # We need n_genes + sample_cols BEFORE materialising y_mat so the
   # memory gate can decide monolithic vs chunked. Both pieces are
-  # discoverable lazily — schema gives us sample columns, $select($len)
+  # discoverable lazily - schema gives us sample columns, $select($len)
   # gives us a row count without ever pulling values into R.
   schema_post <- names(pivot_lazy$collect_schema())
   sample_cols_all <- setdiff(schema_post, c("AREA", "PROBE", "CHR", "START", "END",
@@ -142,7 +142,7 @@ assoc_apply_stat_model_batch_lazy <- function(pivot_lazy,
 
   # Align sample_sheet to the lazy pivot's sample columns. Drop samples
   # without a matching row OR with NA in IV/covariates. This is the
-  # same logic that used to operate on the materialised y_mat — pulled
+  # same logic that used to operate on the materialised y_mat - pulled
   # forward so we can compute the design BEFORE the memory gate.
   ss <- sample_sheet[match(sample_cols_all,
                             as.character(sample_sheet$Sample_ID)), , drop = FALSE]
@@ -161,7 +161,7 @@ assoc_apply_stat_model_batch_lazy <- function(pivot_lazy,
 
   # Design matrix: poly(IV, degree, raw=TRUE) + covariates. Name the
   # polynomial columns the same way assoc_model_polynomial's
-  # I(...) formula winds up after core_name_cleaning — 'I_<IV>_<deg>' — so
+  # I(...) formula winds up after core_name_cleaning - 'I_<IV>_<deg>' - so
   # the CSV columns landed by build_pname/build_ename match the
   # polynomial CSV schema bit-for-bit.
   iv_vec <- as.numeric(ss[, independent_variable])
@@ -236,7 +236,7 @@ assoc_apply_stat_model_batch_lazy <- function(pivot_lazy,
   fit <- limma::eBayes(fit)
 
   # Build the result data.frame in the same schema assoc_apply_stat_model_batch
-  # returns — same column names, so the FDR + selector machinery in
+  # returns - same column names, so the FDR + selector machinery in
   # assoc_analysis_save_results() picks them up unchanged.
   coef_names <- colnames(fit$coefficients)
 
@@ -279,7 +279,7 @@ assoc_apply_stat_model_batch_lazy <- function(pivot_lazy,
     result_temp[[enames[i]]] <- fit$coefficients[, i]
   }
 
-  first_poly_pcol <- pnames[2L]  # coef 1 is (Intercept), coef 2 is poly_1
+  first_poly_pcol <- pnames[2L]  # coef 1 methods::is (Intercept), coef 2 is poly_1
   if (!is.null(first_poly_pcol) && first_poly_pcol %in% colnames(result_temp)) {
     result_temp$PVALUE <- result_temp[[first_poly_pcol]]
   }

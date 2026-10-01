@@ -1,4 +1,4 @@
-enrich_result_save <- function(result_pathway, pathway_report_path, pathway_package)
+enrich_result_save <- function(result_pathway, pathway_report_path, pathway_package, study)
 {
   ssEnv <- core_get_session_info()
   if(nrow(result_pathway)!=0)
@@ -18,6 +18,10 @@ enrich_result_save <- function(result_pathway, pathway_report_path, pathway_pack
     }, error = function(e) {
 
     })
+    # study arrives as an argument. It used to be read as a bare name, which
+    # only works under dynamic scoping: every caller happens to have a
+    # parameter called study, but R resolves names lexically, so this line
+    # failed with "object 'study' not found" on every single call.
     result_pathway$PHENOTYPE <- grepl(study,result_pathway[,description_column], ignore.case = TRUE)
     # REMOVE COLUMNS with NAMES X, X.1 and X.2
     result_pathway <- result_pathway[,!grepl("^X$|^X\\.[0-9]+$", colnames(result_pathway))]

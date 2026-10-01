@@ -2,7 +2,7 @@
 #' Convert a POSITION-keyed signal pivot into a PROBE-keyed lazy frame.
 #'
 #' Returns a Polars LazyFrame rather than an R
-#' data.frame. Materialisation downstream is opt-in only — sem_analyze_batch
+#' data.frame. Materialisation downstream is opt-in only - sem_analyze_batch
 #' and sem_analyze_population_bulk consume the lazy frame directly. This
 #' eliminates the ~12 GB R-side peak that caused silent jetsam kills on
 #' ewas-scale matrices (367k × 4013) in resume mode (v18, v21).
@@ -40,7 +40,7 @@ anno_position_pivot_to_probe <- function(signal_data)
   # Single lazy chain: join on coords, dedupe preserving input order
   # (sort gate is io_signal_save per AI-096 §single-sort-gate-at-pivot-save),
   # filter probes matching the detected technology, drop annotation columns.
-  # NO collect() — caller takes a LazyFrame. Materialisation, if needed,
+  # NO collect() - caller takes a LazyFrame. Materialisation, if needed,
   # is the caller's explicit decision.
   result_lf <- probe_features_lf$
     join(signal_lazy, on = c("CHR", "START", "END"), how = "inner")$

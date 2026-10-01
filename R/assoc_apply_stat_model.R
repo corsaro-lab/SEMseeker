@@ -9,6 +9,9 @@
 #' @param session_folder where to save log file
 #' @param independent_variable independent variable name
 #' @param samples_sql_condition SQL condition string to filter samples
+#' @param inference_detail one row of the inference specification, carrying the
+#'   per-request fields (scope, aggregation, transformation_x) that the model
+#'   call needs; NULL falls back to the defaults
 #' @param ... extra parameters
 #'
 #' @return A data.frame with one row per tested genomic area, including columns
@@ -54,7 +57,7 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
   }
 
   # AI-044 (2026-06-08): bulk path for logistic regression. Same
-  # dispatch=guard pattern as limma/voom — guard against missing
+  # dispatch=guard pattern as limma/voom - guard against missing
   # Rfast lives inside assoc_glm_model_bulk(). Returns one row per probe
   # with the legacy schema (per-coef PVALUE/ESTIMATE + top-level
   # PVALUE/PVALUE_ADJ) so downstream CSV machinery doesn't change.
@@ -69,11 +72,12 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
       session_folder       = session_folder,
       independent_variable = independent_variable,
       samples_sql_condition = samples_sql_condition,
+        inference_detail     = inference_detail,
       ...
     ))
   }
 
-  # Session info is only needed for the per-area (foreach) path —
+  # Session info is only needed for the per-area (foreach) path -
   # the batch path above is intentionally session-independent so it
   # can be exercised in unit tests without a materialised session.
   ssEnv <- core_get_session_info()
@@ -104,7 +108,7 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
   if (anyDuplicated(safe_cols)) {
     safe_cols <- make.unique(safe_cols, sep = "_")
   }
-  safe_to_real <- setNames(real_cols, safe_cols)
+  safe_to_real <- stats::setNames(real_cols, safe_cols)
   colnames(tempDataFrame) <- safe_cols
 
   cols <- colnames(tempDataFrame)
@@ -173,7 +177,7 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
       local_result$SUBAREA <-  as.character(key$SUBAREA)
       # AI-248: which operator reduced the positions to this number. Absent for
       # the depths that do not aggregate, present wherever the caller declared
-      # it — and part of the row identity, so two aggregations of the same
+      # it - and part of the row identity, so two aggregations of the same
       # scope never collapse into one.
       if (!is.null(key$AGGREGATION))
         local_result$AGGREGATION <- as.character(key$AGGREGATION)
@@ -185,7 +189,7 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
       # AI-106 (2026-06-09): reverse-map back to the upstream raw name
       # (HLA-A, chr10:100028204-100028508, ...) so the CSV preserves it
       # for enrichment / resume match. Fallback to burdenValue itself if
-      # the mapping is missing (defensive — should not happen).
+      # the mapping is missing (defensive - should not happen).
       local_result$AREA_OF_TEST <- if (burdenValue %in% names(safe_to_real)) {
         safe_to_real[[burdenValue]]
       } else {
@@ -267,8 +271,8 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
     result_temp <- result_temp %>% dplyr::distinct()
 
     # AI-257: no adjustment here any more. What this function holds is one
-    # chunk — sem_run_depth_n_marker() splits a pivot at ceiling(6e6 / ncol)
-    # rows — so any family it could form is a memory parameter, not a
+    # chunk - sem_run_depth_n_marker() splits a pivot at ceiling(6e6 / ncol)
+    # rows - so any family it could form is a memory parameter, not a
     # statistical choice. assoc_analysis_save_results() is the only place where
     # every row of a family is together, and it computes all three levels there.
     #

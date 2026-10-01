@@ -8,7 +8,6 @@
 ##   3. coverage_minimum lowers the bar explicitly for deliberate
 ##      cross-technology runs.
 ##
-## Session tests use tempFolders indices 10-12.
 
 .coverage_chart_files <- function(tf) {
   list.files(file.path(tf, "Chart", "COVERAGE"), full.names = TRUE)
@@ -19,7 +18,7 @@
 }
 
 test_that("coverage gate passes and writes its sidecar when the input matches the annotation", {
-  tf <- tempFolders[10]
+  tf <- sem_test_folder()
   unlink(tf, recursive = TRUE)
   SEMseeker:::core_init_env(result_folder = tf, tech = "K850",
                             parallel_strategy = "sequential", start_fresh = TRUE)
@@ -41,7 +40,7 @@ test_that("coverage gate passes and writes its sidecar when the input matches th
 })
 
 test_that("coverage gate stops the run below threshold AND still leaves the charts behind", {
-  tf <- tempFolders[11]
+  tf <- sem_test_folder()
   unlink(tf, recursive = TRUE)
   SEMseeker:::core_init_env(result_folder = tf, tech = "K850",
                             parallel_strategy = "sequential", start_fresh = TRUE)
@@ -65,7 +64,7 @@ test_that("coverage gate stops the run below threshold AND still leaves the char
 })
 
 test_that("coverage_minimum lowers the bar explicitly for cross-technology runs", {
-  tf <- tempFolders[12]
+  tf <- sem_test_folder()
   unlink(tf, recursive = TRUE)
   SEMseeker:::core_init_env(result_folder = tf, tech = "K850",
                             parallel_strategy = "sequential", start_fresh = TRUE,
@@ -81,7 +80,7 @@ test_that("coverage_minimum lowers the bar explicitly for cross-technology runs"
 })
 
 test_that("coverage gate is not enforced on coordinate-based technologies", {
-  tf <- tempFolders[12]
+  tf <- sem_test_folder()
   unlink(tf, recursive = TRUE)
   SEMseeker:::core_init_env(result_folder = tf, tech = "LONGREAD",
                             genome_build = "hg38",

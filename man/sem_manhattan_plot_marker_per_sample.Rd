@@ -41,7 +41,11 @@ sample sheet (default \code{"NAME"}).}
 (default 90).}
 
 \item{parallel_strategy}{character. Parallelisation backend
-(default \code{"multicore"}).}
+(default \code{"multisession"}).
+Asking for \code{"multicore"} is accepted and converted to
+\code{"multisession"}: it means fork(), which is unsafe with this
+package's native thread pool on every platform that offers it, and
+absent on Windows. The conversion is logged.}
 
 \item{...}{Additional arguments passed to \code{core_init_env()}.}
 }

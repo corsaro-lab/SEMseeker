@@ -33,6 +33,9 @@ io_data_preparation(
 
 \item{key}{named list with AREA, SUBAREA, MARKER and FIGURE identifiers, used
 to name the artefact in the log when degenerate columns are dropped}
+
+\item{transformation_x}{transformation to apply to the independent variable
+before the fit; "none" leaves it untouched}
 }
 \value{
 A named list with two elements: \code{tempDataFrame} (the prepared

@@ -10,7 +10,7 @@
 #' This gate always runs, in this order:
 #' \enumerate{
 #'   \item the coverage charts (\code{\link{sem_coverage_analysis}}) are
-#'     generated on EVERY run, whatever the verdict — they are the artefact the
+#'     generated on EVERY run, whatever the verdict - they are the artefact the
 #'     analyst reads to understand what was covered;
 #'   \item a global coverage percentage (input positions found in the reference
 #'     annotation) is logged as a BANNER and written to a JSON sidecar for
@@ -95,7 +95,7 @@ sem_coverage_gate <- function(observed_probes, tech = NULL) {
   )
 
   core_log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"),
-            " Coverage — input_positions=", n_input,
+            " Coverage - input_positions=", n_input,
             " | covered_by_reference=", n_covered,
             " | coverage=", if (is.na(pct)) "NA" else paste0(round(pct, 2), "%"),
             " | minimum=", minimum, "%",

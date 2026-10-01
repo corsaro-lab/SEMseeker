@@ -14,7 +14,7 @@ io_pivot_to_long_format <- function (marker, figure, area,subarea, phenotype_col
 {
 
   ssEnv <- core_get_session_info()
-  area_pivot <- get_pivot(marker, figure, area, subarea)
+  area_pivot <- io_read_pivot(marker, figure, area, subarea)
 
   area_pivot <- subset(area_pivot, area_pivot$SAMPLEID=="SAMPLE_GROUP" | area_pivot$SAMPLEID %in% areas_selection)
   study_summary <-   sem_study_summary_get()

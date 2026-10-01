@@ -1,17 +1,17 @@
 #' Write the study sample sheet of the run (internal)
 #'
 #' AI-223: this function used to append the per-sample burden
-#' (`MUTATIONS_HYPER`, `DELTAS_HYPO`, …) and `PROBES_COUNT` to the sample
-#' sheet. Those columns were aggregated over the `AREA == "POSITION"` keys —
-#' i.e. over every probe, with no genomic filter — which is exactly the
+#' (`MUTATIONS_HYPER`, `DELTAS_HYPO`, ...) and `PROBES_COUNT` to the sample
+#' sheet. Those columns were aggregated over the `AREA == "POSITION"` keys -
+#' i.e. over every probe, with no genomic filter - which is exactly the
 #' `SAMPLE` scope of the statistics sibling. They now live in
 #' the `SCOPE = SAMPLE` artefacts, one row tall, and are joined back on read by
 #' [sem_study_summary_get()], so the sample sheet stays the description of the
 #' study.
 #'
 #' AI-255 brought **one** of them back here: `N_PROBES`. It is a property of the
-#' imputation — how many positions of that sample survived the treatment of
-#' missing values — not an aggregation of a marker over a region class, so it
+#' imputation - how many positions of that sample survived the treatment of
+#' missing values - not an aggregation of a marker over a region class, so it
 #' belongs with the descriptive properties of the sample rather than in the
 #' taxonomy.
 #'
@@ -38,7 +38,7 @@ sem_study_summary_total <- function()
     study_summary <- merge(study_summary, n_probes, by = "Sample_ID", all.x = TRUE)
   }
 
-  # io_file_path_build() uppercases via core_name_cleaning() — on-disk name is
+  # io_file_path_build() uppercases via core_name_cleaning() - on-disk name is
   # SAMPLE_SHEET_RESULT.csv. Linux ext4 is case-sensitive; readers that
   # hard-code the path must use the uppercase form. See io_file_path_build().
   summary_file <- io_file_path_build( ssEnv$result_folderData, "sample_sheet_result","csv")

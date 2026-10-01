@@ -191,6 +191,14 @@ jobs:
               "IlluminaHumanMethylation27kanno.ilmn12.hg19",
               "AnnotationHub",
               "TxDb.Hsapiens.UCSC.hg19.knownGene",
+              # org.Hs.eg.db  NOT optional for the GRanges backend, despite the
+              #          fallback in .anno_entrez_to_symbol(). TxDb keys genes by
+              #          Entrez id; without the symbol database the label of a
+              #          gene region stays an Entrez id, and that label becomes
+              #          AREA in the results. The Illumina path labels with
+              #          symbols, so the two backends would key the same gene two
+              #          ways and nothing would join. test-5-area-granges-build.R
+              "org.Hs.eg.db",
               # qvalue   test-0-taxonomy.R — the `q` estimator of
               #          .assoc_adjust_vector(). Without it the test skips, and
               #          test-0-suggests-installed.R fails on purpose: a silent

@@ -16,7 +16,7 @@
 #' [io_signal_stats()] does not declare the mode columns there.
 #'
 #' **The numerosity guard (AI-255).** The old guard asked only for two distinct
-#' points, which is what `density()` needs to run — not what the estimate needs
+#' points, which is what `density()` needs to run - not what the estimate needs
 #' to mean something. On a handful of values the kernel bandwidth dominates and
 #' "the highest peak below 0.5" is noise, but the function would still return a
 #' number, and a plausible-looking number is worse than a refusal because nobody
@@ -35,7 +35,7 @@ util_signal_descriptors <- function(values, beta = TRUE) {
   out    <- stats::setNames(vector("list", length(wanted)), wanted)
   out[]  <- NA_real_
 
-  # AI-255: N_PROBES describes the INPUT — how many finite values were reduced —
+  # AI-255: N_PROBES describes the INPUT - how many finite values were reduced -
   # and is reported here for callers that want it. It is deliberately not in
   # io_signal_stats(), which is the vocabulary of columns an artefact carries,
   # because no artefact carries it any more: it is a property of the imputation

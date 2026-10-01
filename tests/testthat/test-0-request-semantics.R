@@ -75,7 +75,7 @@ test_that("distinct coordinate tuples never compose the same artefact key", {
   # vocabularies carry an underscore inside their values (N_SHORE, S_SHELF), so
   # nothing about the format prevents a collision, only the vocabularies do.
   # That is exactly the kind of guarantee that has to be measured.
-  tempFolder <- tempFolders[20]
+  tempFolder <- sem_test_folder()
   on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE)
             unlink(tempFolder, recursive = TRUE) }, add = TRUE)
   SEMseeker:::core_init_env(result_folder = tempFolder, parallel_strategy = "sequential",
@@ -178,7 +178,7 @@ test_that("no two (region class, aggregation) pairs answer with the same numbers
   # This is where the unrestricted-mask defect showed: every region class
   # returned the burden of the whole sample, so the whole matrix below collapsed
   # to a single distinct row while every name in it promised something else.
-  tempFolder <- tempFolders[21]
+  tempFolder <- sem_test_folder()
   unlink(tempFolder, recursive = TRUE)
   on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE) }, add = TRUE)
 
@@ -262,7 +262,7 @@ test_that("an enrichment on a folder without gene rows is refused, not answered 
   # legitimate analysis that cannot feed a pathway enrichment. Before this, every
   # backend read zero rows and wrote nothing, and the folder looked like a study
   # where no pathway was significant.
-  tempFolder <- tempFolders[22]
+  tempFolder <- sem_test_folder()
   unlink(tempFolder, recursive = TRUE)
   on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE) }, add = TRUE)
 

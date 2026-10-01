@@ -62,7 +62,7 @@ enrich_STRINGdb <- function(study,
 
 
       enrich_phenotype_analysis_name <- enrich_phenotype_analysis_name(inference_detail, keys[i,],prefix ="", suffix= suffix , pvalue_column, ssEnv$alpha, significance)
-      path <- io_dir_check_and_create(ssEnv$result_folderEnrichment,c("STRINGdb",core_name_cleaning(inference_detail$areas_sql_condition),core_name_cleaning(inference_detail$samples_sql_condition), core_name_cleaning(inference_detail$association_results_sql_condition)))
+      path <- io_enrichment_folder(inference_detail, "STRINGdb")
       pathway_report_path <- io_file_path_build(path,enrich_phenotype_analysis_name,"csv")
 
       # if(file.exists(pathway_report_path))
@@ -72,14 +72,14 @@ enrich_STRINGdb <- function(study,
         pp <- utils::read.csv2(pathway_report_path,stringsAsFactors = FALSE)
         if(nrow(pp)==0)
           next
-        enrich_result_save(pp, pathway_report_path, "STRINGdb")
+        enrich_result_save(pp, pathway_report_path, "STRINGdb", study = study)
         next
       }
 
       results_inference <- assoc_results_get(
         inference_detail =  inference_detail,
         marker = keys[i,"MARKER"],
-        # AI-257: neither coordinate was declared here — see enrich_WebGestalt.
+        # AI-257: neither coordinate was declared here - see enrich_WebGestalt.
         area  = .enrich_in$area,
         scope = .enrich_in$scope,
         pvalue_column=  pvalue_column,
@@ -170,7 +170,7 @@ enrich_STRINGdb <- function(study,
 
       if(exists("result_pathway"))
       {
-        enrich_result_save(result_pathway, pathway_report_path, "STRINGdb")
+        enrich_result_save(result_pathway, pathway_report_path, "STRINGdb", study = study)
       }
     }
 

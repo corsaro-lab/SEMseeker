@@ -62,7 +62,7 @@ assoc_execute_model <- function(family_test, tempDataFrame, sig.formula, burdenV
     stop("family_test='", family_test,
          "' is batch-only: voom estimates its mean-variance trend across ",
          "many genomic areas at once. Call assoc_apply_stat_model() instead of ",
-         "assoc_execute_model() — assoc_apply_stat_model dispatches batch families ",
+         "assoc_execute_model() - assoc_apply_stat_model dispatches batch families ",
          "to assoc_apply_stat_model_batch() automatically.")
   }
 

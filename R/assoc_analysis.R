@@ -71,9 +71,13 @@
 #' @param result_folder character. Path to the SEMseeker result folder.
 #' @param maxResources numeric. Maximum percentage of CPU cores to use
 #'   (default 90).
-#' @param parallel_strategy character. Parallelisation backend; possible
-#'   values: \code{"none"}, \code{"multisession"}, \code{"sequential"},
-#'   \code{"multicore"}, \code{"cluster"} (default \code{"multicore"}).
+#' @param parallel_strategy character. Parallelisation backend; one of
+#'   \code{"multisession"}, \code{"sequential"}, \code{"cluster"}
+#'   (default \code{"multisession"}).
+#'   Asking for \code{"multicore"} is accepted and converted to
+#'   \code{"multisession"}: it means fork(), which is unsafe with this
+#'   package's native thread pool on every platform that offers it, and
+#'   absent on Windows. The conversion is logged.
 #' @param start_fresh logical. If \code{TRUE}, delete previous inference
 #'   results before running (default \code{FALSE}).
 #' @param ... Additional arguments passed to \code{core_init_env()}.
@@ -102,7 +106,7 @@
 #' }
 #' @export
 association_analysis <- function(inference_details, result_folder, maxResources = 90,
-  parallel_strategy = "multicore", start_fresh = FALSE, ...) {
+  parallel_strategy = "multisession", start_fresh = FALSE, ...) {
 
   arguments <- list(...)
   areas_selection <- c()
@@ -156,7 +160,7 @@ association_analysis <- function(inference_details, result_folder, maxResources 
     # could produce a complete-looking file.
     family_test <- util_split_and_clean(inference_detail$family_test)
 
-    # AI-255: the models read artefacts, not columns — assoc_run_marker() opens
+    # AI-255: the models read artefacts, not columns - assoc_run_marker() opens
     # the pivot for every key, collapsed or not. So what this needs from the
     # sample sheet is the phenotype and the covariates, and joining the
     # per-sample statistics onto it would build artefacts nobody then reads:
@@ -164,8 +168,8 @@ association_analysis <- function(inference_details, result_folder, maxResources 
     # sem_study_summary_get(), and nothing reads those names back.
     #
     # The join is still done when the request names a feature the plain sheet
-    # does not have — adjusting for the global burden is a legitimate thing to
-    # ask — but it is no longer paid for on every run by default.
+    # does not have - adjusting for the global burden is a legitimate thing to
+    # ask - but it is no longer paid for on every run by default.
     study_summary <- sem_study_summary_get(inference_detail$samples_sql_condition,
                                            with_sample_stats = FALSE)
     wanted_cols <- c(gsub(" ", "", as.character(inference_detail$independent_variable)),
@@ -203,7 +207,7 @@ association_analysis <- function(inference_details, result_folder, maxResources 
 
       # AI-255: one road. There used to be two calls here, chosen by
       # depth_analysis, because the collapsed artefact and the per-instance one
-      # had different shapes — a table of columns against a pivot of rows. They
+      # had different shapes - a table of columns against a pivot of rows. They
       # have the same shape now, so a model handed a row does not know, and has
       # no reason to ask, whether the key of that row is a gene symbol or
       # PROBE_WHOLE. It fits. The scope travels in the key; the batch-family
@@ -221,7 +225,7 @@ association_analysis <- function(inference_details, result_folder, maxResources 
       # CSV is finalised. One call per marker; assoc_volcano_plot_inference
       # splits internally by (AREA, SUBAREA) and writes one PNG per
       # combination under <result_folder>/Chart/VOLCANO/. Best-effort:
-      # plot failure must not abort the analysis loop — log WARNING and
+      # plot failure must not abort the analysis loop - log WARNING and
       # continue with the next marker.
       tryCatch(
         assoc_volcano_plot_inference(

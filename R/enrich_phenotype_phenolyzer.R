@@ -64,7 +64,7 @@ enrich_phenotype_phenolyzer <- function(study,
       inference_detail =  inference_detail,
       marker = keys[i,"MARKER"],
       # AI-257: neither coordinate was declared here, so this read took the
-      # GENE default and every scope — the collapsed rows included. A pathway
+      # GENE default and every scope - the collapsed rows included. A pathway
       # needs a p-value per gene; a per-sample burden has no genes to list.
       area  = .enrich_in$area,
       scope = .enrich_in$scope,
@@ -113,8 +113,8 @@ enrich_phenotype_phenolyzer <- function(study,
 
     file_term <- file.path(tempFolder, paste0("term_",random_string,".txt"))
     file_genes <- file.path(tempFolder, paste0("genes_",random_string,".txt"))
-    write.table(unique(gene_set[,"AREA_OF_TEST"]), file_genes, quote = FALSE, row.names = FALSE, col.names = FALSE)
-    write.table(diseases, file_term, quote = FALSE, row.names = FALSE, col.names = FALSE)
+    utils::write.table(unique(gene_set[,"AREA_OF_TEST"]), file_genes, quote = FALSE, row.names = FALSE, col.names = FALSE)
+    utils::write.table(diseases, file_term, quote = FALSE, row.names = FALSE, col.names = FALSE)
 
     #
     nCore <-  ssEnv$parallel$nCore

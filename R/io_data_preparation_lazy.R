@@ -13,7 +13,7 @@
 #'
 #' Both steps stay end-to-end lazy: the operations are appended to the
 #' input `pivot_lazy` and the caller decides when to `collect()`. NO
-#' materialisation happens here — that is the whole point of the
+#' materialisation happens here - that is the whole point of the
 #' AI-061 lazy path.
 #'
 #' Scope is intentionally narrower than `io_data_preparation()`:
@@ -42,9 +42,9 @@
 #'   non-lazy path. Set `FALSE` only for diagnostic test code that wants
 #'   to see the raw transformations alone.
 #' @param key Optional named list with `MARKER`/`FIGURE`/`AREA`/`SUBAREA`
-#'   identifiers — included in the log line so the diagnostic is
+#'   identifiers - included in the log line so the diagnostic is
 #'   traceable across multiple concurrent dispatches.
-#' @param family_test Optional character — passed through to the log
+#' @param family_test Optional character - passed through to the log
 #'   line, same purpose as `key`.
 #'
 #' @return The transformed and filtered `polars_lazy_frame`. The schema
@@ -89,7 +89,7 @@ io_data_preparation_lazy <- function(pivot_lazy,
     # `factor` and `quantile_<N>` cannot be expressed cleanly in a lazy
     # wide-format chain (they need group / window aggregations). Emit a
     # warning so the user sees the gap explicitly, then silently treat
-    # the row as `transformation_y = "none"` and continue — the CSV
+    # the row as `transformation_y = "none"` and continue - the CSV
     # will still be produced (without the requested transformation),
     # and the user can route the inference_detail to the per-area
     # engine offline if they need that transformation honoured.
@@ -108,7 +108,7 @@ io_data_preparation_lazy <- function(pivot_lazy,
     core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
               " io_data_preparation_lazy", fam_str, key_str,
               ": unsupported transformation_y='", trans_y,
-              "' on lazy batch path — continuing as 'none'.")
+              "' on lazy batch path - continuing as 'none'.")
     trans_y <- "none"
   }
 
@@ -117,9 +117,9 @@ io_data_preparation_lazy <- function(pivot_lazy,
   # Note: `log` on negative or zero values yields NaN; the R-side
   # `io_data_preparation()` guards by adding `min(burden_values[burden_values>0])`,
   # which would require a scan over the full pivot. We use a tiny
-  # epsilon (1e-9) instead — cheap, lazy, accurate for non-negative
+  # epsilon (1e-9) instead - cheap, lazy, accurate for non-negative
   # input (DELTARP, DELTARQ, MUTATIONS). On signed input like
-  # M-values (SIGNAL), `log` doesn't apply semantically anyway —
+  # M-values (SIGNAL), `log` doesn't apply semantically anyway -
   # the caller should choose `transformation_y = "none"` there.
   EPS <- 1e-9
   if (trans_y != "none") {
@@ -156,7 +156,7 @@ io_data_preparation_lazy <- function(pivot_lazy,
     # take `...` exprs as individual args, NOT a list. Wrap via `do.call`
     # to unpack the per-sample column expressions. The same `do.call`
     # pattern is used by `analyze_population_bulk.R` for `pl$concat()`
-    # on per-chr chunks — kept consistent for readability.
+    # on per-chr chunks - kept consistent for readability.
     col_exprs <- lapply(sample_cols, function(c) polars::pl$col(c))
     min_h <- do.call(polars::pl$min_horizontal, col_exprs)$alias("__min_y")
     max_h <- do.call(polars::pl$max_horizontal, col_exprs)$alias("__max_y")

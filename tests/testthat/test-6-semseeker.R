@@ -1,8 +1,7 @@
 test_that("semeeker", {
 
-  tempFolder <- tempFolders[1]
+  tempFolder <- sem_test_folder()
   unlink(tempFolder,recursive = TRUE)
-  tempFolders <<- tempFolders[-1]
 
   ####################################################################################
 

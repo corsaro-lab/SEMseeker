@@ -1,13 +1,13 @@
-# island_opensea.R — shared CpG-island context semantics
+# island_opensea.R - shared CpG-island context semantics
 #
 # Single source of truth for the ISLAND subarea definitions used by BOTH
 # annotation backends, so they cannot drift apart:
-#   * anno_probe_annotation_build()  — Illumina array packages (Relation_to_Island)
-#   * anno_area_granges_build()       — coordinate / AnnotationHub (WGBS, long-read)
+#   * anno_probe_annotation_build()  - Illumina array packages (Relation_to_Island)
+#   * anno_area_granges_build()       - coordinate / AnnotationHub (WGBS, long-read)
 #
 # Illumina's Relation_to_Island has six categories: Island, N_Shore, S_Shore,
 # N_Shelf, S_Shelf, OpenSea. Historically SEMseeker kept only the four
-# shore/shelf contexts plus a WHOLE that actually meant "Island core" — the
+# shore/shelf contexts plus a WHOLE that actually meant "Island core" - the
 # explicit Island core and the OpenSea compartment were lost. This module
 # restores both and aligns the semantics:
 #
@@ -17,7 +17,7 @@
 #   N_SHORE / S_SHORE / N_SHELF / S_SHELF = ±2 kb / ±2-4 kb flanks (unchanged).
 #   OPENSEA  = CpGs outside every neighbourhood. OpenSea regions are the
 #              genomic gaps BETWEEN neighbourhoods, each labelled by its own
-#              coordinate "chr:start-end" — exactly as islands are labelled by
+#              coordinate "chr:start-end" - exactly as islands are labelled by
 #              their coordinate. A gap never crosses a chromosome boundary, so
 #              no OpenSea region spans chromosomes.
 #

@@ -1,4 +1,4 @@
-plot_area_plot_circlize <- function(areas, circle_plot_path,result_folder, maxResources = 90, parallel_strategy  = "multicore", ...)
+plot_area_plot_circlize <- function(areas, circle_plot_path,result_folder, maxResources = 90, parallel_strategy  = "multisession", ...)
 {
   ssEnv <- core_init_env(result_folder = result_folder, maxResources = maxResources, parallel_strategy = parallel_strategy, start_fresh = FALSE, ...)
 
@@ -39,13 +39,13 @@ plot_area_plot_circlize <- function(areas, circle_plot_path,result_folder, maxRe
   circlize::circos.track(track.index = circlize::get.current.track.index(), panel.fun = function(x, y) {
     circlize::circos.text(circlize::CELL_META$xcenter, circlize::CELL_META$ylim[1], circlize::CELL_META$sector.index,
       niceFacing = TRUE, adj = c(0.5, 0), cex = chr_font_size)
-  }, track.height = strheight("fj", cex = chr_font_size) * 2, bg.border = "grey", bg.col= "white", cell.padding = c(0, 0, 0, 0))
+  }, track.height = graphics::strheight("fj", cex = chr_font_size) * 2, bg.border = "grey", bg.col= "white", cell.padding = c(0, 0, 0, 0))
 
   # Add the ideogram track
   circlize::circos.genomicIdeogram(cytoband)
 
   # Add genomic links with unique colors
-  my_col <- grDevicesrainbow(nrow(results))
+  my_col <- grDevices::rainbow(nrow(results))
   circlize::circos.genomicLink(results[, 1:3], results[, 6:8], col = my_col)
 
   # Clear the circos plot after drawing

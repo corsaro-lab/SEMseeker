@@ -17,8 +17,7 @@
 # ---------------------------------------------------------------------------
 
 test_that("enrich_analysy_add_category returns data unchanged for empty input", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
@@ -30,8 +29,7 @@ test_that("enrich_analysy_add_category returns data unchanged for empty input", 
 })
 
 test_that("enrich_analysy_add_category adds SS_CATEGORY='CHEMICAL' for ctdR source", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
@@ -61,8 +59,7 @@ test_that("enrich_analysy_add_category adds SS_CATEGORY='CHEMICAL' for ctdR sour
 })
 
 test_that("enrich_analysy_add_category maps GO types for WebGestalt source", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
@@ -99,8 +96,7 @@ test_that("enrich_analysy_add_category maps GO types for WebGestalt source", {
 # ---------------------------------------------------------------------------
 
 test_that("enrich_WebGestalt returns NULL gracefully when WebGestaltR not installed", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
@@ -136,8 +132,7 @@ test_that("enrich_WebGestalt returns NULL gracefully when WebGestaltR not instal
 })
 
 test_that("enrich_STRINGdb returns NULL gracefully when STRINGdb not installed", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
@@ -167,8 +162,7 @@ test_that("enrich_STRINGdb returns NULL gracefully when STRINGdb not installed",
 })
 
 test_that("enrich_pathfindR returns NULL gracefully when pathfindR not installed", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
@@ -210,8 +204,7 @@ test_that("enrich_ctdR runs without error on synthetic association results", {
     testthat::skip("ctdR not installed")
   }
 
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   unlink(tempFolder, recursive = TRUE)
 
   # ── Build synthetic data with injected mutations ──────────────────────────

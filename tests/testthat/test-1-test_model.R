@@ -33,7 +33,7 @@
 # ---------------------------------------------------------------------------
 
 test_that("assoc_test_model t.test returns a data.frame with pvalue", {
-  tf <- tempFolders[1]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -55,7 +55,7 @@ test_that("assoc_test_model t.test returns a data.frame with pvalue", {
 })
 
 test_that("assoc_test_model t.test: clearly separated groups give small p-value", {
-  tf <- tempFolders[2]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -78,7 +78,7 @@ test_that("assoc_test_model t.test: clearly separated groups give small p-value"
 # ---------------------------------------------------------------------------
 
 test_that("assoc_test_model chisq.test returns a data.frame with pvalue", {
-  tf <- tempFolders[3]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -106,7 +106,7 @@ test_that("assoc_test_model chisq.test returns a data.frame with pvalue", {
 # ---------------------------------------------------------------------------
 
 test_that("assoc_test_model bartlett.test returns a data.frame with pvalue", {
-  tf <- tempFolders[4]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -125,7 +125,7 @@ test_that("assoc_test_model bartlett.test returns a data.frame with pvalue", {
 })
 
 test_that("assoc_test_model bartlett.test: equal-variance groups give large p-value", {
-  tf <- tempFolders[5]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -148,7 +148,7 @@ test_that("assoc_test_model bartlett.test: equal-variance groups give large p-va
 # ---------------------------------------------------------------------------
 
 test_that("assoc_test_model wilcoxon returns pvalue and effect_size columns", {
-  tf <- tempFolders[6]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -170,7 +170,7 @@ test_that("assoc_test_model wilcoxon returns pvalue and effect_size columns", {
 # ---------------------------------------------------------------------------
 
 test_that("assoc_test_model kruskal.test with 3 groups returns pvalue", {
-  tf <- tempFolders[7]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -192,7 +192,7 @@ test_that("assoc_test_model kruskal.test with 3 groups returns pvalue", {
 })
 
 test_that("assoc_test_model kruskal.test with single group returns NA pvalue", {
-  tf <- tempFolders[8]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 

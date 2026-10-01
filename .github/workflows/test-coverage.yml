@@ -83,12 +83,16 @@ jobs:
               "IlluminaHumanMethylation450kanno.ilmn12.hg19",
               "IlluminaHumanMethylation27kanno.ilmn12.hg19",
               "AnnotationHub",
-              "TxDb.Hsapiens.UCSC.hg19.knownGene"
+              "TxDb.Hsapiens.UCSC.hg19.knownGene",
+              # Not optional: it is what turns the Entrez keys of TxDb into the
+              # gene symbols the Illumina path uses, so both backends name a gene
+              # the same way. test-5-area-granges-build.R
+              "org.Hs.eg.db"
             ),
             ask = FALSE, update = FALSE
           )
           # Install Suggests that are safe to install from CRAN (no Bioconductor chain)
-          # Excluded: pathfindR, ctdR, GEOquery, STRINGdb, AnnotationDbi, org.Hs.eg.db,
+          # Excluded: pathfindR, ctdR, GEOquery, STRINGdb, AnnotationDbi,
           #           OpenCL, openai, WebGestaltR (require Bioc or non-CRAN sources)
           #
           #   Rfast    test-0-glm_model_bulk.R (AI-044 binomial_bulk)

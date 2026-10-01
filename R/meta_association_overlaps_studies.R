@@ -1,6 +1,34 @@
-# compare inference associations of differente studies
+#' Compare association results across studies
+#'
+#' Reads the inference results of several studies from a shared result folder,
+#' joins them on the area taxonomy (marker, figure, area, subarea) and reports,
+#' per area, which studies called it significant. The aggregated table and one
+#' table per marker are written as CSV under the inference folder; the function
+#' is called for those files and returns nothing.
+#'
+#' @param inference_detail One row of the inference specification identifying
+#'   the request whose results are compared. If more than one row is passed the
+#'   first supplies the run-level parameters.
+#' @param studies Character vector of study names to compare. Each must have
+#'   its results already present under \code{result_folder}.
+#' @param alpha Significance threshold applied to \code{pvalue_column}.
+#' @param adjust_per_area Adjust p-values within each area separately.
+#' @param adjust_globally Adjust p-values across the whole result set.
+#' @param pvalue_column Name of the p-value column to test against
+#'   \code{alpha}. Defaults to the all-scope BH-adjusted column.
+#' @param statistic_parameter Name of the effect-size column carried into the
+#'   comparison table alongside the p-value.
+#' @param adjustment_method Multiple-testing correction passed to
+#'   \code{stats::p.adjust()}.
+#' @param result_folder Folder holding the studies' results and receiving the
+#'   comparison output.
+#' @param ... Passed through to the session setup.
+#'
+#' @return Called for its side effect: CSV files written under the inference
+#'   folder. Returns \code{NULL} invisibly, and early if no results are found.
+# compare inference associations of different studies
 #' @export
-assoc_inter_study_association_overlaps <- function(inference_detail, studies,alpha = 0.05, adjust_per_area = FALSE,
+meta_association_overlaps_studies <- function(inference_detail, studies,alpha = 0.05, adjust_per_area = FALSE,
   adjust_globally = FALSE,pvalue_column="PVALUE_ADJ_ALL_BH",statistic_parameter, adjustment_method = "BH",
   result_folder, ...)
 {
@@ -177,7 +205,7 @@ assoc_inter_study_association_overlaps <- function(inference_detail, studies,alp
 
     # AI-106 (2026-06-09): removed the legacy round-trip
     #   gsub("-","_") then gsub("_","-")
-    # which forced ALL underscores into dashes — a posticcio for CSV
+    # which forced ALL underscores into dashes - a posticcio for CSV
     # written with the old sanitisation that incidentally corrupted
     # WGBS coordinate names ("chr1_12345_12346" → "chr1-12345-12346").
     # Post-AI-106 all CSVs preserve raw names from the upstream
@@ -230,7 +258,7 @@ assoc_inter_study_association_overlaps <- function(inference_detail, studies,alp
             next
           # AI-044 (2026-06-09): use shared `util_pretty_label()` helper.
           categories <- util_pretty_label(categories)
-          folder <- io_dir_check_and_create(ssEnv$result_folderChart,c("OVERLAPS",areas_sql_condition))
+          folder <- io_dir_check_and_create(ssEnv$result_folderChart,c("OVERLAPS",core_name_cleaning(inference_detail$areas_sql_condition)))
           filename <-
             paste(
               folder,  "/",

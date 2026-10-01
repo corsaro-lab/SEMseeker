@@ -7,7 +7,6 @@
 ##   io_inference_file_name()       inference-result path assembly (session)
 ##   io_save_latex_table()          data.frame -> .tex via xtable
 ##
-## Session test uses tempFolders index 42.
 
 # ---------------------------------------------------------------------------
 # io_guess_decimal_separator
@@ -60,7 +59,7 @@ test_that(".io_make_probe_id strips the chr prefix and joins with START", {
 # ---------------------------------------------------------------------------
 
 test_that("io_inference_file_name assembles a marker path", {
-  tf <- tempFolders[42]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 

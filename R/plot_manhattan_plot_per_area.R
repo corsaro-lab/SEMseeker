@@ -35,6 +35,10 @@
 #'
 plot_manhattan_plot_per_area <- function(marker,figure,area,subarea,family, adjust_method,phenotype, only_significant_areas=FALSE){
 
+  # The plot reads ssEnv$color_palette. The lookup was missing, so the
+  # function failed on an unbound ssEnv as soon as it reached the fill scale.
+  ssEnv <- core_get_session_info()
+
   if(only_significant_areas)
   {
     # get inference file

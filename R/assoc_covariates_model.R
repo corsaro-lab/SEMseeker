@@ -51,7 +51,7 @@ assoc_covariates_model <- function(inference_detail, study_summary)
       {
         core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
                   " dummy expansion of '", covariate_dummy,
-                  "' produced 0 columns (covariate constant within sample subset?) — skipping.")
+                  "' produced 0 columns (covariate constant within sample subset?) - skipping.")
         next
       }
       if(is.null(dim(encoded_covariate)))
@@ -90,13 +90,13 @@ assoc_covariates_model <- function(inference_detail, study_summary)
       # Keep only non-constant columns
       filtered_covariates <- covariates[!zero_var_cols]
 
-      # AI-070: PCA on < 3 covariates is pointless — 1-col PCA = identity,
+      # AI-070: PCA on < 3 covariates is pointless - 1-col PCA = identity,
       # 2-col PCA = orthogonal rotation that loses interpretability without
       # reducing dimensionality. Skip PCA in those cases and use the raw
       # (non-constant) covariates directly. This also subsumes the AI-069
       # Kaiser-Guttman edge case (sdev^2 == 1 on single scaled dummy).
       if (length(filtered_covariates) < 3L) {
-        core_log_event("JOURNAL: PCA skipped — only ", length(filtered_covariates),
+        core_log_event("JOURNAL: PCA skipped - only ", length(filtered_covariates),
                   " non-constant covariate(s), using raw: ",
                   paste(filtered_covariates, collapse = ", "))
         covariates <- filtered_covariates
@@ -105,7 +105,7 @@ assoc_covariates_model <- function(inference_detail, study_summary)
       pca_result <- prcomp(study_summary[, filtered_covariates], center = TRUE, scale. = TRUE)
 
       core_log_event("JOURNAL: PCA,scaling and centering, applied on covariates: ", paste(covariates, collapse = ", "))
-      # preserve components with eigenvalue (sdev^2) above 1 — Kaiser-Guttman
+      # preserve components with eigenvalue (sdev^2) above 1 - Kaiser-Guttman
       # criterion. If NO PC passes this filter (e.g. when only a single dummy
       # is left after subset filtering: scale=TRUE forces sdev^2 == 1 exactly,
       # which fails the strict '> 1' inequality) we fall back to keeping the
@@ -113,7 +113,7 @@ assoc_covariates_model <- function(inference_detail, study_summary)
       keep <- which(pca_result$sdev^2 > 1)
       if (length(keep) == 0L) {
         core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
-                  " No PC passed Kaiser-Guttman (sdev^2 > 1) filter — keeping PC1 as fallback.")
+                  " No PC passed Kaiser-Guttman (sdev^2 > 1) filter - keeping PC1 as fallback.")
         keep <- 1L
       }
       pca_result <- pca_result$x[, keep, drop = FALSE]

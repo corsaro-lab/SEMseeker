@@ -6,13 +6,17 @@
 #' @param signal_data character. Path to the signal parquet file under
 #'   \code{Data/Pivots/SIGNAL/}, or a data.frame already loaded into memory.
 #'   The file is named \code{SIGNAL_<FIGURE>_PROBE_WHOLE_<GENOME_BUILD>.parquet},
-#'   where \code{FIGURE} is the scale the run was written on — \code{BETA} for a
+#'   where \code{FIGURE} is the scale the run was written on - \code{BETA} for a
 #'   proportion bounded in [0,1], \code{MVALUE} for the logit-transformed one.
 #' @param result_folder character. Path to the SEMseeker result folder.
 #' @param maxResources numeric. Maximum percentage of CPU cores to use
 #'   (default 90).
 #' @param parallel_strategy character. Parallelisation backend passed to
-#'   \code{future} (default \code{"multicore"}).
+#'   \code{future} (default \code{"multisession"}).
+#'   Asking for \code{"multicore"} is accepted and converted to
+#'   \code{"multisession"}: it means fork(), which is unsafe with this
+#'   package's native thread pool on every platform that offers it, and
+#'   absent on Windows. The conversion is logged.
 #' @param ... Additional named arguments passed to \code{core_init_env()}.
 #' @return Invisibly \code{NULL}. Coverage tables and charts are written to
 #'   the result folder.
@@ -27,7 +31,7 @@
 #' )
 #' }
 #' @export
-sem_coverage_analysis_report <- function (signal_data, result_folder, maxResources = 90, parallel_strategy  = "multicore", ...)
+sem_coverage_analysis_report <- function (signal_data, result_folder, maxResources = 90, parallel_strategy  = "multisession", ...)
 {
 
   ssEnv <- core_init_env( result_folder =  result_folder, maxResources =  maxResources, ...)

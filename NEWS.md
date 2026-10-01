@@ -214,6 +214,26 @@
   marker, figure, area and subarea, in the deduplication, in the resume match
   and in the cross-study overlaps.
 
+- **The second-order analyses are grouped under a `meta_` prefix and renamed.**
+  Six functions read the results of previous runs rather than the signal, which
+  no other function in the package does, and they were scattered across the
+  association and enrichment prefixes as if they belonged with the analyses that
+  produce those results. They now say what they aggregate over, studies or
+  subsamples, in the suffix:
+
+  | was | is |
+  |---|---|
+  | `assoc_inter_study_association_meta_analysis()` | `meta_association_across_studies()` |
+  | `assoc_inter_study_association_overlaps()` | `meta_association_overlaps_studies()` |
+  | `assoc_intra_study_association_subsamples_overlaps()` | `meta_association_overlaps_subsamples()` |
+  | `assoc_intra_study_association_replication()` | `meta_association_replication()` |
+  | `enrich_inter_study_enrichment_compare()` | `meta_enrichment_compare_studies()` |
+  | `enrich_intra_study_enrichment_subsamples_overlaps()` | `meta_enrichment_overlaps_subsamples()` |
+
+  The old names are gone rather than deprecated. A deprecated alias keeps a name
+  alive so that working code goes on working, and none of these six could run:
+  each of them read at least one variable that was never assigned.
+
 ### Bug fixes
 
 - **A request for `multicore` on a platform without `fork()` was granted with a

@@ -10,7 +10,7 @@
 test_that("plot_box_plot: wilcoxon call creates boxplot and violin PNG files", {
   skip_if_not_installed("ggpubr")
 
-  tf  <- tempFolders[30]
+  tf  <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -40,7 +40,7 @@ test_that("plot_box_plot: wilcoxon call creates boxplot and violin PNG files", {
 test_that("plot_box_plot: t.test family also creates PNG files", {
   skip_if_not_installed("ggpubr")
 
-  tf  <- tempFolders[31]
+  tf  <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -70,7 +70,7 @@ test_that("plot_box_plot: t.test family also creates PNG files", {
 test_that("plot_box_plot: non-dichotomous family (pearson) is skipped silently", {
   skip_if_not_installed("ggpubr")
 
-  tf  <- tempFolders[32]
+  tf  <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 

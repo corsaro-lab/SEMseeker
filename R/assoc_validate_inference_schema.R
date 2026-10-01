@@ -4,7 +4,7 @@
 #'
 #' 1. **Fill missing optional columns** with NA, so downstream code can
 #'    always reference them without `is.null()` checks.
-#' 2. **Reject unknown columns** with a clear diagnostic — including a
+#' 2. **Reject unknown columns** with a clear diagnostic - including a
 #'    fuzzy-match suggestion when the unknown name is close to an
 #'    expected one (typical case: typo in setup like `phenolyser` vs
 #'    `phenolyzer`, or `areas_sql_condtion` vs `areas_sql_condition`).
@@ -24,7 +24,7 @@ assoc_validate_inference_schema <- function(inference_details, strict = TRUE) {
   # Canonical user-input vocabulary for inference_details.
   # Source of truth: this list. New user-input fields go HERE.
   # (Internal runtime-stamped fields like node_name, session_id, start_time,
-  # processed_items are NOT in this list — they are added by the engine
+  # processed_items are NOT in this list - they are added by the engine
   # after the row has been validated.)
   expected_columns <- c(
     "independent_variable",
@@ -85,7 +85,7 @@ assoc_validate_inference_schema <- function(inference_details, strict = TRUE) {
   hit <- intersect(names(retired), unknown_cols)
   if (length(hit) > 0)
     stop("inference_details carries column(s) that no longer exist:\n  ",
-         paste(sprintf("'%s' — %s", hit, retired[hit]), collapse = "\n  "),
+         paste(sprintf("'%s' - %s", hit, retired[hit]), collapse = "\n  "),
          call. = FALSE)
 
   if (length(unknown_cols) > 0) {

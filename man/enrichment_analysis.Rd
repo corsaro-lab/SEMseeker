@@ -26,7 +26,7 @@ enrichment_analysis(
   ctdR = FALSE,
   result_folder,
   maxResources = 90,
-  parallel_strategy = "multicore",
+  parallel_strategy = "multisession",
   ...
 )
 }
@@ -86,7 +86,11 @@ backend (default \code{FALSE}).}
 (default 90).}
 
 \item{parallel_strategy}{character. Parallelisation backend (default
-\code{"multicore"}).}
+\code{"multisession"}).
+Asking for \code{"multicore"} is accepted and converted to
+\code{"multisession"}: it means fork(), which is unsafe with this
+package's native thread pool on every platform that offers it, and
+absent on Windows. The conversion is logged.}
 
 \item{...}{Additional named arguments passed to \code{core_init_env()}.}
 }

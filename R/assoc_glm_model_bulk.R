@@ -1,11 +1,11 @@
-# AI-044 (2026-06-08): bulk path for logistic regression — family_test
+# AI-044 (2026-06-08): bulk path for logistic regression - family_test
 # "binomial_bulk". Mirror of apply_stat_model_batch.R (limma path) but
 # for binomial GLM: per-probe Rfast::glm_logistic with shared design
 # matrix, parallelised via foreach %dorng%.
 #
 # Why a bulk path:
 #   - Per-probe stats::glm via foreach has heavy R-level overhead
-#     (~5 ms per fit × 600k probes × 4 inference cycles ≈ hours).
+#     (~5 ms per fit × 600k  probes x 4 inference cycles ≈ hours).
 #   - Rfast::glm_logistic is a C++ Newton-Raphson implementation,
 #     ~10-20× faster than stats::glm; combined with the AI-044
 #     degenerate-burden filter in io_data_preparation (~92% of LESIONS
@@ -51,7 +51,8 @@ assoc_glm_model_bulk <- function(tempDataFrame, g_start, family_test,
                             transformation_y,
                             session_folder,
                             independent_variable,
-                            samples_sql_condition, ...) {
+                            samples_sql_condition,
+                            inference_detail = NULL, ...) {
 
   if (!requireNamespace("Rfast", quietly = TRUE)) {
     stop("family_test='", family_test,
@@ -67,10 +68,16 @@ assoc_glm_model_bulk <- function(tempDataFrame, g_start, family_test,
   }
 
   # 1. io_data_preparation: factors the IV (assoc_is_family_dicotomic branch),
-  # then runs the AI-044 universal degenerate-burden filter — so by the
+  # then runs the AI-044 universal degenerate-burden filter - so by the
   # time we get back, tempDataFrame only contains informative probes.
-  transformation_x_local <- if (exists("inference_detail", inherits = TRUE) &&
-                                !is.null(inference_detail$transformation_x))
+  # inference_detail now arrives as an argument. It used to be looked up with
+  # exists("inference_detail", inherits = TRUE), which from inside a function
+  # searches the LEXICAL chain (namespace, imports, base, then the user's
+  # global environment) and never the caller's frame. So the transformation_x
+  # asked for in the request was silently dropped and the bulk fit ran on
+  # untransformed data, while a stray object of that name in the workspace
+  # would have been picked up instead.
+  transformation_x_local <- if (!is.null(inference_detail$transformation_x))
     as.character(inference_detail$transformation_x) else "none"
   prepared <- io_data_preparation(family_test, transformation_y, tempDataFrame,
                                 independent_variable, g_start, ncol(tempDataFrame),
@@ -83,7 +90,7 @@ assoc_glm_model_bulk <- function(tempDataFrame, g_start, family_test,
   g_end <- length(cols)
   if (g_start > g_end) {
     core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
-              " assoc_glm_model_bulk: no probes survived io_data_preparation — returning NULL.")
+              " assoc_glm_model_bulk: no probes survived io_data_preparation - returning NULL.")
     return(NULL)
   }
   probe_cols <- cols[g_start:g_end]
@@ -96,18 +103,18 @@ assoc_glm_model_bulk <- function(tempDataFrame, g_start, family_test,
   td <- tempDataFrame[keep_rows, , drop = FALSE]
   if (nrow(td) < 5L) {
     core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
-              " assoc_glm_model_bulk: too few complete samples (", nrow(td), " < 5) — skip.")
+              " assoc_glm_model_bulk: too few complete samples (", nrow(td), " < 5) - skip.")
     return(NULL)
   }
 
-  # 3. Design matrix: factor-expanded IV + covariates (no intercept here —
+  # 3. Design matrix: factor-expanded IV + covariates (no intercept here -
   # Rfast::glm_logistic adds it). One reference level dropped so each
   # remaining IV coefficient is a log-OR vs reference.
   iv_factor <- as.factor(td[, independent_variable])
   iv_factor <- droplevels(iv_factor)
   if (nlevels(iv_factor) < 2L) {
     core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
-              " assoc_glm_model_bulk: IV has < 2 levels after droplevels — skip.")
+              " assoc_glm_model_bulk: IV has < 2 levels after droplevels - skip.")
     return(NULL)
   }
   iv_dummies <- stats::model.matrix(~iv_factor)[, -1L, drop = FALSE]
@@ -130,7 +137,7 @@ assoc_glm_model_bulk <- function(tempDataFrame, g_start, family_test,
   }
   storage.mode(design_no_int) <- "numeric"
 
-  # 4. Response matrix: probes × samples → as integer 0/1
+  # 4. Response matrix:  probes x samples → as integer 0/1
   y_mat <- as.matrix(vapply(td[, probe_cols, drop = FALSE], as.integer, integer(nrow(td))))
   if (!is.matrix(y_mat)) y_mat <- matrix(y_mat, ncol = length(probe_cols))
   colnames(y_mat) <- probe_cols
@@ -141,12 +148,12 @@ assoc_glm_model_bulk <- function(tempDataFrame, g_start, family_test,
   coef_names_full <- c("(Intercept)", colnames(design_no_int))
 
   core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
-            " assoc_glm_model_bulk: fitting ", n_probes, " probes × ",
+            " assoc_glm_model_bulk: fitting ", n_probes, "  probes x ",
             ncoef, " coefs via Rfast::glm_logistic (parallel foreach).")
 
   # 5. Per-probe fit in parallel. Each worker only needs Rfast +
   # the design matrix + one Y column → small payload.
-  # Rfast::glm_logistic returns only estimates ($be) — NO standard errors.
+  # Rfast::glm_logistic returns only estimates ($be) - NO standard errors.
   # We compute SEs from the Fisher information at the MLE:
   #   I(β) = X' diag(p(1-p)) X  →  Var(β̂) = I(β̂)^{-1}
   # This is the standard logistic SE (same formula stats::glm uses).
@@ -166,7 +173,7 @@ assoc_glm_model_bulk <- function(tempDataFrame, g_start, family_test,
     na_vec <- c(rep(NA_real_, ncoef_local), rep(NA_real_, ncoef_local),
                 rep(NA_real_, n_metrics))
     y <- y_mat[, j]
-    # Skip degenerate Y (safety net — io_data_preparation should have caught it).
+    # Skip degenerate Y (safety net - io_data_preparation should have caught it).
     if (length(unique(y)) < 2L) return(na_vec)
     f <- tryCatch(
       Rfast::glm_logistic(x = X_design, y = y),
@@ -193,7 +200,7 @@ assoc_glm_model_bulk <- function(tempDataFrame, g_start, family_test,
 
     # AI-044 (2026-06-09): goodness-of-fit metrics per probe. Registered
     # in metrics_properties.rda. Rationale: R²/R²_adj don't apply to
-    # logistic — we report McFadden + Nagelkerke pseudo-R² (variance
+    # logistic - we report McFadden + Nagelkerke pseudo-R² (variance
     # explained analogs), C-statistic (= AUC, discrimination), and the
     # deviance ratio (devi/null_devi, lower = better fit).
     n <- length(y)
@@ -221,7 +228,7 @@ assoc_glm_model_bulk <- function(tempDataFrame, g_start, family_test,
 
   if (is.null(fits) || nrow(fits) == 0L) {
     core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
-              " assoc_glm_model_bulk: all fits failed — returning NULL.")
+              " assoc_glm_model_bulk: all fits failed - returning NULL.")
     return(NULL)
   }
 
@@ -229,7 +236,7 @@ assoc_glm_model_bulk <- function(tempDataFrame, g_start, family_test,
   pval_mat  <- fits[, (ncoef + 1):(2 * ncoef),       drop = FALSE]
   # AI-044 (2026-06-09): goodness-of-fit metrics block (4 columns) sits
   # after the est/pval blocks. Order MUST match the c(est, pval, metrics_vec)
-  # return in fit_one above — MCFADDEN_R2, NAGELKERKE_R2, C_STATISTIC_AUC,
+  # return in fit_one above - MCFADDEN_R2, NAGELKERKE_R2, C_STATISTIC_AUC,
   # DEVIANCE_RATIO. See metrics_properties.rda for direction.
   metrics_mat <- fits[, (2 * ncoef + 1):(2 * ncoef + 4), drop = FALSE]
   colnames(est_mat)     <- coef_names_full
@@ -265,7 +272,7 @@ assoc_glm_model_bulk <- function(tempDataFrame, g_start, family_test,
     result[[ename]] <- est_mat[, i]
   }
 
-  # AI-044 (2026-06-09): goodness-of-fit metrics block — names canonical
+  # AI-044 (2026-06-09): goodness-of-fit metrics block - names canonical
   # (uppercase, registered in metrics_properties.rda).
   result$MCFADDEN_R2     <- metrics_mat[, "MCFADDEN_R2"]
   result$NAGELKERKE_R2   <- metrics_mat[, "NAGELKERKE_R2"]
@@ -283,7 +290,7 @@ assoc_glm_model_bulk <- function(tempDataFrame, g_start, family_test,
 
   # AI-257: no adjustment here. This function sees the probes of one batch, and
   # a family made of whatever happened to be in a batch is a memory parameter.
-  # The three levels — key, scope, file — are computed in
+  # The three levels - key, scope, file - are computed in
   # assoc_analysis_save_results(), the one place where every row of a family is
   # together, and each is named after the family it controls.
 

@@ -11,20 +11,20 @@
 #'
 #' **No aggregate is ever derived from another aggregate.** Not for elegance:
 #' the mean of means is weighted wrong when regions hold different numbers of
-#' positions, the median of medians does not exist, and — the case that makes the
-#' rule general rather than a precaution — not even the sum of sums, because the
+#' positions, the median of medians does not exist, and - the case that makes the
+#' rule general rather than a precaution - not even the sum of sums, because the
 #' partition into genes is **not disjoint**. The annotation maps one probe onto
 #' several genes, so adding the per-gene rows counts that probe once per gene.
 #'
 #' That is also why the two scopes part company here, and only here:
 #'
 #' * `INSTANCE` **explodes** the multi-gene areas, because a probe belonging to
-#'   three genes must contribute to all three — they are three different
+#'   three genes must contribute to all three - they are three different
 #'   questions (AI-050);
 #' * `SAMPLE` **de-duplicates positions** instead: the mask says which positions
 #'   belong to the region class, each position enters the single group once.
 #'
-#' Same grammar, same function, one branch — which is exactly the difference
+#' Same grammar, same function, one branch - which is exactly the difference
 #' between *selecting* and *selecting and grouping*.
 #'
 #' **The rule forbids composition, not co-computation.** One `group_by` emits
@@ -111,7 +111,7 @@ io_pivot_build <- function(marker, figure, scope, area, subarea,
 #' The key value of a collapsed artefact (internal)
 #'
 #' AI-255. A `SCOPE = SAMPLE` artefact has exactly one row, and the key of that
-#' row becomes `AREA_OF_TEST` downstream — the answer to "what was tested".
+#' row becomes `AREA_OF_TEST` downstream - the answer to "what was tested".
 #'
 #' For a collapsed artefact that answer is **which aggregate**, not which region
 #' class: the class is already said by the `AREA` and `SUBAREA` columns, and
@@ -128,7 +128,7 @@ key_col_value <- function(aggregation) {
 #' Polars expression for one aggregation on one column (internal)
 #'
 #' AI-255. `IQR` has no direct polars reduction and is the difference of two
-#' quantiles — which is its definition, not a workaround.
+#' quantiles - which is its definition, not a workaround.
 #'
 #' @keywords internal
 #' @noRd
@@ -174,7 +174,7 @@ key_col_value <- function(aggregation) {
                                              names(base))),
                   key_col = "AREA"))
 
-    # A position pivot is keyed by CHR/START/END — three columns — while every
+    # A position pivot is keyed by CHR/START/END - three columns - while every
     # consumer downstream wants ONE identifier per row, because that identifier
     # becomes AREA_OF_TEST. Compose it the way the package already does:
     # `<CHR>_<START>`, the synthetic probe id io_probe_id_to_coord() splits back
@@ -239,8 +239,8 @@ key_col_value <- function(aggregation) {
 #' The two modes, column by column (internal)
 #'
 #' AI-255. They have no lazy form: the estimate needs the whole distribution of
-#' the group. Admissible only at `SCOPE = SAMPLE` — see
-#' [util_aggregations_allowed()] — where a group is one sample, so this walks one
+#' the group. Admissible only at `SCOPE = SAMPLE` - see
+#' [util_aggregations_allowed()] - where a group is one sample, so this walks one
 #' column at a time and never materialises the matrix.
 #'
 #' @keywords internal

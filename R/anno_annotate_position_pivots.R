@@ -1,8 +1,8 @@
 #' @title Materialise the area-level artefacts of the run
 #'
 #' Rewritten as a thin batch pass over [io_pivot_build()], which is now
-#' the single derivation path of the taxonomy. What used to live here — the join
-#' with the annotation, the multi-gene explode, the group-by — moved into
+#' the single derivation path of the taxonomy. What used to live here - the join
+#' with the annotation, the multi-gene explode, the group-by - moved into
 #' `io_pivot_build()` and [.anno_area_explode()], so the batch pre-pass and the
 #' on-demand construction cannot diverge.
 #'

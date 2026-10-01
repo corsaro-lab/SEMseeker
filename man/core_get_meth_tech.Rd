@@ -21,11 +21,11 @@ or EPIC 850k array (or WGBS data).  Detection runs in priority order:
 }
 \details{
 \enumerate{
-  \item \strong{Annotation-package overlap} — probe IDs are matched against
+  \item \strong{Annotation-package overlap} - probe IDs are matched against
     each installed \code{IlluminaHumanMethylation*anno} package; the
     technology with the most matching probes wins.  Accurate for any subset
     size (e.g. 20 k probes out of 866 k).
-  \item \strong{Row-count heuristics} — last resort for WGBS or unknown
+  \item \strong{Row-count heuristics} - last resort for WGBS or unknown
     probe naming schemes.
 }
 
