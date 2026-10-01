@@ -343,6 +343,50 @@
 
 ### New features
 
+- **`PROMOTER` is a region class of its own, masked once instead of grouped on
+  read.** `AREA = GENE` gains `SUBAREA = PROMOTER`: the positions annotated to
+  `TSS200`, `TSS1500` or `1stExon` are selected together, so one gene receives one
+  measure of the promoter. Grouping the three windows when reading results instead
+  put the same gene in three families, and a gene with three p-values has none,
+  which is why the backends that require one per gene could not be used on this
+  question at all.
+
+  The class is a union, not a partition, and it is not alone in that: `GENE_WHOLE`
+  has always been the union of every gene of a probe whatever the window. A probe
+  annotated `TSS200` for one transcript and `TSS1500` for another is in the
+  promoter of both genes and names each of them once, so no position is counted
+  twice when the class is masked.
+
+  The definition is the RefGene groups of the manifest. The regulatory column of
+  the same manifest was considered and set aside: the two agree for about a third
+  of the probes, that column is empty for three quarters of them, and it is not a
+  rule about position relative to the transcription start, so it cannot be
+  reproduced from coordinates alone.
+
+  **What this changes in results you already have.** Nothing within a class: the
+  values of `GENE_TSS1500`, `GENE_BODY` and every other class are untouched, since
+  each masks the positions independently. What grows is the family a correction for
+  multiple testing ranges over. `PVALUE_ADJ_KEY` is unaffected, because it lives
+  inside one key; `PVALUE_ADJ_SCOPE_` and `PVALUE_ADJ_ALL` change, because the
+  family gained a member. A run asking `subareas = "ALL"` also gains one region
+  class per marker and figure, and the time and the artefacts that go with it. A
+  comparison against an earlier analysis therefore holds on the raw p-values and on
+  the per-key adjusted ones, and does not hold on the adjusted values whose scope
+  spans region classes.
+
+  The class is built on both annotation paths. On the array it is a column of the
+  per-probe table, read from the RefGene groups of the manifest. On the
+  coordinate path it is the three windows of the gene model put together and kept
+  labelled by gene, which is the part that matters: the whole-gene class reduces
+  its overlapping ranges and therefore carries coordinates instead of gene names,
+  and a promoter labelled that way would answer nothing. Overlaps between the
+  three windows of one gene are left standing on purpose, because a position is
+  counted once per gene downstream.
+
+  On the enrichment side `gene_region = "PROMOTER"` now stands for the single
+  window of the same name instead of naming the three. The grouping it used to do
+  when reading results is what the class removes: it reached one gene from three
+  families, and the backends that need one p-value per gene could not be used.
 - **Descriptors on any scope.** The signal descriptors are no longer a separate
   path: `SIGNAL` is a marker like the others, so `sample_stats_scopes` now
   produces its median, mean, variance, IQR and — on the beta scale — its two

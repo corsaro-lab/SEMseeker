@@ -15,8 +15,8 @@
 # naming helpers (pure)
 # ---------------------------------------------------------------------------
 
-test_that("io_scope_name derives the scope from (area, subarea) with no depth", {
-  # AI-223 slice 2a: the producer is depth-agnostic — it writes every scope
+test_that("io_scope_name derives the scope from (area, subarea) alone", {
+  # AI-223 slice 2a: the producer writes every scope
   # once, so it names them from the pair alone.
   expect_equal(SEMseeker:::io_scope_name(area = "GENE", subarea = "TSS1500"),
                "GENE_TSS1500")
@@ -171,10 +171,10 @@ test_that("semseeker() writes the statistics sibling and leaves the sample sheet
 })
 
 # ---------------------------------------------------------------------------
-# AI-223 slice 2a — region scope, produced and consumed at depth = 1
+# AI-223 slice 2a - region scope, produced and consumed at SCOPE = SAMPLE
 # ---------------------------------------------------------------------------
 
-test_that("a region scope reaches the sibling and the depth=1 inference", {
+test_that("a region scope reaches the sibling and the collapsed inference", {
   tempFolder <- sem_test_folder()
   unlink(tempFolder, recursive = TRUE)
   on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE)
@@ -187,6 +187,17 @@ test_that("a region scope reaches the sibling and the depth=1 inference", {
     signal_data    = signal_data)
   scope <- SEMseeker:::io_scope_name(area = "GENE", subarea = "TSS1500")
 
+  # The classes this run declares, named once and reused by the run and by every
+  # reopen below: a reopen that leaves a class out gets the default vocabulary,
+  # not the classes the run built.
+  #
+  # Five and not two, because the inequalities at the end of this block need the
+  # promoter and the three windows it is made of. One run serves both halves: the
+  # exact-value check below is about ONE class, the inequalities are about how the
+  # classes relate, and neither needs its own analysis.
+  windows  <- c("TSS200", "TSS1500", "1STEXON")
+  declared <- c("WHOLE", windows, "PROMOTER")
+
   SEMseeker::semseeker(
     input               = syn$signal,
     sample_sheet        = syn$samples,
@@ -196,7 +207,7 @@ test_that("a region scope reaches the sibling and the depth=1 inference", {
     # keys, and every burden — whatever its scope — is aggregated from the
     # POSITION pivots.
     areas               = c("POSITION", "GENE"),
-    subareas            = c("WHOLE", "TSS1500"),
+    subareas            = declared,
     markers             = c("MUTATIONS", "SIGNAL"),
     start_fresh         = TRUE,
     inpute              = "median",
@@ -208,13 +219,16 @@ test_that("a region scope reaches the sibling and the depth=1 inference", {
   SEMseeker:::core_init_env(result_folder = tempFolder,
                             parallel_strategy = "sequential",
                             areas = c("POSITION", "GENE"),
-                            subareas = c("WHOLE", "TSS1500"),
+                            subareas = declared,
                             markers = c("MUTATIONS", "SIGNAL"),
                             start_fresh = FALSE)
 
   # AI-255: the region class is asked for at read time, not declared before the
   # run. This is the whole point — no rerun to change your mind.
-  stats <- SEMseeker:::sem_study_summary_get(regions = c("SAMPLE", scope))
+  cls     <- function(subarea) SEMseeker:::io_scope_name(area = "GENE", subarea = subarea)
+  classes <- vapply(declared, cls, character(1), USE.NAMES = FALSE)
+
+  stats <- SEMseeker:::sem_study_summary_get(regions = c("SAMPLE", classes))
   skip_if_not(!is.null(stats) && nrow(stats) > 0,
               "downstream assertions need the composed statistics")
 
@@ -244,7 +258,7 @@ test_that("a region scope reaches the sibling and the depth=1 inference", {
   # genes must enter the sample's number ONCE. Build the mask the way the
   # producer does — the distinct positions of the region class.
   SEMseeker:::core_init_env(result_folder = tempFolder, parallel_strategy = "sequential",
-                            areas = c("POSITION", "GENE"), subareas = c("WHOLE", "TSS1500"),
+                            areas = c("POSITION", "GENE"), subareas = declared,
                             markers = c("MUTATIONS"),
                             start_fresh = FALSE, showprogress = FALSE, verbosity = 1)
 
@@ -289,7 +303,72 @@ test_that("a region scope reaches the sibling and the depth=1 inference", {
   # one row per position, whatever the annotation says
   expect_equal(nrow(mask_df), nrow(unique(mask_df[, c("CHR", "START", "END")])))
 
-  # ── consumption at depth = 1 ─────────────────────────────────────────────
+  # ── the burden is monotone over nested classes ───────────────────────────
+  # A burden at SCOPE = SAMPLE counts the lesions of one sample at the positions a
+  # class selects, so a class whose positions are a subset of another's cannot
+  # carry the larger number: widening a class can only add positions, and a
+  # position can only add lesions. Greater or equal, never less.
+  #
+  # PROMOTER is TSS200, TSS1500 and the first exon taken together, so each of the
+  # three sits inside it, it sits inside the gene, and the gene sits inside the
+  # sample. If one of those turns round, the class is not selecting what it says:
+  # either the mask drops positions a window had, or something is counted twice and
+  # the two numbers being compared do not mean the same thing.
+  #
+  # The upper bound is the other half and it is what pins the de-duplication on the
+  # data rather than on the shape of the annotation: the promoter cannot exceed its
+  # three windows added up, because a position lying in two of them is one position
+  # of the sample. Equality would mean the three never overlap, which on a real
+  # gene model they do.
+  #
+  # Why the gene contains the promoter here: a class is a set of POSITIONS, and
+  # GENE_WHOLE is every probe of every gene whatever window it falls in, so a probe
+  # in TSS200 is a probe with a gene annotation and is in GENE_WHOLE too. The
+  # containment is structural, not a property of this fixture. On the coordinate
+  # backend it holds for a different reason - WHOLE is the gene span plus 1500 bp
+  # upstream - and a first exon outside that span would turn that one inequality
+  # round with nothing miscounted. These fixtures are array ones.
+  col <- function(region, figure)
+    SEMseeker:::io_feature_colname(region, "MUTATIONS", figure, "SUM")
+
+  for (figure in c("HYPER", "HYPO")) {
+
+    needed <- c(col("SAMPLE", figure), col(cls("WHOLE"), figure),
+                col(cls("PROMOTER"), figure),
+                vapply(windows, function(w) col(cls(w), figure), character(1)))
+    # Not a skip: this run declared those classes, so a column missing here is a
+    # defect and has to say so. A skip would leave a file that looks complete.
+    expect_true(all(needed %in% colnames(stats)),
+                info = paste("missing:", paste(setdiff(needed, colnames(stats)),
+                                               collapse = ", ")))
+
+    sample_wide <- stats[[col("SAMPLE", figure)]]
+    gene        <- stats[[col(cls("WHOLE"), figure)]]
+    promoter    <- stats[[col(cls("PROMOTER"), figure)]]
+    parts       <- lapply(windows, function(w) stats[[col(cls(w), figure)]])
+
+    # Both ends pinned: on a burden that is zero everywhere every inequality below
+    # holds and measures nothing.
+    expect_gt(sum(sample_wide, na.rm = TRUE), 0)
+    expect_gt(sum(promoter, na.rm = TRUE), 0)
+
+    for (i in seq_along(windows))
+      expect_true(all(promoter >= parts[[i]], na.rm = TRUE),
+                  info = paste0(figure, ": GENE_", windows[i], " carries more than ",
+                                "the promoter that contains it, for sample(s) ",
+                                paste(which(promoter < parts[[i]]), collapse = ", ")))
+
+    expect_true(all(gene >= promoter, na.rm = TRUE),
+                info = paste0(figure, ": the promoter carries more than the whole gene"))
+    expect_true(all(sample_wide >= gene, na.rm = TRUE),
+                info = paste0(figure, ": a region class carries more than the whole sample"))
+
+    expect_true(all(promoter <= Reduce(`+`, parts), na.rm = TRUE),
+                info = paste0(figure, ": the promoter exceeds its windows added up, so ",
+                              "a position is counted more than once"))
+  }
+
+  # ── consumption at SCOPE = SAMPLE ────────────────────────────────────────
   SEMseeker:::core_close_env()
 
   inference_details <- data.frame(

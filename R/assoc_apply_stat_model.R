@@ -271,7 +271,7 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
     result_temp <- result_temp %>% dplyr::distinct()
 
     # AI-257: no adjustment here any more. What this function holds is one
-    # chunk - sem_run_depth_n_marker() splits a pivot at ceiling(6e6 / ncol)
+    # chunk - assoc_run_marker() splits a pivot at ceiling(6e6 / ncol)
     # rows - so any family it could form is a memory parameter, not a
     # statistical choice. assoc_analysis_save_results() is the only place where
     # every row of a family is together, and it computes all three levels there.

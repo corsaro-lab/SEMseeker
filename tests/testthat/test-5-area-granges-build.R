@@ -16,8 +16,6 @@ test_that("anno_area_granges_build errors on unknown area", {
 })
 
 test_that("anno_area_granges_build errors on unknown GENE subarea", {
-  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
-  skip_on_os("mac")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("GenomicFeatures")
@@ -28,8 +26,6 @@ test_that("anno_area_granges_build errors on unknown GENE subarea", {
 })
 
 test_that("anno_area_granges_build errors on unknown ISLAND subarea", {
-  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
-  skip_on_os("mac")
   skip_if_not_installed("AnnotationHub")
   skip_if_not_installed("GenomicRanges")
   expect_error(
@@ -39,8 +35,6 @@ test_that("anno_area_granges_build errors on unknown ISLAND subarea", {
 })
 
 test_that("anno_area_granges_build appends _WHOLE when no underscore", {
-  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
-  skip_on_os("mac")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("GenomicFeatures")
@@ -57,8 +51,6 @@ test_that("anno_area_granges_build appends _WHOLE when no underscore", {
 # ---------------------------------------------------------------------------
 
 test_that("anno_area_granges_build DMR_WHOLE returns GRanges with label", {
-  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
-  skip_on_os("mac")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("IRanges")
   gr <- SEMseeker:::anno_area_granges_build("DMR_WHOLE", genome_build = "hg19")
@@ -73,8 +65,6 @@ test_that("anno_area_granges_build DMR_WHOLE returns GRanges with label", {
 # ---------------------------------------------------------------------------
 
 test_that("anno_area_granges_build GENE_BODY returns valid GRanges", {
-  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
-  skip_on_os("mac")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("GenomicFeatures")
@@ -85,8 +75,6 @@ test_that("anno_area_granges_build GENE_BODY returns valid GRanges", {
 })
 
 test_that("anno_area_granges_build GENE_TSS200 ranges are ≤ 200bp wide", {
-  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
-  skip_on_os("mac")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("GenomicFeatures")
@@ -95,8 +83,6 @@ test_that("anno_area_granges_build GENE_TSS200 ranges are ≤ 200bp wide", {
 })
 
 test_that("GENE_TSS1500 and GENE_TSS200 do not overlap within the same gene", {
-  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
-  skip_on_os("mac")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("GenomicFeatures")
@@ -119,8 +105,6 @@ test_that("GENE_TSS1500 and GENE_TSS200 do not overlap within the same gene", {
 })
 
 test_that("anno_area_granges_build result is cached on second call", {
-  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
-  skip_on_os("mac")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("GenomicFeatures")
@@ -134,8 +118,6 @@ test_that("anno_area_granges_build result is cached on second call", {
 # ---------------------------------------------------------------------------
 
 test_that("anno_area_granges_build CHR_CYTOBAND returns GRanges with label", {
-  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
-  skip_on_os("mac")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
   gr <- SEMseeker:::anno_area_granges_build("CHR_CYTOBAND", genome_build = "hg19")
@@ -176,8 +158,6 @@ for (.subarea in c("1STEXON", "5UTR", "3UTR", "EXONBND")) {
 
   test_that(paste0("anno_area_granges_build GENE_", .subarea,
                    " labels name genes of the same model as GENE_BODY"), {
-    # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
-    skip_on_os("mac")
     skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
     skip_if_not_installed("GenomicRanges")
     skip_if_not_installed("GenomicFeatures")
@@ -208,8 +188,6 @@ for (.subarea in c("1STEXON", "5UTR", "3UTR", "EXONBND")) {
 }
 
 test_that("GENE labels are gene symbols, not the Entrez ids TxDb keys on", {
-  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
-  skip_on_os("mac")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("GenomicFeatures")
@@ -233,8 +211,6 @@ test_that("GENE labels are gene symbols, not the Entrez ids TxDb keys on", {
 })
 
 test_that(".anno_entrez_to_symbol refuses identifiers of the wrong kind", {
-  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
-  skip_on_os("mac")
   skip_if_not_installed("org.Hs.eg.db")
   skip_if_not_installed("AnnotationDbi")
 
@@ -267,4 +243,52 @@ test_that(".anno_entrez_to_symbol refuses identifiers of the wrong kind", {
   expect_silent(res <- SEMseeker:::.anno_entrez_to_symbol(ok))
   expect_length(res, length(ok))
   expect_identical(utils::tail(res, 1L), "900000001")
+})
+
+# ---------------------------------------------------------------------------
+# GENE_PROMOTER on the coordinate backend
+#
+# The class is the union of TSS200, TSS1500 and 1STEXON, and the thing that can
+# go wrong is losing the gene. GENE_WHOLE shows how: it reduce()s overlapping
+# ranges, which merges across genes, so its labels are coordinates and no
+# consumer can join them to a gene. A promoter labelled that way would be
+# useless for the question it exists to answer, which is per gene.
+# ---------------------------------------------------------------------------
+
+test_that("GENE_PROMOTER is the union of its three windows, still named by gene", {
+  skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
+  skip_if_not_installed("GenomicRanges")
+  skip_if_not_installed("GenomicFeatures")
+
+  gr <- SEMseeker:::anno_area_granges_build("GENE_PROMOTER", genome_build = "hg19")
+
+  expect_s4_class(gr, "GRanges")
+  expect_true(length(gr) > 0L)
+  expect_true("label" %in% names(GenomicRanges::mcols(gr)))
+
+  labels_of <- function(area_subarea) {
+    g <- SEMseeker:::anno_area_granges_build(area_subarea, genome_build = "hg19")
+    l <- unique(as.character(GenomicRanges::mcols(g)$label))
+    l[!is.na(l) & nzchar(l)]
+  }
+
+  promoter <- labels_of("GENE_PROMOTER")
+  windows  <- unique(c(labels_of("GENE_TSS200"), labels_of("GENE_TSS1500"),
+                       labels_of("GENE_1STEXON")))
+
+  # Union, in both directions: nothing arrives that no window named, and no
+  # window's genes are dropped on the way in.
+  expect_setequal(promoter, windows)
+
+  # The gene survived. Two ways it would not have: the coordinate label that
+  # reduce() leaves behind, and the positional placeholder used when names(gr)
+  # carries no parent gene.
+  expect_false(any(grepl("^(chr)?[0-9XYMT]+:[0-9]+-[0-9]+$", promoter)),
+               info = "labels are coordinates, so per-gene identity was reduced away")
+  expect_false(any(grepl("^GENE_PROMOTER_[0-9]+$", promoter)),
+               info = "labels fell back to the positional placeholder")
+
+  # Concatenated and not merged: one gene keeps a range per window it is in, and
+  # the duplicate (position, gene) rows are removed downstream, not here.
+  expect_gt(length(gr), length(promoter))
 })

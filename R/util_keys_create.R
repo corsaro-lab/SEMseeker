@@ -72,7 +72,11 @@ util_keys_create <- function(ssEnv, arguments)
 
   keys_areas_default <- data.frame("AREA"=c("GENE","ISLAND","DMR","CHR","PROBE"))
 
-  keys_gene_subareas_default <- data.frame("AREA"="GENE", "SUBAREA"=c("BODY","TSS1500","TSS200","1STEXON","3UTR","5UTR","EXONBND","WHOLE"))
+  # PROMOTER is a window of its own here, not a shorthand read back later: the
+  # positions of TSS200, TSS1500 and 1STEXON are masked once, so one gene gets one
+  # measure. Grouped at read time it would reach three families of results, and a
+  # gene with three p-values has none.
+  keys_gene_subareas_default <- data.frame("AREA"="GENE", "SUBAREA"=c("BODY","TSS1500","TSS200","1STEXON","3UTR","5UTR","EXONBND","PROMOTER","WHOLE"))
   # ISLAND context (Illumina Relation_to_Island, 6 categories): WHOLE = whole
   # neighbourhood (core+shores+shelves, like GENE_WHOLE), ISLAND = core only,
   # OPENSEA = CpGs outside every neighbourhood. See island_opensea.R.

@@ -38,7 +38,7 @@
 #' @param group_str Character vector: \code{UCSC_RefGene_Group} (";"-joined).
 #' @param name_str Character vector: \code{UCSC_RefGene_Name} (";"-joined).
 #' @return Named list of GENE_BODY, GENE_TSS200, GENE_TSS1500, GENE_1STEXON,
-#'   GENE_5UTR, GENE_3UTR, GENE_EXONBND, GENE_WHOLE.
+#'   GENE_5UTR, GENE_3UTR, GENE_EXONBND, GENE_WHOLE, GENE_PROMOTER.
 #' @keywords internal
 #' @noRd
 .anno_gene_columns <- function(group_str, name_str) {
@@ -50,10 +50,13 @@
   gene_groups <- strsplit(as.character(group_str), ";", fixed = TRUE)
   gene_names  <- strsplit(as.character(name_str),  ";", fixed = TRUE)
 
-  extract <- function(region) {
+  # `regions` takes one window or several: with several, the gene is named once
+  # however many of them it is annotated to, which is what makes a multi-window
+  # class a union rather than a sum.
+  extract <- function(regions) {
     vapply(seq_along(gene_groups), function(i) {
       g <- gene_groups[[i]]; n <- gene_names[[i]]
-      hits <- unique(n[g == region & n != ""])
+      hits <- unique(n[g %in% regions & n != ""])
       if (length(hits) == 0L) NA_character_ else paste(hits, collapse = ";")
     }, character(1))
   }
@@ -63,6 +66,17 @@
     hits <- unique(genes[genes != "" & !is.na(genes)])
     if (length(hits) == 0L) NA_character_ else paste(hits, collapse = ";")
   }, character(1))
+
+  # The three RefGene groups that sit at the transcription start, as one class.
+  # A union like GENE_WHOLE and not a partition: a probe annotated TSS200 for one
+  # transcript and TSS1500 for another is in the promoter of both genes and names
+  # each of them once, so nothing is counted twice when the class is masked.
+  #
+  # The regulatory column of the same manifest was considered and set aside: it
+  # agrees with this definition for about a third of the probes, is empty for
+  # three quarters of them, and is not a rule about position relative to the TSS,
+  # so it cannot be reproduced without the manifest in hand.
+  out$GENE_PROMOTER <- extract(c("TSS200", "TSS1500", "1stExon"))
   out
 }
 
@@ -134,19 +148,35 @@
   paste0(tech, "_", build)
 }
 
+# The columns this builder produces, named once so the cache can tell a table
+# written by an older build from one it can still use. A class added to the
+# vocabulary adds a column here, and a cache that predates it has to be rebuilt:
+# the request would otherwise ask for a column the table does not carry and the
+# run would stop on an undefined column, far from the change that caused it.
+.anno_probe_schema <- function(tech) {
+  c("PROBE", "CHR", "START", "END", tech,
+    "GENE_BODY", "GENE_TSS200", "GENE_TSS1500", "GENE_1STEXON",
+    "GENE_5UTR", "GENE_3UTR", "GENE_EXONBND", "GENE_WHOLE", "GENE_PROMOTER",
+    "ISLAND_WHOLE", "ISLAND_ISLAND",
+    "ISLAND_N_SHORE", "ISLAND_S_SHORE",
+    "ISLAND_N_SHELF", "ISLAND_S_SHELF", "ISLAND_OPENSEA",
+    "CHR_CYTOBAND", "DMR_WHOLE", "DMR_DMR")
+}
+
 .anno_probe_cache_file <- function(key) {
   file.path(tools::R_user_dir("SEMseeker", "cache"),
             paste0("probe_annotation_", key, ".rds"))
 }
 
-.anno_probe_cache_get <- function(key) {
+.anno_probe_cache_get <- function(key, schema) {
   memo <- .pkgglobalenv$probe_annotation_memo
-  if (!is.null(memo) && identical(memo$key, key)) return(memo$data)
+  if (!is.null(memo) && identical(memo$key, key) &&
+      identical(memo$schema, schema)) return(memo$data)
 
   f <- .anno_probe_cache_file(key)
   if (!file.exists(f)) return(NULL)
 
-  data <- tryCatch(readRDS(f), error = function(e) {
+  payload <- tryCatch(readRDS(f), error = function(e) {
     # A truncated or unreadable cache must not take the run down with it: the
     # annotation can always be rebuilt, it just costs a minute.
     core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
@@ -154,15 +184,29 @@
               conditionMessage(e), "); rebuilding.")
     NULL
   })
-  if (is.null(data)) return(NULL)
+  if (is.null(payload)) return(NULL)
 
-  assign("probe_annotation_memo", list(key = key, data = data),
+  # A cache written by a build with a different set of columns is the same
+  # situation as an unreadable one: it can be rebuilt. It is NOT the same as an
+  # error, and it must not be one, because every upgrade that adds a region class
+  # leaves exactly this behind on every machine that already ran the package. A
+  # file with no schema in it was written before the schema was recorded.
+  if (!is.list(payload) || is.null(payload$schema) ||
+      !identical(payload$schema, schema)) {
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " cached probe annotation at ", f, " was written for a different ",
+              "set of columns; rebuilding.")
+    return(NULL)
+  }
+  data <- payload$data
+
+  assign("probe_annotation_memo", list(key = key, schema = schema, data = data),
          envir = .pkgglobalenv)
   data
 }
 
-.anno_probe_cache_put <- function(key, data) {
-  assign("probe_annotation_memo", list(key = key, data = data),
+.anno_probe_cache_put <- function(key, data, schema) {
+  assign("probe_annotation_memo", list(key = key, schema = schema, data = data),
          envir = .pkgglobalenv)
   f <- .anno_probe_cache_file(key)
   dir.create(dirname(f), recursive = TRUE, showWarnings = FALSE)
@@ -171,7 +215,7 @@
     # previous cache intact rather than a half file that every later process
     # would try to read.
     tmp <- paste0(f, ".", Sys.getpid(), ".tmp")
-    saveRDS(data, tmp)
+    saveRDS(list(schema = schema, data = data), tmp)
     file.rename(tmp, f)
   }, error = function(e)
     core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
@@ -201,7 +245,7 @@ anno_probe_annotation_build <- function(tech, force = FALSE) {
   key <- .anno_probe_cache_key(tech)
 
   if (!force) {
-    cached <- .anno_probe_cache_get(key)
+    cached <- .anno_probe_cache_get(key, .anno_probe_schema(tech))
     if (!is.null(cached)) return(cached)
   }
 
@@ -252,19 +296,11 @@ anno_probe_annotation_build <- function(tech, force = FALSE) {
   anno_df <- merge(anno_df, dmr, by = "PROBE", all.x = TRUE)
 
   # ---- Select final columns ----
-  keep <- c(
-    "PROBE", "CHR", "START", "END", tech,
-    "GENE_BODY", "GENE_TSS200", "GENE_TSS1500", "GENE_1STEXON",
-    "GENE_5UTR", "GENE_3UTR", "GENE_EXONBND", "GENE_WHOLE",
-    "ISLAND_WHOLE", "ISLAND_ISLAND",
-    "ISLAND_N_SHORE", "ISLAND_S_SHORE",
-    "ISLAND_N_SHELF", "ISLAND_S_SHELF", "ISLAND_OPENSEA",
-    "CHR_CYTOBAND", "DMR_WHOLE", "DMR_DMR"
-  )
+  keep <- .anno_probe_schema(tech)
   anno_df <- anno_df[, intersect(keep, colnames(anno_df)), drop = FALSE]
 
   # ---- Cache and return ----
-  .anno_probe_cache_put(key, anno_df)
+  .anno_probe_cache_put(key, anno_df, keep)
 
   core_log_event("INFO: probe annotation built - ", nrow(anno_df),
             " probes, tech = ", tech, ", cached as ", key)

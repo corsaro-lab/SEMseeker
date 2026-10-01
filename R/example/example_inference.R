@@ -20,7 +20,7 @@ inference_details <- expand.grid("independent_variable"= c("tcdd_mother"),
                                 "covariates"=c("exam_age+tcdd_father","breast_feeding"),
                                 "family_test"=c("gaussian","wilcoxon"),
                                 "transformation_y"="scale",
-                                "depth_analysis"=1,
+                                "scope"="SAMPLE",
                                 "filter_p_value" = FALSE)
 
 
