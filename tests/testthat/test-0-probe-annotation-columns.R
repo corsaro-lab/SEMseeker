@@ -66,3 +66,59 @@ test_that(".anno_chr_columns assigns cytoband by range overlap (injected table)"
   expect_named(out, "CHR_CYTOBAND")
   expect_equal(out$CHR_CYTOBAND, c("p36.33", "p36.32", NA))  # chr2 absent -> NA
 })
+
+# ---- The cache has to know which columns it was written for ----------------
+# A class added to the vocabulary adds a column to the annotation. A cache keyed
+# only on technology and genome build is reused across that change, so the request
+# asks for a column the stored table does not carry and the run stops on an
+# undefined column, eleven files away from the change that caused it. Every
+# machine that has run the package before the upgrade holds exactly such a file.
+#
+# These exercise the in-memory tier only: the key is one no file can exist for, so
+# nothing is read from or written to the user's cache directory.
+
+test_that("a cached annotation written for other columns is a miss, not an error", {
+  env  <- SEMseeker:::.pkgglobalenv
+  prev <- env$probe_annotation_memo
+  on.exit(assign("probe_annotation_memo", prev, envir = env), add = TRUE)
+
+  key    <- paste0("schema_probe_", as.integer(Sys.time()))
+  before <- c("PROBE", "CHR", "START", "END", "K850", "GENE_BODY")
+  after  <- c(before, "GENE_PROMOTER")
+  table  <- data.frame(PROBE = "cg00000029", CHR = "1", START = 1L, END = 1L,
+                       K850 = TRUE, GENE_BODY = NA_character_,
+                       stringsAsFactors = FALSE)
+
+  assign("probe_annotation_memo",
+         list(key = key, schema = before, data = table), envir = env)
+
+  # Same columns: the cache answers.
+  expect_identical(SEMseeker:::.anno_probe_cache_get(key, before), table)
+
+  # One column more: it is a miss, and a miss is NULL rather than a condition,
+  # because the annotation can always be rebuilt.
+  expect_null(SEMseeker:::.anno_probe_cache_get(key, after))
+})
+
+test_that("a cache with no schema recorded is a miss", {
+  env  <- SEMseeker:::.pkgglobalenv
+  prev <- env$probe_annotation_memo
+  on.exit(assign("probe_annotation_memo", prev, envir = env), add = TRUE)
+
+  # What every machine that ran an earlier build holds: the table on its own.
+  key   <- paste0("schema_probe_legacy_", as.integer(Sys.time()))
+  table <- data.frame(PROBE = "cg00000029", stringsAsFactors = FALSE)
+  assign("probe_annotation_memo", list(key = key, data = table), envir = env)
+
+  expect_null(SEMseeker:::.anno_probe_cache_get(key, c("PROBE", "GENE_PROMOTER")))
+})
+
+test_that(".anno_probe_schema names the columns the builder selects", {
+  s <- SEMseeker:::.anno_probe_schema("K850")
+  expect_true(all(c("PROBE", "CHR", "START", "END", "K850") %in% s))
+  expect_true("GENE_PROMOTER" %in% s)
+  # The technology is part of the schema, so a cache built for one array is not
+  # offered to another even before the key is compared.
+  expect_false("K450" %in% s)
+  expect_true("K450" %in% SEMseeker:::.anno_probe_schema("K450"))
+})
