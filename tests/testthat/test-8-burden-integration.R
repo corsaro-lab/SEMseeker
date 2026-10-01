@@ -56,6 +56,19 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
     verbosity         = verbosity
   )
 
+  # semseeker() closes the session it opened, so reading its artefacts needs the
+  # session back, and the reopen has to name the same coordinates as the run: an
+  # option the reopen leaves out is filled with its default, not with what the run
+  # asked for. Before the close emptied the session these reads were answered by
+  # the one it had left standing in memory, which is why they named nothing.
+  SEMseeker:::core_init_env(result_folder = tempFolder,
+                            parallel_strategy = "sequential",
+                            areas = c("POSITION"),
+                            markers = c("MUTATIONS", "LESIONS",
+                                        "DELTAP", "DELTAQ", "DELTARP", "DELTARQ",
+                                        "DELTAS", "DELTAR"),
+                            start_fresh = FALSE)
+
   # SEMseeker writes via io_file_path_build() → core_name_cleaning() → toupper(),
   # so the on-disk file is SAMPLE_SHEET_RESULT.csv (not the lowercase form
   # used in the API contract). macOS/Windows file systems are case-insensitive
@@ -265,6 +278,15 @@ test_that("burden survives mixed-case Sample_IDs and a polluted global temp_resu
     showprogress      = showprogress,
     verbosity         = verbosity
   )
+
+  # Same reopen as above, with this run's own coordinates.
+  SEMseeker:::core_init_env(result_folder = tempFolder,
+                            parallel_strategy = "sequential",
+                            areas = c("POSITION"),
+                            markers = c("MUTATIONS", "LESIONS",
+                                        "DELTAP", "DELTAQ", "DELTARP", "DELTARQ",
+                                        "DELTAS", "DELTAR"),
+                            start_fresh = FALSE)
 
   # AI-255: composed on read, no sibling file.
   df <- SEMseeker:::sem_study_summary_get()

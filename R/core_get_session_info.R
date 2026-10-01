@@ -20,8 +20,13 @@ core_get_session_info <- function(result_folder=NULL)
 
   session_folder <- file.path(result_folder,"/Log/session_info.rds")
   # try from file
+  # `&&` and not `&`: with no folder named, file.path(NULL, ...) is character(0)
+  # and so is file.exists() of it, so the non-short-circuiting form evaluated to
+  # logical(0) and `if` raised "argument is of length zero" instead of the message
+  # below. That branch was unreachable while a session was always left in memory;
+  # emptying the session on close makes it the ordinary path.
   if (is.null(ssEnv) | length(ssEnv)==0)
-    if((!is.null(result_folder) & file.exists(session_folder)))
+    if(!is.null(result_folder) && file.exists(session_folder))
       ssEnv <- readRDS( file.path(session_folder))
 
   # try from doFuture

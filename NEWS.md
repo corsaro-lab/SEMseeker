@@ -236,6 +236,29 @@
 
 ### Bug fixes
 
+- **A session outlived both the folder it was opened on and the call that closed
+  it.** The session was read from memory first and the folder consulted only when
+  memory was empty, so while a session was standing the folder decided nothing;
+  and closing an analysis left that session in memory. Two consequences, both
+  silent. An analysis opened on a new folder in the same R session inherited the
+  previous one's options, because a default is applied only to a value that is
+  still unset, so an option the second analysis never named arrived with nothing
+  to announce it. And a read taken after a close was answered with the closed
+  session rather than refused.
+
+  The folder now identifies the session: a session in memory that belongs to a
+  different folder is not returned, and the folder's own file is read instead, or
+  an empty session when that file is absent. Resuming is unaffected, since
+  resuming means the same folder and the folders then match. Closing empties the
+  session, and closing one that is already closed is not an error. A read that
+  names no folder when no session is open now fails with the message the package
+  writes for it, rather than with an error about an argument of length zero.
+
+  No exported function changes behaviour: each one opens its own session and
+  closes it. What changes is that state no longer crosses from one analysis to
+  the next. Most inherited values happened to equal the defaults, which is why
+  this stayed out of sight: seeing it takes two analyses in one process, in that
+  order, with the first naming an option the second does not.
 - **A request for `multicore` on a platform without `fork()` was granted with a
   single worker.** `future::plan(multicore)` does not refuse such a platform: it
   accepts the request and degrades to one worker. Windows has no `fork()`, so a

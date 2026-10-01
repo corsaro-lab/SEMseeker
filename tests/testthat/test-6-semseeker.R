@@ -17,6 +17,13 @@ test_that("semeeker", {
     parallel_strategy = "sequential"
   )
 
+  # semseeker() closes the session it opened, so reading its artefacts needs the
+  # session back. This run named no areas and no markers, so the reopen names none
+  # either and both land on the same defaults.
+  SEMseeker:::core_init_env(result_folder = tempFolder,
+                            parallel_strategy = "sequential",
+                            start_fresh = FALSE)
+
   ssEnv <- SEMseeker:::core_get_session_info()
   keys <- subset(ssEnv$keys_areas_subareas_markers_figures)
   # core_name_cleaning uppercases Sample_ID inside semseeker(); use the same for comparison
