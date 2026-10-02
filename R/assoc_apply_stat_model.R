@@ -126,7 +126,7 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
     "io_data_preparation","apply_stat_model_sig.formula","assoc_quantreg_permutation_model",
     "assoc_apply_stat_model_sig_formula", "data_distribution_info", "assoc_glm_model", "assoc_test_model", "assoc_test_model_paired", "Breusch_Pagan_pvalue",
     "progress_bar","progression_index", "progression", "progressor_uuid", "owner_session_uuid", "trace","signal_values","ssEnv","g_start",
-    "assoc_execute_model", "assoc_is_family_dicotomic", "core_log_event","mediate","mediation","core_get_session_info", "samples_sql_condition",
+    "assoc_execute_model", "assoc_is_family_dicotomic", "core_log_event","mediate","mediation","core_get_session_info","core_update_session_info", "samples_sql_condition",
     # AI-106 (2026-06-09): safe_to_real mapping must reach each foreach worker
     "safe_to_real")
 
@@ -135,9 +135,16 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
 
   core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " I'll perform:",g_end - g_start," tests." )
   result_temp <- data.frame()
-  # .packages loads SEMseeker in each worker so SEMseeker::: lookups resolve.
-  # Internal helpers are prefixed with SEMseeker::: because they live in the
-  # namespace (not in the caller's frame) and .export does not cover them.
+  # How the internal helpers reach a worker. .packages attaches SEMseeker there,
+  # and an attach exposes the EXPORTED functions only, so it is not what carries
+  # them. .export is: it resolves each name in the frame this call is made from,
+  # and that frame's enclosure is the namespace, so a name living there is found
+  # and the function object travels with the task.
+  #
+  # Measured, because an earlier version of this comment asserted the opposite and
+  # the calls below were qualified with the namespace on that basis - while the
+  # same names were already in the list above. The prefix was doing nothing, and
+  # R CMD check was reporting it.
   result_temp <- foreach::foreach(
     g = g_start:g_end,
     .combine = plyr::rbind.fill,
@@ -155,8 +162,8 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
     # plyr::rbind.fill silently ignores NULL results.
     # AI-041: in-memory only; saveRDS happens at end-of-batch in the caller,
     # not per-gene (was the hot-path culprit causing ~5-7x slowdown).
-    SEMseeker:::core_update_session_info(ssEnv, save_to_disk = FALSE)
-    ssEnv <- SEMseeker:::core_get_session_info()
+    core_update_session_info(ssEnv, save_to_disk = FALSE)
+    ssEnv <- core_get_session_info()
 
     burdenValue <- cols[g]
     if(ssEnv$showprogress)
@@ -166,8 +173,8 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
 
 
       #
-      sig.formula <- SEMseeker:::assoc_apply_stat_model_sig_formula(family_test, burdenValue, independent_variable, covariates)
-      model_result <- SEMseeker:::assoc_execute_model(family_test, tempDataFrame, sig.formula, burdenValue, independent_variable, transformation_y, (g_end - g_start < 10), samples_sql_condition, key)
+      sig.formula <- assoc_apply_stat_model_sig_formula(family_test, burdenValue, independent_variable, covariates)
+      model_result <- assoc_execute_model(family_test, tempDataFrame, sig.formula, burdenValue, independent_variable, transformation_y, (g_end - g_start < 10), samples_sql_condition, key)
 
       #
       local_result <- data.frame("INDIPENDENT_VARIABLE" = independent_variable)
@@ -200,7 +207,7 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
       local_result$COVARIATES <- ifelse(length(covariates)>0,paste0(covariates,collapse=" "),NA)
       # local_result$bartlett.pvalue <- data_distribution_info(family_test, tempDataFrame, burdenValue, independent_variable)
 
-      if (SEMseeker:::assoc_is_family_dicotomic(family_test))
+      if (assoc_is_family_dicotomic(family_test))
       {
         #
         selector <- tempDataFrame[, independent_variable]==independent_variable1stLevel
@@ -210,20 +217,20 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
 
         if(length(stats::na.omit(independent_variableData2ndLevel))==0 | length(stats::na.omit(independent_variableData1stLevel))==0)
         {
-          SEMseeker:::core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " I skip this test because one of the two groups is empty." )
+          core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " I skip this test because one of the two groups is empty." )
           colnames(local_result) <- toupper(colnames(local_result))
           local_result$PVALUE <- NA
         }
       }
 
-      if (!SEMseeker:::assoc_is_family_dicotomic(family_test))
+      if (!assoc_is_family_dicotomic(family_test))
       {
         dependentVariableData <- as.numeric(stats::na.omit(tempDataFrame[!is.na(tempDataFrame[,independent_variable]),burdenValue]))
         independent_variableData <- as.numeric(stats::na.omit(tempDataFrame[  ,independent_variable]))
 
         if(sum(is.na(dependentVariableData)>0) | sum(is.na(independent_variableData)))
         {
-          SEMseeker:::core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), "The submitted data are not factorial or numeric.")
+          core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), "The submitted data are not factorial or numeric.")
           stop()
         }
       }
@@ -238,7 +245,7 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
       local_result
     }
   }, error = function(e) {
-    SEMseeker:::core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
               " Skipping area '", if(exists("burdenValue")) burdenValue else "?",
               "': ", conditionMessage(e))
     NULL
