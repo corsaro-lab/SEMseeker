@@ -51,7 +51,7 @@ anno_create_position_pivots <- function(population, keys) {
 
     area    <- "POSITION"
     subarea <- "WHOLE"
-    pivot_filename <- SEMseeker:::io_pivot_file_name_parquet(marker, figure,
+    pivot_filename <- io_pivot_file_name_parquet(marker, figure,
                                                          area, subarea)
 
     # Figure out which samples are still missing from the existing pivot.
@@ -68,7 +68,7 @@ anno_create_position_pivots <- function(population, keys) {
     # those that actually exist (some samples have no signal for a given
     # marker/figure → no bedgraph was emitted).
     bed_paths <- vapply(seq_len(nrow(missing_pop)), function(i) {
-      SEMseeker:::io_bed_file_name(missing_pop$Sample_ID[i],
+      io_bed_file_name(missing_pop$Sample_ID[i],
                                 missing_pop$Sample_Group[i],
                                 marker, figure)
     }, character(1))
@@ -80,7 +80,7 @@ anno_create_position_pivots <- function(population, keys) {
               "] stream-merging ", length(bed_paths), " bed file(s)")
 
     # One-shot lazy pivot built by polars Rust runtime (no R-side loop).
-    new_lazy <- SEMseeker:::io_stream_merge_bed(bed_paths, marker, figure)
+    new_lazy <- io_stream_merge_bed(bed_paths, marker, figure)
 
     dir.create(dirname(pivot_filename), recursive = TRUE, showWarnings = FALSE)
     tmp_filename <- paste0(pivot_filename, ".tmp")

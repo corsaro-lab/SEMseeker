@@ -92,7 +92,7 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
     "signal_superior_thresholds","sem_deltar_single_sample","signal_inferior_thresholds","iqr","signal_median_values",
     "bt","bonferroni_threshold", "probe_features", "sem_analyze_single_sample_both", "sem_delta_single_sample", "progress_bar",
     "progression_index", "progression", "progressor_uuid", "owner_session_uuid", "trace","sem_signal_single_sample",
-    "core_get_session_info","io_bed_file_name","signal_thresholds","core_update_session_info","anno_normalize_chr",
+    "core_get_session_info","io_bed_file_name","signal_thresholds","core_update_session_info","anno_normalize_chr","io_signal_figure",
     "existing_signal_mean","existing_mut_hyper","existing_mut_hypo","existing_deltas_hypo","existing_deltar_hypo",
     "dir_known_signal_mean","dir_known_mut_hyper","dir_known_mut_hypo","dir_known_deltas_hypo","dir_known_deltar_hypo")
   i <- 1
@@ -157,9 +157,16 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
 
   rm(signal_data)
   # for(i in 1:nrow(sample_sheet)) {
-  # .packages loads SEMseeker in each worker so SEMseeker::: lookups resolve.
-  # Internal helpers are prefixed with SEMseeker::: because they live in the
-  # namespace (not in the caller's frame) and .export does not cover them.
+  # How the internal helpers reach a worker. .packages attaches SEMseeker there,
+  # and an attach exposes the EXPORTED functions only, so it is not what carries
+  # them. .export is: it resolves each name in the frame this call is made from,
+  # and that frame's enclosure is the namespace, so a name living there is found
+  # and the function object travels with the task.
+  #
+  # Measured, because an earlier version of this comment asserted the opposite and
+  # the calls below were qualified with the namespace on that basis - while the
+  # same names were already in the list above. The prefix was doing nothing, and
+  # R CMD check was reporting it.
   foreach::foreach(
     i = seq_len(nrow(sample_sheet)),
     .export = variables_to_export,
@@ -173,7 +180,7 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
     # result folder". See engineering-decisions.md §1.3.
     # AI-041: in-memory only; saveRDS would happen N_samples × N_workers
     # times per SEM step otherwise (15 MB per write → catastrophic I/O).
-    SEMseeker:::core_update_session_info(ssEnv, save_to_disk = FALSE)
+    core_update_session_info(ssEnv, save_to_disk = FALSE)
 
     local_sample_detail <- sample_sheet[i,]
 
@@ -181,10 +188,10 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
     # 4 stat syscalls per sample (~16k saved on a 4000-sample population).
     # skip_dir_create=TRUE because all destination dirs were ensured ONCE at
     # the top of sem_analyze_population - no per-sample dir_check_and_create.
-    bed_mut_hyper   <- SEMseeker:::io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "MUTATIONS","HYPER", skip_dir_create = dir_known_mut_hyper)
-    bed_mut_hypo    <- SEMseeker:::io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "MUTATIONS","HYPO", skip_dir_create = dir_known_mut_hypo)
-    bed_deltas_hypo <- SEMseeker:::io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "DELTAS","HYPO", skip_dir_create = dir_known_deltas_hypo)
-    bed_deltar_hypo <- SEMseeker:::io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "DELTAR","HYPO", skip_dir_create = dir_known_deltar_hypo)
+    bed_mut_hyper   <- io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "MUTATIONS","HYPER", skip_dir_create = dir_known_mut_hyper)
+    bed_mut_hypo    <- io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "MUTATIONS","HYPO", skip_dir_create = dir_known_mut_hypo)
+    bed_deltas_hypo <- io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "DELTAS","HYPO", skip_dir_create = dir_known_deltas_hypo)
+    bed_deltar_hypo <- io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "DELTAR","HYPO", skip_dir_create = dir_known_deltar_hypo)
     need_mut_hyper   <- !(bed_mut_hyper   %in% existing_mut_hyper)
     need_mut_hypo    <- !(bed_mut_hypo    %in% existing_mut_hypo)
     need_deltas_hypo <- !(bed_deltas_hypo %in% existing_deltas_hypo)
@@ -197,19 +204,19 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
       # namespace on its search path. io_signal_figure() was left unqualified
       # when AI-248 introduced it, which resolves under an attached package but
       # not in a parallel worker.
-      bed_filename <- SEMseeker:::io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "SIGNAL", SEMseeker:::io_signal_figure())
+      bed_filename <- io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "SIGNAL", io_signal_figure())
       signal_values <- utils::read.delim(bed_filename, header = FALSE, sep = "\t")
       colnames(signal_values) <- c("CHR", "START", "END", "VALUE")
-      signal_values$CHR <- SEMseeker:::anno_normalize_chr(signal_values$CHR, "internal")
+      signal_values$CHR <- anno_normalize_chr(signal_values$CHR, "internal")
 
       if (need_mut_hyper)
-        SEMseeker:::sem_analyze_single_sample( values = signal_values,thresholds = signal_thresholds, figure="HYPER", sample_detail = local_sample_detail)
+        sem_analyze_single_sample( values = signal_values,thresholds = signal_thresholds, figure="HYPER", sample_detail = local_sample_detail)
       if (need_mut_hypo)
-        SEMseeker:::sem_analyze_single_sample( values = signal_values,thresholds = signal_thresholds, figure="HYPO", sample_detail = local_sample_detail)
+        sem_analyze_single_sample( values = signal_values,thresholds = signal_thresholds, figure="HYPO", sample_detail = local_sample_detail)
       if (need_deltas_hypo)
-        SEMseeker:::sem_delta_single_sample( values = signal_values,thresholds = signal_thresholds , sample_detail = local_sample_detail)
+        sem_delta_single_sample( values = signal_values,thresholds = signal_thresholds , sample_detail = local_sample_detail)
       if (need_deltar_hypo)
-        SEMseeker:::sem_deltar_single_sample ( values = signal_values, thresholds = signal_thresholds,sample_detail = local_sample_detail)
+        sem_deltar_single_sample ( values = signal_values, thresholds = signal_thresholds,sample_detail = local_sample_detail)
     }
 
     if(ssEnv$showprogress)
