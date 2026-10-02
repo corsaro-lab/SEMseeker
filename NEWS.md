@@ -1,6 +1,6 @@
 # semseeker NEWS
 
-## semseeker 0.99.5 (development)
+## semseeker 0.99.5
 
 ### Breaking changes
 
@@ -111,19 +111,19 @@
 - **`semseeker(sample_stats_scopes = ...)` was removed.** Which region classes
   you want is no longer a decision to be made before the run: the artefacts are
   built when they are asked for. The error that used to say *"produce it with
-  `semseeker(sample_stats_scopes = ...)` and rerun the analysis"* is gone —
+  `semseeker(sample_stats_scopes = ...)` and rerun the analysis"* is gone:
   changing your mind now costs one scan of the position pivot instead of a whole
-  SEM run. Ask for a region class at analysis time with
-  `association_analysis(inference_details$scopes)` or
-  `sem_study_summary_get(regions = ...)`.
+  SEM run. Ask for a region class at analysis time, with the `areas` and
+  `subareas` arguments of `association_analysis()` at `scope = "SAMPLE"`, or with
+  `sem_study_summary_get(regions = ...)` to read the table.
 
   The cost moved rather than vanished: the call that asks for a region class has
-  to know it, so `association_analysis(inference_details$scopes = "GENE_TSS1500")`
-  needs `areas` and `subareas` to cover `GENE`/`TSS1500` — a run that does not
-  register the pair refuses the request instead of silently testing nothing. The
-  registry is also what resolves `GENE_TSS1500` into its two coordinates without
-  splitting the string, which cannot be done safely: `N_SHORE` carries an
-  underscore of its own.
+  to know it, so testing the burden over `GENE`/`TSS1500` means naming that pair
+  in `areas` and `subareas`, and a run that does not register the pair refuses
+  the request instead of silently testing nothing. Where a class is named by its
+  joined form, as in `sem_study_summary_get(regions = "GENE_TSS1500")`, it is the
+  registry that resolves it into its two coordinates: splitting the string cannot
+  be done safely, because `N_SHORE` carries an underscore of its own.
 
 - **`MODE_LOW` / `MODE_HIGH` are spelled `MODELOW` / `MODEHIGH`**, and they are
   admissible only at `SCOPE = SAMPLE`. Per instance a gene holds about nineteen
@@ -235,6 +235,39 @@
   each of them read at least one variable that was never assigned.
 
 ### Bug fixes
+
+- **The row filter wrote into the workspace of whoever was using the package.**
+  `assoc_filter_sql()` registered the table it was about to query in the global
+  environment under a fixed name, queried it, and removed it. An object of that
+  name belonging to the caller was overwritten and then deleted, so what was lost
+  was not a name but its contents; and the removal was not protected against
+  failure, so the one case that left the workspace dirty was the case where the
+  query had already failed. The query is handed an environment of its own now,
+  holding nothing but the table, living only as long as the call, and with an
+  empty parent so that the only name it resolves is the table. It was the last
+  assignment to the global environment in the package.
+
+  A second defect sat next to it: the documented `TABLE` placeholder, for a
+  condition carrying a sub-statement, was replaced with the name of a local
+  variable rather than with the name the table is registered under, so that
+  branch asked for a table nobody had registered. No caller passes a
+  sub-statement, which is how it stayed broken.
+
+- **An annotation cache written by a different version of the package.** The
+  probe annotation is cached under `tools::R_user_dir("SEMseeker", "cache")`. It
+  now records which columns it was built for, so a file written before a region
+  class joined the vocabulary counts as a miss and is rebuilt, instead of being
+  read and then used for a column it does not carry.
+
+  That settles one direction only. The version that gets the other one wrong is a
+  version already installed, which cannot be taught a format that postdates it:
+  it reads the file, uses the result as a table, and stops on an undefined column
+  far from anything it can see as a cause. So the name carries the shape as well,
+  `probe_annotation_v2_<key>.rds`, and the two never open the same file. The file
+  in the previous shape is left where it is, for the version still using it.
+
+  On upgrade the annotation is therefore rebuilt once, about a minute, and read
+  from the cache in about two seconds from then on.
 
 - **A session outlived both the folder it was opened on and the call that closed
   it.** The session was read from memory first and the folder consulted only when
@@ -388,9 +421,9 @@
   when reading results is what the class removes: it reached one gene from three
   families, and the backends that need one p-value per gene could not be used.
 - **Descriptors on any scope.** The signal descriptors are no longer a separate
-  path: `SIGNAL` is a marker like the others, so `sample_stats_scopes` now
-  produces its median, mean, variance, IQR and — on the beta scale — its two
-  modes restricted to a region class, e.g. `GENE_TSS1500_SIGNAL_BETA_MEDIAN`.
+  path: `SIGNAL` is a marker like the others, so a request at `SCOPE = SAMPLE`
+  produces its median, mean, variance, IQR and, on the beta scale, its two modes
+  restricted to a region class, e.g. `GENE_TSS1500_SIGNAL_BETA_MEDIAN`.
 
 - **Density.** The mean of a binary marker over a scope is the fraction of its
   positions classified as epimutations. Unlike the raw burden it is comparable
@@ -403,26 +436,45 @@
   restricted to the signal on the beta scale.
 
 
-- **Per-sample burden restricted to a region class.** The
-  statistics sibling can now carry a scope other than the whole sample:
-  `semseeker(sample_stats_scopes = c("SAMPLE", "GENE_TSS1500"))` adds
-  `GENE_TSS1500_<MARKER>_<FIGURE>`, the burden computed over the probes of that
-  region class only. Any registered `(AREA, SUBAREA)` pair of the run is a
-  legal scope; `SAMPLE` is always produced. A scope that does not resolve stops
-  the run instead of being ignored.
+- **Per-sample burden restricted to a region class.** A per-sample number no
+  longer has to be computed over every position of the sample. At
+  `scope = "SAMPLE"` the region classes of the call are each reduced to one
+  number per sample, so
+
+  ```r
+  association_analysis(
+    areas     = "GENE",
+    subareas  = "TSS1500",
+    inference_details = data.frame(
+      independent_variable = "Phenotest",
+      family_test          = "spearman",
+      aggregation          = "SUM",
+      scope                = "SAMPLE"))
+  ```
+
+  tests the burden carried by the TSS1500 probes alone, against the burden over
+  the whole sample that `areas = "SAMPLE"` gives. The result rows say which one
+  they are in `AREA`, `SUBAREA` and `SCOPE` rather than in a name squashed into
+  one column, and the readable per-sample table is composed on read with
+  `sem_study_summary_get(regions = c("SAMPLE", "GENE_TSS1500"))`, which joins
+  `GENE_TSS1500_<MARKER>_<FIGURE>_<AGG>` onto the sample sheet. A class the run
+  does not register refuses the request instead of answering with an empty
+  result.
 
   Each position is counted **once**, even when the annotation maps it to
   several genes. The burden is computed from the POSITION pivot restricted to
-  the probes of the region, not by summing the per-gene pivot — summing the
+  the probes of the region, not by summing the per-gene pivot: summing the
   latter would count a multi-gene probe once per gene.
 
-- **Region scopes as dependent variable at `depth = 1`.** The new
-  `inference_details$scopes` column (several separated by `"+"`, default
-  `"SAMPLE"`) selects which scopes `association_analysis()` tests at depth 1.
-  A region scope is still one value per sample, so its rows keep `DEPTH = 1`
-  and `SUBAREA = "SAMPLE"`, with the scope in `AREA` (e.g. `GENE_TSS1500`) and
-  `AREA_OF_TEST` unchanged. Requesting a scope that was never produced is an
-  error naming the scope, not a silently empty result.
+### Dependencies
+
+- **Nine declared dependencies the package never called are gone.** `FSA`, `fst`,
+  `future.apply`, `gridExtra` and `zoo` leave `Imports`; `fitdistrplus`, `openai`,
+  `pkgdown` and `wordcloud` leave `Suggests`. With `methods` added to `Imports`,
+  which the package does use, and `ggrepel` and `memuse` to `Suggests`, the
+  declared counts go from 47 and 40 to 43 and 38. A declared import is installed
+  whether or not anything reaches it, so what this removes is install time for
+  every user rather than source lines.
 
 ### Documentation
 
