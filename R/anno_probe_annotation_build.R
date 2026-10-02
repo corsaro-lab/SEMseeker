@@ -164,8 +164,23 @@
 }
 
 .anno_probe_cache_file <- function(key) {
+  # "v2" is the shape of what is stored, and it is in the NAME because the name is
+  # the only part an older build reads before opening the file.
+  #
+  # The schema recorded inside covers one direction: a build that finds a file
+  # written for other columns rebuilds it. The other direction cannot be covered
+  # from inside, because the build that gets it wrong is the one that already
+  # shipped: an earlier version does readRDS() and uses the result as a table, so a
+  # file holding a list stops it on an undefined column, far from any cause it can
+  # see. It cannot be taught this format. It can be kept from looking at it, and a
+  # name it never asks for does exactly that.
+  #
+  # The suffix moves when the stored SHAPE moves, not when the columns do - those
+  # the schema inside already settles. A file from the previous shape is left where
+  # it is rather than removed: an older version that is still installed goes on
+  # using it, which is the whole point of parting the names.
   file.path(tools::R_user_dir("SEMseeker", "cache"),
-            paste0("probe_annotation_", key, ".rds"))
+            paste0("probe_annotation_v2_", key, ".rds"))
 }
 
 .anno_probe_cache_get <- function(key, schema) {
