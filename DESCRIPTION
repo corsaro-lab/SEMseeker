@@ -1,7 +1,7 @@
 Package: SEMseeker
 Type: Package
 Title: Stochastic Epigenetic Mutations SEM Seeker
-Version: 0.99.4
+Version: 0.99.5
 Authors@R: person("Luigi", "Corsaro",
     email = "lcorsaro69@gmail.com",
     role  = c("aut", "cre"),
