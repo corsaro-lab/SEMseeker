@@ -9,7 +9,8 @@ assoc_multinomial_model <- function (family_test, tempDataFrame, sig.formula , t
   ssEnv <- core_get_session_info()
 
   # The family string is split so that a trailing "_predictor" suffix can swap
-  # response and predictor, the same shape assoc_relu_model() uses. Without the
+  # response and predictor, the shape another association model used before it was
+  # removed on 2026-10-02. Without the
   # split, multinomial_params held the whole string, length() was always 1, and
   # the swap below could never fire. It still cannot fire today for a different
   # reason: assoc_validate_family() accepts the bare "multinomial" and no
@@ -108,8 +109,8 @@ assoc_multinomial_model <- function (family_test, tempDataFrame, sig.formula , t
 
     # Predict the values for the plot
     # The model is fitted on the whole tempDataFrame: this function never split
-    # train from test. The block below was transplanted from the relu model,
-    # which does split, and arrived without partition_percentage, train.data,
+    # train from test. The block below was transplanted from a model that did
+    # split, removed on 2026-10-02, and arrived without partition_percentage, train.data,
     # test.data, predictions_test or degree. Plot what is actually here.
     plot_data <- tempDataFrame
     plot_data$predicted <- stats::predict(multinomial_model_result, newdata = plot_data)
