@@ -36,7 +36,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Validate the schema of inference_details (strict, with helpful errors)</h1>
-      <small class="dont-index">Source: <a href="https://github.com/drake69/semseeker/blob/main/R/assoc_validate_inference_schema.R" class="external-link"><code>R/assoc_validate_inference_schema.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/corsaro-lab/SEMseeker/blob/main/R/assoc_validate_inference_schema.R" class="external-link"><code>R/assoc_validate_inference_schema.R</code></a></small>
       <div class="d-none name"><code>assoc_validate_inference_schema.Rd</code></div>
     </div>
 
@@ -70,7 +70,7 @@ recommended) or just warn (`FALSE`, lenient mode for back-compat).</p></dd>
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>1. **Fill missing optional columns** with NA, so downstream code can
    always reference them without `is.null()` checks.
-2. **Reject unknown columns** with a clear diagnostic — including a
+2. **Reject unknown columns** with a clear diagnostic - including a
    fuzzy-match suggestion when the unknown name is close to an
    expected one (typical case: typo in setup like `phenolyser` vs
    `phenolyzer`, or `areas_sql_condtion` vs `areas_sql_condition`).</p>

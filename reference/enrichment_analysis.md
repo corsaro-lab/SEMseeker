@@ -36,7 +36,7 @@ enrichment_analysis(
   ctdR = FALSE,
   result_folder,
   maxResources = 90,
-  parallel_strategy = "multicore",
+  parallel_strategy = "multisession",
   ...
 )
 ```
@@ -45,8 +45,8 @@ enrichment_analysis(
 
 - inference_details:
 
-  data.frame. Inference parameter table (must contain a `depth_analysis`
-  column; rows with `depth_analysis == 3` are processed).
+  data.frame. Inference parameter table (must contain the per-gene
+  artefacts (SCOPE = INSTANCE, AREA = GENE) are processed).
 
 - adjust_per_area_s:
 
@@ -139,7 +139,11 @@ enrichment_analysis(
 
 - parallel_strategy:
 
-  character. Parallelisation backend (default `"multicore"`).
+  character. Parallelisation backend (default `"multisession"`). Asking
+  for `"multicore"` is accepted and converted to `"multisession"`: it
+  means fork(), which is unsafe with this package's native thread pool
+  on every platform that offers it, and absent on Windows. The
+  conversion is logged.
 
 - ...:
 

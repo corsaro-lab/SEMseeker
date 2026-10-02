@@ -40,7 +40,7 @@ invariant guaranteed by this function is:"><script>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Prepare a SIGNAL matrix for one sem_analyze_batch() invocation</h1>
-      <small class="dont-index">Source: <a href="https://github.com/drake69/semseeker/blob/main/R/sem_prepare_batch_signal.R" class="external-link"><code>R/sem_prepare_batch_signal.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/corsaro-lab/SEMseeker/blob/main/R/sem_prepare_batch_signal.R" class="external-link"><code>R/sem_prepare_batch_signal.R</code></a></small>
       <div class="d-none name"><code>sem_prepare_batch_signal.Rd</code></div>
     </div>
 
@@ -66,7 +66,7 @@ invariant guaranteed by this function is:</p>
 <dl><dt id="arg-signal-data">signal_data<a class="anchor" aria-label="anchor" href="#arg-signal-data"></a></dt>
 <dd><p>A data.frame whose rownames are probe identifiers
 (Illumina probe IDs like `"cg00050873"` for K27/K450/K850, or
-coordinate-encoded `"CHR_START"` strings for WGBS/LONGREAD).
+coordinate-encoded `"&lt;CHR&gt;_&lt;START&gt;"` strings for WGBS/LONGREAD).
 Sample columns follow. Must be PROBE-keyed, i.e. already passed
 through `io_normalize_signal_input()`.</p></dd>
 
@@ -86,11 +86,11 @@ on `CHR == "X"` or `CHR == "Y"` from both `probe_features` and
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>The input `signal_data` filtered to the autosomal manifest
-  intersection, with two attributes attached:</p><ul><li><p>`probe_features` — data.frame with columns
+  intersection, with two attributes attached:</p><ul><li><p>`probe_features` - data.frame with columns
       `PROBE, CHR, START, END` (+ any extra columns produced by the
       tech-specific annotation builder), one row per surviving probe,
       in the same order as `rownames(signal_data)`.</p></li>
-<li><p>`tech` — the resolved tech string.</p></li>
+<li><p>`tech` - the resolved tech string.</p></li>
 </ul></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -101,7 +101,7 @@ in the same order.</p>
 previously lived in `sem_analyze_batch()` fresh-path and was a source of
 silent drift between the SIGNAL matrix and the probe_features used to
 compute thresholds, write the POSITION pivot, and run downstream
-analyses. The classic failure (visible v35–v43) was</p>
+analyses. The classic failure (visible v35-v43) was</p>
 <p>`Error in data.frame(probe_features, VALUE = values,
                        row.names = probe_features$PROBE):
    arguments imply differing number of rows: 366948, 374705`</p>

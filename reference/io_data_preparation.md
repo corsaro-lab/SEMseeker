@@ -12,9 +12,7 @@ io_data_preparation(
   independent_variable,
   g_start,
   g_end,
-  dototal,
   covariates,
-  depth_analysis,
   key,
   transformation_x = "none"
 )
@@ -46,22 +44,19 @@ io_data_preparation(
 
   index of the last burden column in tempDataFrame
 
-- dototal:
-
-  logical; if TRUE, append a column with the total (row-sum) burden
-
 - covariates:
 
   vector of covariates to be found in the sample sheet
 
-- depth_analysis:
-
-  1 only sample, 2 chr, 3 alle genomic areas
-
 - key:
 
-  named list with AREA, SUBAREA, MARKER and FIGURE identifiers (used to
-  name TOTAL columns)
+  named list with AREA, SUBAREA, MARKER and FIGURE identifiers, used to
+  name the artefact in the log when degenerate columns are dropped
+
+- transformation_x:
+
+  transformation to apply to the independent variable before the fit;
+  "none" leaves it untouched
 
 ## Value
 

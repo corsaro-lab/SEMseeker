@@ -30,11 +30,11 @@ assoc_volcano_plot_inference(
 
 - inference_detail:
 
-  A single row of \`inference_details\` (data.frame or list) — the same
+  A single row of \`inference_details\` (data.frame or list) - the same
   shape consumed by \`association_analysis()\`. Must carry
   \`independent_variable\`, \`family_test\`, \`covariates\`,
-  \`covariates_dummy\`, \`transformation_y\`, \`depth_analysis\`,
-  \`areas_sql_condition\`, \`samples_sql_condition\`.
+  \`covariates_dummy\`, \`transformation_y\`, \`areas_sql_condition\`,
+  \`samples_sql_condition\`.
 
 - result_folder:
 
@@ -48,6 +48,11 @@ assoc_volcano_plot_inference(
   \`c("SIGNAL","DELTARP","DELTARQ")\` for limma_2 PROBE). If NULL,
   inferred from the CSVs that exist in \`Inference/\` matching this
   scheda's metadata.
+
+- pvalue_column:
+
+  Name of the p-value column to plot on the y axis. NULL lets the
+  function pick the adjusted column matching the inference request
 
 - alpha:
 
@@ -82,7 +87,7 @@ exists).
 
 ## Details
 
-\`MARKER_DEPTH_depth_IV_transformation_y_family_covariates_areas_sql_condition_AREA_SUBAREA.png\`
+\`\<MARKER\>\_\<IV\>\_\<transformation_y\>\_\<family\>\_\<covariates\>\_\<areas_sql_condition\>\_\<AREA\>\_\<SUBAREA\>.png\`
 
 (passed through \`core_name_cleaning()\` which uppercases + replaces
 comparison operators with \`\_GT\_\` / \`\_LT\_\` / \`\_EQ\_\` etc.)
@@ -91,6 +96,6 @@ comparison operators with \`\_GT\_\` / \`\_LT\_\` / \`\_EQ\_\` etc.)
 
 ``` r
 # Stub: see vignette('imprinting-disorders', package = 'SEMseeker') for a
-# runnable Beckwith-Wiedemann workflow on the GSE133774 subset (AI-112b).
+# runnable Beckwith-Wiedemann workflow on the GSE133774 subset.
 invisible(NULL)
 ```

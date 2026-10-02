@@ -12,7 +12,7 @@ sem_signal_single_sample(values, sample_detail, probe_features)
 
 - values:
 
-  signal vaòues
+  signal values
 
 - sample_detail:
 

@@ -36,7 +36,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Title</h1>
-      <small class="dont-index">Source: <a href="https://github.com/drake69/semseeker/blob/main/R/assoc_apply_stat_model.R" class="external-link"><code>R/assoc_apply_stat_model.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/corsaro-lab/SEMseeker/blob/main/R/assoc_apply_stat_model.R" class="external-link"><code>R/assoc_apply_stat_model.R</code></a></small>
       <div class="d-none name"><code>assoc_apply_stat_model.Rd</code></div>
     </div>
 
@@ -53,10 +53,8 @@
 <span>  covariates <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">key</span>,</span>
 <span>  <span class="va">transformation_y</span>,</span>
-<span>  <span class="va">dototal</span>,</span>
 <span>  <span class="va">session_folder</span>,</span>
 <span>  <span class="va">independent_variable</span>,</span>
-<span>  depth_analysis <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>  <span class="va">samples_sql_condition</span>,</span>
 <span>  inference_detail <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
@@ -91,10 +89,6 @@
 <dd><p>transformation_y to apply to covariates, burden and independent variable</p></dd>
 
 
-<dt id="arg-dototal">dototal<a class="anchor" aria-label="anchor" href="#arg-dototal"></a></dt>
-<dd><p>do a total per area</p></dd>
-
-
 <dt id="arg-session-folder">session_folder<a class="anchor" aria-label="anchor" href="#arg-session-folder"></a></dt>
 <dd><p>where to save log file</p></dd>
 
@@ -103,12 +97,14 @@
 <dd><p>independent variable name</p></dd>
 
 
-<dt id="arg-depth-analysis">depth_analysis<a class="anchor" aria-label="anchor" href="#arg-depth-analysis"></a></dt>
-<dd><p>depth's analysis</p></dd>
-
-
 <dt id="arg-samples-sql-condition">samples_sql_condition<a class="anchor" aria-label="anchor" href="#arg-samples-sql-condition"></a></dt>
 <dd><p>SQL condition string to filter samples</p></dd>
+
+
+<dt id="arg-inference-detail">inference_detail<a class="anchor" aria-label="anchor" href="#arg-inference-detail"></a></dt>
+<dd><p>one row of the inference specification, carrying the
+per-request fields (scope, aggregation, transformation_x) that the model
+call needs; NULL falls back to the defaults</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

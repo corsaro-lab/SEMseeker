@@ -38,7 +38,7 @@ or EPIC 850k array (or WGBS data).  Detection runs in priority order:"><script>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Detect the Illumina methylation array technology from a signal matrix</h1>
-      <small class="dont-index">Source: <a href="https://github.com/drake69/semseeker/blob/main/R/core_get_meth_tech.R" class="external-link"><code>R/core_get_meth_tech.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/corsaro-lab/SEMseeker/blob/main/R/core_get_meth_tech.R" class="external-link"><code>R/core_get_meth_tech.R</code></a></small>
       <div class="d-none name"><code>core_get_meth_tech.Rd</code></div>
     </div>
 
@@ -70,11 +70,11 @@ rows and samples as columns.  Row names must be probe identifiers (e.g.
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
 
-<ol><li><p><strong>Annotation-package overlap</strong> — probe IDs are matched against
+<ol><li><p><strong>Annotation-package overlap</strong> - probe IDs are matched against
     each installed <code>IlluminaHumanMethylation*anno</code> package; the
     technology with the most matching probes wins.  Accurate for any subset
     size (e.g. 20 k probes out of 866 k).</p></li>
-<li><p><strong>Row-count heuristics</strong> — last resort for WGBS or unknown
+<li><p><strong>Row-count heuristics</strong> - last resort for WGBS or unknown
     probe naming schemes.</p></li>
 </ol><p>The detected technology and beta/M-value flag are written to the session
 environment.</p>

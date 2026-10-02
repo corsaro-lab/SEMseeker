@@ -44,7 +44,7 @@ MUTATIONS_* ~ covariate1 + covariate2)."><script>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Association analysis of SEMseeker results</h1>
-      <small class="dont-index">Source: <a href="https://github.com/drake69/semseeker/blob/main/R/assoc_analysis.R" class="external-link"><code>R/assoc_analysis.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/corsaro-lab/SEMseeker/blob/main/R/assoc_analysis.R" class="external-link"><code>R/assoc_analysis.R</code></a></small>
       <div class="d-none name"><code>association_analysis.Rd</code></div>
     </div>
 
@@ -62,7 +62,7 @@ Spearman), and multi-covariate formulas (e.g.
 <span>  <span class="va">inference_details</span>,</span>
 <span>  <span class="va">result_folder</span>,</span>
 <span>  maxResources <span class="op">=</span> <span class="fl">90</span>,</span>
-<span>  parallel_strategy <span class="op">=</span> <span class="st">"multicore"</span>,</span>
+<span>  parallel_strategy <span class="op">=</span> <span class="st">"multisession"</span>,</span>
 <span>  start_fresh <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -74,34 +74,70 @@ Spearman), and multi-covariate formulas (e.g.
 
 <dl><dt id="arg-inference-details">inference_details<a class="anchor" aria-label="anchor" href="#arg-inference-details"></a></dt>
 <dd><p>data.frame. Each row defines one analysis run.
-Required columns:</p><dl><dt>independent_variable</dt>
+  Required columns:</p><dl><dt>independent_variable</dt>
 <dd><p>Sample sheet column used as grouping /
-    covariate variable.</p></dd>
+      covariate variable.</p></dd>
 
-  <dt>family_test</dt>
+    <dt>family_test</dt>
 <dd><p>Statistical model: <code>"wilcoxon"</code>,
-    <code>"stats::t.test"</code>, <code>"gaussian"</code>, <code>"poisson"</code>,
-    <code>"binomial"</code>, <code>"pearson"</code>, <code>"kendall"</code>,
-    <code>"spearman"</code>, or quantile regression as
-    <code>"quantreg_&lt;tau&gt;_&lt;runs&gt;"</code> (e.g. <code>"quantreg_0.25_2000"</code>).</p></dd>
+      <code>"stats::t.test"</code>, <code>"gaussian"</code>, <code>"poisson"</code>,
+      <code>"binomial"</code>, <code>"pearson"</code>, <code>"kendall"</code>,
+      <code>"spearman"</code>, or quantile regression as
+      <code>"quantreg_&lt;tau&gt;_&lt;runs&gt;"</code> (e.g. <code>"quantreg_0.25_2000"</code>).</p></dd>
 
-  <dt>transformation_y</dt>
+    <dt>transformation_y</dt>
 <dd><p>Transformation applied to the dependent variable:
-    <code>"none"</code>, <code>"scale"</code>, <code>"log"</code>, <code>"log2"</code>,
-    <code>"log10"</code>, <code>"exp"</code>, or
-    <code>"quantile_&lt;n&gt;"</code> (e.g. <code>"quantile_3"</code>).</p></dd>
+      <code>"none"</code>, <code>"scale"</code>, <code>"log"</code>, <code>"log2"</code>,
+      <code>"log10"</code>, <code>"exp"</code>, or
+      <code>"quantile_&lt;n&gt;"</code> (e.g. <code>"quantile_3"</code>).</p></dd>
 
-  <dt>marker</dt>
-<dd><p>SEM metric column prefix (e.g. <code>"DELTARP"</code>,
-    <code>"MUTATIONS"</code>).</p></dd>
+    <dt>scope</dt>
+<dd><p>Required. Which of the two aggregations to run, over the
+      region classes of the call (<code>areas</code>, <code>subareas</code>).
+      <code>"SAMPLE"</code> reduces the positions of each class to one number per
+      sample: the burden, or its density, or a descriptor of the signal.
+      <code>"INSTANCE"</code> reduces them to one number per instance of the class:
+      one row per gene, per island, per cytoband, per probe.</p>
+<p>The two are <strong>mutually exclusive</strong>. They used to be produced
+      together and written into the same file, which made every result the
+      union of two different questions; a request that wants both now writes
+      two rows, and each carries its own <code>SCOPE</code> in the output.</p>
+<p>It has no default on purpose. Any default would answer half of what was
+      asked and say nothing about the other half.</p></dd>
 
-  <dt>depth_analysis</dt>
-<dd><p>Integer depth: <code>1</code> = sample level,
-    <code>2</code> = type level (gene, DMR, CpG island),
-    <code>3</code> = genomic area (TSS1550, WHOLE, TSS200, …).</p></dd>
+    <dt>aggregation</dt>
+<dd><p>Required. How the positions are reduced to the one
+      number the model is fitted on: <code>"SUM"</code>, <code>"MEAN"</code>,
+      <code>"MEDIAN"</code>, <code>"VARIANCE"</code>, <code>"IQR"</code>, <code>"MODELOW"</code> or
+      <code>"MODEHIGH"</code>. While every marker admitted exactly one operator
+      this could stay implicit; a scope now carries several, so the request
+      has to name the one it wants. Which are admissible depends on the
+      marker: a count carries <code>SUM</code> (the burden) and <code>MEAN</code> (the
+      density, the form comparable across regions of different size), while
+      its median and IQR are degenerate; the two modes exist only for the
+      signal on the beta scale. A request no marker of the run admits is
+      dropped with a warning naming it, not answered with an empty result.</p></dd>
 
 
-</dl></dd>
+</dl><p>The markers are <strong>not</strong> named in <code>inference_details</code> either.
+  They are chosen by the <code>markers</code> argument of this call and every row
+  of the request is tested on all of them, one result file per marker. A
+  <code>marker</code> column was documented here for a long time and never existed
+  in the vocabulary, so a request written from that description was rejected
+  as carrying an unknown column.</p>
+<p>The region classes are <strong>not</strong> named in <code>inference_details</code>: they
+  are the <code>(AREA, SUBAREA)</code> pairs of the run, declared with the
+  <code>areas</code> and <code>subareas</code> arguments of this call and built at
+  runtime. Both scopes range over the same pairs, so
+  <code>scope = "SAMPLE"</code> with <code>areas = c("GENE", "PROBE")</code> gives the
+  burden over the gene probes and the burden over the whole sample, and
+  <code>scope = "INSTANCE"</code> gives one row per gene and one row per probe.
+  The artefact is built on the way in if it does not exist yet, so a class no
+  previous run foresaw costs one scan of the position pivot rather than a
+  rerun.</p>
+<p>Result rows carry the coordinates as columns: <code>MARKER</code>,
+  <code>FIGURE</code>, <code>SCOPE</code>, <code>AREA</code>, <code>SUBAREA</code>,
+  <code>AGGREGATION</code>, never a class name squashed into one of them.</p></dd>
 
 
 <dt id="arg-result-folder">result_folder<a class="anchor" aria-label="anchor" href="#arg-result-folder"></a></dt>
@@ -114,9 +150,13 @@ Required columns:</p><dl><dt>independent_variable</dt>
 
 
 <dt id="arg-parallel-strategy">parallel_strategy<a class="anchor" aria-label="anchor" href="#arg-parallel-strategy"></a></dt>
-<dd><p>character. Parallelisation backend; possible
-values: <code>"none"</code>, <code>"multisession"</code>, <code>"sequential"</code>,
-<code>"multicore"</code>, <code>"cluster"</code> (default <code>"multicore"</code>).</p></dd>
+<dd><p>character. Parallelisation backend; one of
+<code>"multisession"</code>, <code>"sequential"</code>, <code>"cluster"</code>
+(default <code>"multisession"</code>).
+Asking for <code>"multicore"</code> is accepted and converted to
+<code>"multisession"</code>: it means fork(), which is unsafe with this
+package's native thread pool on every platform that offers it, and
+absent on Windows. The conversion is logged.</p></dd>
 
 
 <dt id="arg-start-fresh">start_fresh<a class="anchor" aria-label="anchor" href="#arg-start-fresh"></a></dt>
@@ -144,10 +184,13 @@ results before running (default <code>FALSE</code>).</p></dd>
 <span class="r-in"><span>    independent_variable <span class="op">=</span> <span class="st">"Sample_Group"</span>,</span></span>
 <span class="r-in"><span>    family_test          <span class="op">=</span> <span class="st">"wilcoxon"</span>,</span></span>
 <span class="r-in"><span>    transformation_y     <span class="op">=</span> <span class="st">"none"</span>,</span></span>
-<span class="r-in"><span>    marker               <span class="op">=</span> <span class="st">"DELTARP"</span>,</span></span>
-<span class="r-in"><span>    areas                <span class="op">=</span> <span class="st">"GENE"</span></span></span>
+<span class="r-in"><span>    aggregation          <span class="op">=</span> <span class="st">"MEAN"</span>,</span></span>
+<span class="r-in"><span>    scope                <span class="op">=</span> <span class="st">"INSTANCE"</span></span></span>
 <span class="r-in"><span>  <span class="op">)</span>,</span></span>
 <span class="r-in"><span>  result_folder     <span class="op">=</span> <span class="st">"~/semseeker_results/"</span>,</span></span>
+<span class="r-in"><span>  markers           <span class="op">=</span> <span class="st">"DELTARP"</span>,</span></span>
+<span class="r-in"><span>  areas             <span class="op">=</span> <span class="st">"GENE"</span>,</span></span>
+<span class="r-in"><span>  subareas          <span class="op">=</span> <span class="st">"WHOLE"</span>,</span></span>
 <span class="r-in"><span>  multiple_test_adj <span class="op">=</span> <span class="st">"BH"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>

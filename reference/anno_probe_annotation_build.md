@@ -27,3 +27,11 @@ anno_probe_annotation_build(tech, force = FALSE)
 ## Value
 
 A data frame of per-probe annotation columns.
+
+## Details
+
+The result is cached on disk under
+`tools::R_user_dir("SEMseeker", "cache")`, keyed by technology and
+genome build, and memoised in the package environment for the rest of
+the process. It is deliberately NOT stored in `ssEnv` - see the note
+above this function.

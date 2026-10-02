@@ -1,8 +1,8 @@
 # Run SEMseeker on methylation data from any supported source
 
-Public entry point. Accepts a wide range of inputs — bedmethyl files
+Public entry point. Accepts a wide range of inputs - bedmethyl files
 (modkit / nanopolish), coordinate-based data frames (WGBS / long-read),
-Illumina probe-indexed matrices, or already-loaded data frames —
+Illumina probe-indexed matrices, or already-loaded data frames -
 normalises them to the internal format, validates the tech /
 genome_build combination, and delegates to the core pipeline
 [`sem_core`](https://corsaro-lab.github.io/SEMseeker/reference/sem_core.md).
@@ -72,9 +72,18 @@ semseeker(
   [`core_init_env()`](https://corsaro-lab.github.io/SEMseeker/reference/core_init_env.md)
   (e.g. `parallel_strategy`, `alpha`, `LESIONS_BP`, `marker`, `areas`).
   `LESIONS_BP` (default 2000) is the maximum bp distance between two
-  probes for them to be in the same LESIONS enrichment window — replaces
+  probes for them to be in the same LESIONS enrichment window - replaces
   the legacy `sliding_window_size` probe-count parameter (removed in
-  AI-092).
+  0.99.2). `coverage_minimum` (default 80) is the minimum percentage of
+  input positions that must be present in the reference annotation: the
+  coverage charts are written on every run, and the run stops below this
+  threshold Lower it explicitly for deliberate cross-technology runs.
+  The per-sample statistics are no longer selected here: they are built
+  on demand by `sem_study_summary_get(regions = ...)` and by
+  `association_analysis(scope = "SAMPLE")` over the region classes that
+  call declares, so a region class that was not foreseen at run time
+  costs one scan instead of a whole rerun. Each position is counted
+  once, even when it is annotated to several genes.
 
 ## Value
 
@@ -84,15 +93,15 @@ Invisibly `NULL`; writes output files to `result_folder`.
 
 Supported `input` forms:
 
-- Character vector of bedmethyl file paths (`.bed`/`.tsv`/ `.bedmethyl`)
-  — parsed via
+- Character vector of bedmethyl file paths (`.bed`/`.tsv`/
+  `.bedmethyl`) - parsed via
   [`io_bedmethyl_read`](https://corsaro-lab.github.io/SEMseeker/reference/io_bedmethyl_read.md).
 
 - Data frame with `CHR`/`START`\[`/END`\] columns (WGBS / long-read
-  coordinate format) — normalised via
+  coordinate format) - normalised via
   [`io_normalize_signal_input`](https://corsaro-lab.github.io/SEMseeker/reference/io_normalize_signal_input.md).
 
-- Matrix or data frame with probe-ID rownames (Illumina array) — passed
+- Matrix or data frame with probe-ID rownames (Illumina array) - passed
   through unchanged.
 
 - List of any of the above, one element per batch.
@@ -101,7 +110,7 @@ Supported `input` forms:
 
 ``` r
 # Stub: see vignette('imprinting-disorders', package = 'SEMseeker') for a
-# runnable Beckwith-Wiedemann workflow on the GSE133774 subset (AI-112b).
+# runnable Beckwith-Wiedemann workflow on the GSE133774 subset.
 invisible(NULL)
 if (FALSE) { # \dontrun{
 # Bedmethyl (Nanopore / modkit):

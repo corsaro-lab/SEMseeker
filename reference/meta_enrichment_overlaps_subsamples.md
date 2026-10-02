@@ -3,12 +3,12 @@
 Tests the stability of enrichment (pathway/term) results under random
 subsampling of a single cohort, quantifying how robust the enriched
 terms are to sample variability. The intra-study counterpart of
-\[enrich_inter_study_enrichment_compare()\].
+\[meta_enrichment_compare_studies()\].
 
 ## Usage
 
 ``` r
-enrich_intra_study_enrichment_subsamples_overlaps(
+meta_enrichment_overlaps_subsamples(
   inference_details,
   pathways_sql_selection = "",
   old_label_samples_sql_condition = "",
@@ -76,7 +76,7 @@ Invisibly \`NULL\`; stability tables and plots are written under
 
 ## See also
 
-\[enrich_inter_study_enrichment_compare()\]
+\[meta_enrichment_compare_studies()\]
 
 ## Examples
 

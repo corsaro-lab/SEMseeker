@@ -39,9 +39,9 @@ Starting from a normalised beta-value (or M-value) matrix, semseeker:
     the reference interval (`DELTAS`), its ratio to the interval width
     (`DELTAR`), and their binned/ranked variants (`DELTAP`/`DELTARP`,
     `DELTAQ`/`DELTARQ`).
-5.  Optionally analyses the **raw methylation signal** directly (mean
-    per region, `SIGNAL_MEAN`) for differential methylation without
-    mutation calling.
+5.  Optionally analyses the **raw methylation signal** directly (the
+    `SIGNAL` marker, reduced per region the way you ask) for
+    differential methylation without mutation calling.
 
 Supported input platforms: Illumina EPIC (850k), 450k, and 27k arrays
 (detected automatically from probe IDs).
@@ -56,7 +56,7 @@ Supported input platforms: Illumina EPIC (850k), 450k, and 27k arrays
 install.packages("remotes")
 
 # Install SEMseeker from GitHub
-remotes::install_github("drake69/SEMseeker")
+remotes::install_github("corsaro-lab/SEMseeker")
 ```
 
 > **Note:** semseeker requires the `polars` package from R-multiverse.
@@ -73,7 +73,7 @@ remotes::install_github("drake69/SEMseeker")
 
 **macOS — XQuartz.** R 4.6’s base `tcltk` package is linked against
 `/opt/X11/lib/libX11.6.dylib` at install time. Plain SEMseeker usage
-([`library(SEMseeker)`](https://github.com/drake69/semseeker),
+([`library(SEMseeker)`](https://github.com/corsaro-lab/SEMseeker),
 `semseeker(...)`, `association_analysis(...)`) does not load tcltk.
 However, some Bioconductor optional features that transitively pull
 `minfi` or `GEOquery` (e.g. running the annotation-concordance checks)
@@ -275,21 +275,36 @@ Results are written under `result_folder/Data/`. Each sample produces:
     ├── SAMPLEID_MUTATIONS_HYPER.bed      ← probe-level hypermethylated mutations
     ├── SAMPLEID_LESIONS_HYPO.bed         ← genomic lesion clusters (hypo)
     ├── SAMPLEID_LESIONS_HYPER.bed        ← genomic lesion clusters (hyper)
-    ├── SAMPLEID_SIGNAL_MEAN.PROBE.bedgraph
+    ├── SAMPLE_GROUP/SIGNAL_BETA/SAMPLEID_SIGNAL_BETA.bedgraph.gz
     └── ...
 
 Population-level pivot tables aggregate all samples per marker:
 
     Data/Pivots/
-    ├── SIGNAL/SIGNAL_MEAN_PROBE_WHOLE_hg19.parquet       ← mean signal per probe, all samples
-    ├── MUTATIONS/MUTATIONS_HYPO_PROBE_WHOLE_hg19.parquet
-    ├── DELTARP/DELTARP_HYPER_GENE_WHOLE_hg19.parquet     ← DELTARP (hyper) per gene, all samples
+    ├── SIGNAL/SIGNAL_BETA_INSTANCE_PROBE_WHOLE_VALUE_HG19.parquet    ← one row per probe
+    ├── MUTATIONS/MUTATIONS_HYPO_INSTANCE_PROBE_WHOLE_VALUE_HG19.parquet
+    ├── DELTARP/DELTARP_HYPER_INSTANCE_GENE_WHOLE_SUM_HG19.parquet    ← one row per gene
+    ├── MUTATIONS/MUTATIONS_HYPER_SAMPLE_PROBE_WHOLE_SUM_HG19.parquet ← one row: the whole sample
     └── ...
 
 Pivot file names follow
-`<MARKER>_<FIGURE>_<AREA>_<SUBAREA>_<genome_build>.parquet` under
-`Data/Pivots/<MARKER>/`. The marker name is invariant across aggregation
-levels — only the `AREA` segment (`PROBE`, `GENE`, `ISLAND`, …) changes.
+`<MARKER>_<FIGURE>_<SCOPE>_<AREA>_<SUBAREA>_<AGGREGATION>_<GENOME_BUILD>.parquet`
+under `Data/Pivots/<MARKER>/`, uppercased. Read them as a sentence —
+*DELTARP hyper, over each instance, for GENE WHOLE, by SUM*. Six
+coordinates, and each one answers a different question:
+
+| coordinate | what it fixes |
+|----|----|
+| `MARKER` | which quantity |
+| `FIGURE` | which side of it (`HYPER`/`HYPO`), or for `SIGNAL` the **scale** of the value: `BETA` for a proportion bounded in \[0,1\], `MVALUE` for the logit-transformed one |
+| `SCOPE` | `SAMPLE` = one number per sample, so the file is **one row tall**; `INSTANCE` = one row per gene, island, cytoband or probe |
+| `AREA`, `SUBAREA` | the region class: which positions take part |
+| `AGGREGATION` | how those positions are reduced — `SUM`, `MEAN`, `MEDIAN`, `VARIANCE`, `IQR`, and `VALUE` when the row is already a single position so nothing is reduced |
+
+The two that differ by one token are worth reading together:
+
+    MUTATIONS_HYPER_SAMPLE_PROBE_WHOLE_SUM_HG19    the sample's total burden
+    MUTATIONS_HYPER_SAMPLE_GENE_WHOLE_SUM_HG19     the same total, over gene probes only
 
 ### Reading results
 
@@ -349,11 +364,11 @@ head(deltarp_gene[order(-deltarp_gene$mean_deltarp),
 ## Step 5 — Differential signal analysis
 
 Beyond mutation calling, semseeker also tracks the **raw methylation
-signal** per region via the `SIGNAL_MEAN` marker:
+signal** per region via the `SIGNAL` marker:
 
 | Marker | File pattern | Description |
 |----|----|----|
-| `SIGNAL_MEAN` | `Pivots/SIGNAL/SIGNAL_MEAN_*.parquet` | Per-region mean beta value per sample |
+| `SIGNAL` | `Pivots/SIGNAL/SIGNAL_BETA_INSTANCE_*.parquet` | Per-region signal per sample, on the scale of the session (`BETA`, or `MVALUE`) |
 
 This pivot table has exactly the same structure as the mutation/delta
 tables and can be passed directly to
@@ -365,7 +380,7 @@ without any mutation-calling step.
 
 # inference_details specifies the PREDICTOR and the test — not a model formula.
 # `independent_variable` is the phenotype column, `family_test` the statistical
-# test. The dependent marker (SIGNAL_MEAN, MUTATIONS, …) is NOT named here: it
+# test. The dependent marker (SIGNAL, MUTATIONS, …) is NOT named here: it
 # comes from the markers you ran through semseeker(); association_analysis()
 # iterates over them and reads the matching pivot tables internally.
 inference_details <- data.frame(

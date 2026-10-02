@@ -3,11 +3,11 @@
 Reads `session_metadata.json` from each path in `session_list` and
 enforces provenance rules before combining results across studies:
 
-1.  **Stops** if `genome_build` differs — coordinates from different
+1.  **Stops** if `genome_build` differs - coordinates from different
     assemblies are physically incomparable and would produce silently
     wrong intersection results.
 
-2.  **Warns** if `tech` differs — cross-array meta-analysis (e.g. K450 +
+2.  **Warns** if `tech` differs - cross-array meta-analysis (e.g. K450 +
     K850) is statistically valid on the probe intersection but must be
     intentional.
 

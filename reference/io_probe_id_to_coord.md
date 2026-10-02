@@ -1,7 +1,7 @@
 # Parse synthetic probe IDs back to a CHR / START / END data frame.
 
-Synthetic probe ID format: "CHR_START" where CHR has no "chr" prefix.
-E.g. "1_10000" → CHR = "1", START = 10000L, END = 10001L.
+Synthetic probe ID format: "\<CHR\>\_\<START\>" where CHR has no "chr"
+prefix. E.g. "1_10000" → CHR = "1", START = 10000L, END = 10001L.
 
 ## Usage
 

@@ -4,12 +4,12 @@
 present in test_master_features.  Contains 10 samples from
 a Beckwith-Wiedemann Syndrome (BWS) / Multi-Locus Imprinting Disturbance
 (MLID) family study: 6 unrelated controls and 4 family members (L1 = BWS
-proband, L2–L4 = siblings/parent with NLRP5 compound heterozygous variants)."><meta property="og:description" content="Real EPIC methylation beta-value matrix from GEO series GSE133774
+proband, L2-L4 = siblings/parent with NLRP5 compound heterozygous variants)."><meta property="og:description" content="Real EPIC methylation beta-value matrix from GEO series GSE133774
 (Infinium MethylationEPIC 850k, GPL21145), filtered to the probe IDs
 present in test_master_features.  Contains 10 samples from
 a Beckwith-Wiedemann Syndrome (BWS) / Multi-Locus Imprinting Disturbance
 (MLID) family study: 6 unrelated controls and 4 family members (L1 = BWS
-proband, L2–L4 = siblings/parent with NLRP5 compound heterozygous variants)."><script>
+proband, L2-L4 = siblings/parent with NLRP5 compound heterozygous variants)."><script>
   window.vmtrcq = window.vmtrcq || [];
   window.vmtrc = window.vmtrc || function (){window.vmtrcq.push(Array.prototype.slice.call(arguments))};
 </script><script defer src="https://cdn.vemetric.com/main.js" id="vmtrc-scr" data-token="nWIrdnyvzA1sksDn"></script></head><body>
@@ -46,7 +46,7 @@ proband, L2–L4 = siblings/parent with NLRP5 compound heterozygous variants).">
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>test_signal_gse133774</h1>
-      <small class="dont-index">Source: <a href="https://github.com/drake69/semseeker/blob/main/R/util_data.R" class="external-link"><code>R/util_data.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/corsaro-lab/SEMseeker/blob/main/R/util_data.R" class="external-link"><code>R/util_data.R</code></a></small>
       <div class="d-none name"><code>test_signal_gse133774.Rd</code></div>
     </div>
 
@@ -56,7 +56,7 @@ proband, L2–L4 = siblings/parent with NLRP5 compound heterozygous variants).">
 present in <code><a href="test_master_features.html">test_master_features</a></code>.  Contains 10 samples from
 a Beckwith-Wiedemann Syndrome (BWS) / Multi-Locus Imprinting Disturbance
 (MLID) family study: 6 unrelated controls and 4 family members (L1 = BWS
-proband, L2–L4 = siblings/parent with NLRP5 compound heterozygous variants).</p>
+proband, L2-L4 = siblings/parent with NLRP5 compound heterozygous variants).</p>
     </div>
 
     <div class="section level2">
@@ -67,7 +67,7 @@ proband, L2–L4 = siblings/parent with NLRP5 compound heterozygous variants).</
     <div class="section level2">
     <h2 id="format">Format<a class="anchor" aria-label="anchor" href="#format"></a></h2>
     <p>A numeric matrix with 18,089 rows (EPIC probe IDs) and 10 columns
-  (samples: CTRL01–CTRL06, L1–L4). Values are beta coefficients in
+  (samples: CTRL01-CTRL06, L1-L4). Values are beta coefficients in
   \([0, 1]\); a small number of probes may have <code>NA</code> (QC-filtered
   positions in the original GEO submission).</p>
     </div>
@@ -80,7 +80,7 @@ proband, L2–L4 = siblings/parent with NLRP5 compound heterozygous variants).</
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>This fixture replaces all <code><a href="https://rdrr.io/r/stats/Beta.html" class="external-link">rbeta()</a></code>-based synthetic signal generation
-in the test suite and vignette (AI-123).  Because the data contain real BWS
+in the test suite and vignette.  Because the data contain real BWS
 epimutations at imprinting DMRs (KCNQ1OT1, H19/IGF2, MEG3, ...), running
 the full SEMseeker pipeline on this matrix detects biologically expected
 hypo-epimutation events in the Case samples without any artificial injection.</p>

@@ -12,7 +12,7 @@ diagnostic_performance(
   result_folder,
   independent_variable = "Sample_Group",
   maxResources = 90,
-  parallel_strategy = "multicore",
+  parallel_strategy = "multisession",
   ...
 )
 ```
@@ -44,9 +44,12 @@ diagnostic_performance(
 
 - parallel_strategy:
 
-  character. Parallelisation backend; possible values: `"none"`,
-  `"multisession"`, `"sequential"`, `"multicore"`, `"cluster"` (default
-  `"multicore"`).
+  character. Parallelisation backend; one of `"multisession"`,
+  `"sequential"`, `"cluster"` (default `"multisession"`). Asking for
+  `"multicore"` is accepted and converted to `"multisession"`: it means
+  fork(), which is unsafe with this package's native thread pool on
+  every platform that offers it, and absent on Windows. The conversion
+  is logged.
 
 - ...:
 

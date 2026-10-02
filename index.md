@@ -30,7 +30,7 @@ Install from GitHub using devtools:
 
 install.packages("devtools")
 library(devtools)
-install_github("drake69/semseeker")
+install_github("corsaro-lab/SEMseeker")
 ```
 
 ### System requirements
@@ -39,7 +39,7 @@ install_github("drake69/semseeker")
 
 R 4.6’s base `tcltk` package is linked against XQuartz’s
 `/opt/X11/lib/libX11.6.dylib` at install time. Plain SEMseeker usage
-([`library(SEMseeker)`](https://github.com/drake69/semseeker),
+([`library(SEMseeker)`](https://github.com/corsaro-lab/SEMseeker),
 `semseeker(...)`, `association_analysis(...)`) does NOT load tcltk and
 works without XQuartz. But some Bioconductor optional features
 (e.g. annotation chains pulling `minfi` / `GEOquery`) transitively load
@@ -209,6 +209,6 @@ citation("semseeker")
 ```
 
 The package is archived on Zenodo under the concept DOI
-[10.5281/zenodo.5095417](https://doi.org/10.5281/zenodo.5095417), which
+[10.5281/zenodo.5095416](https://doi.org/10.5281/zenodo.5095416), which
 always resolves to the latest archived version; every release tag also
 gets its own version DOI.

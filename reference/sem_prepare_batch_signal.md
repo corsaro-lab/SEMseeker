@@ -20,8 +20,8 @@ sem_prepare_batch_signal(
 
   A data.frame whose rownames are probe identifiers (Illumina probe IDs
   like \`"cg00050873"\` for K27/K450/K850, or coordinate-encoded
-  \`"CHR_START"\` strings for WGBS/LONGREAD). Sample columns follow.
-  Must be PROBE-keyed, i.e. already passed through
+  \`"\<CHR\>\_\<START\>"\` strings for WGBS/LONGREAD). Sample columns
+  follow. Must be PROBE-keyed, i.e. already passed through
   \`io_normalize_signal_input()\`.
 
 - tech:
@@ -41,12 +41,12 @@ sem_prepare_batch_signal(
 The input \`signal_data\` filtered to the autosomal manifest
 intersection, with two attributes attached:
 
-- \`probe_features\` — data.frame with columns \`PROBE, CHR, START,
+- \`probe_features\` - data.frame with columns \`PROBE, CHR, START,
   END\` (+ any extra columns produced by the tech-specific annotation
   builder), one row per surviving probe, in the same order as
   \`rownames(signal_data)\`.
 
-- \`tech\` — the resolved tech string.
+- \`tech\` - the resolved tech string.
 
 ## Details
 
@@ -59,7 +59,7 @@ This replaces ~30 lines of scattered annotation/filter/align logic that
 previously lived in \`sem_analyze_batch()\` fresh-path and was a source
 of silent drift between the SIGNAL matrix and the probe_features used to
 compute thresholds, write the POSITION pivot, and run downstream
-analyses. The classic failure (visible v35–v43) was
+analyses. The classic failure (visible v35-v43) was
 
 \`Error in data.frame(probe_features, VALUE = values, row.names =
 probe_features\$PROBE): arguments imply differing number of rows:

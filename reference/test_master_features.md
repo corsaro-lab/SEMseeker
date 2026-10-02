@@ -48,7 +48,7 @@ Built from
 and the `IlluminaHumanMethylationEPICanno.ilm10b4.hg19` Bioconductor
 annotation package with `set.seed(20210713)` (date of the v.0.1.9 Zenodo
 software-archive release, DOI
-[10.5281/zenodo.5095417](https://doi.org/10.5281/zenodo.5095417)).
+[10.5281/zenodo.5095416](https://doi.org/10.5281/zenodo.5095416)).
 Re-generate with `Rscript data-raw/build_test_master_features.R`.
 
 ## Details

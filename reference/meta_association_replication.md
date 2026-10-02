@@ -7,12 +7,12 @@ across two datasets for comparative inference.
 ## Usage
 
 ``` r
-assoc_intra_study_association_replication(
+meta_association_replication(
   inference_details_origin,
   inference_details,
   result_folder,
   maxResources = 90,
-  parallel_strategy = "multicore",
+  parallel_strategy = "multisession",
   start_fresh = FALSE,
   ...
 )
@@ -40,9 +40,12 @@ assoc_intra_study_association_replication(
 
 - parallel_strategy:
 
-  character. Parallelisation backend passed to `future`; e.g.
-  `"multicore"`, `"multisession"`, `"sequential"` (default
-  `"multicore"`).
+  character. Parallelisation backend passed to `future`; one of
+  `"multisession"`, `"sequential"`, `"cluster"` (default
+  `"multisession"`). Asking for `"multicore"` is accepted and converted
+  to `"multisession"`: it means fork(), which is unsafe with this
+  package's native thread pool on every platform that offers it, and
+  absent on Windows. The conversion is logged.
 
 - start_fresh:
 
@@ -64,7 +67,7 @@ Invisibly `NULL`. Results are written to the inference sub-folder of
 ``` r
 result_dir <- tempdir()
 if (FALSE) { # \dontrun{
-assoc_intra_study_association_replication(
+meta_association_replication(
   inference_details_origin = inference_study1,
   inference_details        = inference_study2,
   result_folder            = "~/semseeker_comparison/"

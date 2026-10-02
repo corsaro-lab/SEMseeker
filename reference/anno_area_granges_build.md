@@ -1,7 +1,7 @@
 # Build a GRanges object for a given genomic area/subarea
 
 Constructs the same region boundaries used by Illumina array annotation
-(TSS200, TSS1500, gene body, CpG islands, shores, shelves …) from TxDb
+(TSS200, TSS1500, gene body, CpG islands, shores, shelves ...) from TxDb
 packages and AnnotationHub, so that WGBS and long-read analyses share
 identical region semantics with Illumina array analyses.
 
@@ -47,7 +47,7 @@ by
   `cg00000029`). Probe identity is meaningful and cross-study comparable
   for the same array platform.
 
-- **WGBS / LONGREAD**: treated as `POSITION_WHOLE` — one row per genomic
+- **WGBS / LONGREAD**: treated as `POSITION_WHOLE` - one row per genomic
   position encoded as `"CHR\_START"` (e.g. `"1\_10000"`). Cross-study
   comparisons require the same `genome_build`.
 
@@ -59,8 +59,11 @@ Install via
 - GENE areas:
 
   `TxDb.Hsapiens.UCSC.hg19.knownGene` (or hg38/mm10), `GenomicFeatures`,
-  `GenomicRanges`, `IRanges`. `org.Hs.eg.db` is optional (falls back to
-  Entrez IDs as labels).
+  `GenomicRanges`, `IRanges`. `org.Hs.eg.db` is required in practice:
+  without it the label of a gene region stays the Entrez id that TxDb
+  keys on, while the Illumina path labels with gene symbols, so the two
+  backends name the same gene two different ways. The code falls back
+  rather than failing, but the result is not comparable across backends.
 
 - ISLAND areas:
 

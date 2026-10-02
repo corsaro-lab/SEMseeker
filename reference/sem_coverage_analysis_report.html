@@ -42,7 +42,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Probe coverage analysis report</h1>
-      <small class="dont-index">Source: <a href="https://github.com/drake69/semseeker/blob/main/R/sem_coverage_analysis_report.R" class="external-link"><code>R/sem_coverage_analysis_report.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/corsaro-lab/SEMseeker/blob/main/R/sem_coverage_analysis_report.R" class="external-link"><code>R/sem_coverage_analysis_report.R</code></a></small>
       <div class="d-none name"><code>sem_coverage_analysis_report.Rd</code></div>
     </div>
 
@@ -59,7 +59,7 @@
 <span>  <span class="va">signal_data</span>,</span>
 <span>  <span class="va">result_folder</span>,</span>
 <span>  maxResources <span class="op">=</span> <span class="fl">90</span>,</span>
-<span>  parallel_strategy <span class="op">=</span> <span class="st">"multicore"</span>,</span>
+<span>  parallel_strategy <span class="op">=</span> <span class="st">"multisession"</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -69,9 +69,11 @@
 
 
 <dl><dt id="arg-signal-data">signal_data<a class="anchor" aria-label="anchor" href="#arg-signal-data"></a></dt>
-<dd><p>character. Path to the signal parquet file (e.g.
-<code>Data/SIGNAL_MEAN_PROBE_WHOLE.parquet</code>) or a data.frame already
-loaded into memory.</p></dd>
+<dd><p>character. Path to the signal parquet file under
+<code>Data/Pivots/SIGNAL/</code>, or a data.frame already loaded into memory.
+The file is named <code>SIGNAL_&lt;FIGURE&gt;_PROBE_WHOLE_&lt;GENOME_BUILD&gt;.parquet</code>,
+where <code>FIGURE</code> is the scale the run was written on - <code>BETA</code> for a
+proportion bounded in [0,1], <code>MVALUE</code> for the logit-transformed one.</p></dd>
 
 
 <dt id="arg-result-folder">result_folder<a class="anchor" aria-label="anchor" href="#arg-result-folder"></a></dt>
@@ -85,7 +87,11 @@ loaded into memory.</p></dd>
 
 <dt id="arg-parallel-strategy">parallel_strategy<a class="anchor" aria-label="anchor" href="#arg-parallel-strategy"></a></dt>
 <dd><p>character. Parallelisation backend passed to
-<code>future</code> (default <code>"multicore"</code>).</p></dd>
+<code>future</code> (default <code>"multisession"</code>).
+Asking for <code>"multicore"</code> is accepted and converted to
+<code>"multisession"</code>: it means fork(), which is unsafe with this
+package's native thread pool on every platform that offers it, and
+absent on Windows. The conversion is logged.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -102,8 +108,10 @@ loaded into memory.</p></dd>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">result_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+<span class="r-in"><span><span class="co"># BETA is the scale this particular run was written on; a run on the</span></span></span>
+<span class="r-in"><span><span class="co"># logit scale produces SIGNAL_MVALUE_PROBE_WHOLE_HG19.parquet instead.</span></span></span>
 <span class="r-in"><span><span class="fu">sem_coverage_analysis_report</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  signal_data   <span class="op">=</span> <span class="st">"~/semseeker_results/Data/SIGNAL_MEAN_PROBE_WHOLE.parquet"</span>,</span></span>
+<span class="r-in"><span>  signal_data   <span class="op">=</span> <span class="st">"~/semseeker_results/Data/Pivots/SIGNAL/SIGNAL_BETA_PROBE_WHOLE_HG19.parquet"</span>,</span></span>
 <span class="r-in"><span>  result_folder <span class="op">=</span> <span class="st">"~/semseeker_results/"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>

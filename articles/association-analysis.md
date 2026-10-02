@@ -92,7 +92,7 @@ Any semseeker output metric can be the dependent variable in `formula`:
 | `DELTARP` | `DELTAR` discretised into equal-width bins, each assigned an integer rank weight (default 4 bins) |
 | `DELTAQ` | `DELTAS` discretised into quantile bins, each assigned an integer rank weight |
 | `DELTARQ` | `DELTAR` discretised into quantile bins, each assigned an integer rank weight (default 4 bins) |
-| `SIGNAL_MEAN` | Per-probe mean methylation signal (marker `SIGNAL`, figure `MEAN`) |
+| `SIGNAL` | Per-probe methylation signal; its figure is the scale of the value — `BETA` for a proportion bounded in \[0,1\], `MVALUE` for the logit-transformed one |
 
 ------------------------------------------------------------------------
 
@@ -507,17 +507,33 @@ full analysis specification:
 
 Each CSV contains:
 
-| Column                    | Description                               |
-|---------------------------|-------------------------------------------|
-| `CHR`, `START`, `END`     | Genomic coordinates                       |
-| `AREA`, `SUBAREA`         | Aggregation level and sub-region          |
-| `MARKER`                  | SEM metric tested                         |
-| `SCORE`                   | Test statistic (ρ, W, t, β, …)            |
-| `P_Value`                 | Nominal p-value                           |
-| `Q` / `PVALUE_ADJ_ALL_BH` | FDR-adjusted p-value (Benjamini-Hochberg) |
-| `SIGNIFICATIVE_ADJ`       | `TRUE` if Q \< α (default 0.05)           |
-| `FAMILY_TEST`             | Model used                                |
-| `SAMPLE_GROUP`            | Sample subset tested                      |
+| Column | Description |
+|----|----|
+| `CHR`, `START`, `END` | Genomic coordinates |
+| `AREA`, `SUBAREA` | Aggregation level and sub-region |
+| `MARKER` | SEM metric tested |
+| `SCORE` | Test statistic (ρ, W, t, β, …) |
+| `P_Value` | Nominal p-value |
+| `PVALUE_ADJ_KEY_<m>` | Adjusted within the identity key — the instances tested for one `(MARKER, FIGURE, SCOPE, AREA, SUBAREA, AGGREGATION)` |
+| `PVALUE_ADJ_SCOPE_<m>` | Adjusted across every row of the same `SCOPE` — all its region classes, figures and aggregations |
+| `PVALUE_ADJ_ALL_<m>` | Adjusted across the whole file — everything tested on this marker under this model |
+| `SIGNIFICATIVE_ADJ` | `TRUE` if the `ALL` level is below α (default 0.05) |
+| `FAMILY_TEST` | Model used |
+| `SAMPLE_GROUP` | Sample subset tested |
+
+The three adjusted columns differ **only** by the family the correction
+was controlled over, and `<m>` is the method the run declared
+(`multiple_test_adj`). Which one to report is an analytical choice that
+belongs in your Methods:
+
+- at `SCOPE = INSTANCE` the `KEY` level is the usual one — its members
+  are the genes (or islands, or cytobands) tested for one measurement;
+- at `SCOPE = SAMPLE` the key holds a **single row**, so
+  `PVALUE_ADJ_KEY_<m>` equals the raw p-value by arithmetic. The `SCOPE`
+  level is the one with members to count there;
+- the three are **not** a severity ladder. Benjamini-Hochberg is
+  adaptive, so a wider family is usually — but not necessarily — more
+  conservative.
 
 ------------------------------------------------------------------------
 
@@ -557,20 +573,20 @@ studies:
 ``` r
 
 # Overlap significant hits across two studies
-assoc_inter_study_association_overlaps(
+meta_association_overlaps_studies(
   studies       = list("~/study_A/", "~/study_B/"),
   result_folder = "~/meta_results/",
   pvalue_column = "PVALUE_ADJ_ALL_BH"
 )
 
 # Meta-analysis (combines p-values / effect sizes)
-assoc_inter_study_association_meta_analysis(
+meta_association_across_studies(
   studies       = list("~/study_A/", "~/study_B/"),
   result_folder = "~/meta_results/"
 )
 
 # Subsample stability analysis (bootstrap cohort sub-sampling)
-assoc_intra_study_association_subsamples_overlaps(
+meta_association_overlaps_subsamples(
   result_folder = "~/semseeker_results/",
   n_subsamples  = 100,
   fraction      = 0.8
@@ -645,7 +661,7 @@ cohort. CSV files are written to `<result_folder>/Euristic/`.
 
 ## Cross-study replication
 
-[`assoc_intra_study_association_replication()`](https://corsaro-lab.github.io/SEMseeker/reference/assoc_intra_study_association_replication.md)
+[`meta_association_replication()`](https://corsaro-lab.github.io/SEMseeker/reference/meta_association_replication.md)
 reruns the association on a target study restricted to the regions that
 were already significant in a reference study, then merges the two
 result sets. It’s the standard “replication / validation” workflow when
@@ -653,7 +669,7 @@ you have a discovery cohort and a validation cohort.
 
 ``` r
 
-assoc_intra_study_association_replication(
+meta_association_replication(
   inference_details_origin = inference_discovery,
   inference_details        = inference_validation,
   result_folder            = "~/semseeker_replication/",

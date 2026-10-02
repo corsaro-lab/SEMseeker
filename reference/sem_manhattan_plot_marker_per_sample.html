@@ -36,7 +36,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Manhattan plot of SEM markers for a single sample</h1>
-      <small class="dont-index">Source: <a href="https://github.com/drake69/semseeker/blob/main/R/sem_manhattan_plot_marker_per_sample.R" class="external-link"><code>R/sem_manhattan_plot_marker_per_sample.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/corsaro-lab/SEMseeker/blob/main/R/sem_manhattan_plot_marker_per_sample.R" class="external-link"><code>R/sem_manhattan_plot_marker_per_sample.R</code></a></small>
       <div class="d-none name"><code>sem_manhattan_plot_marker_per_sample.Rd</code></div>
     </div>
 
@@ -104,7 +104,11 @@ sample sheet (default <code>"NAME"</code>).</p></dd>
 
 <dt id="arg-parallel-strategy">parallel_strategy<a class="anchor" aria-label="anchor" href="#arg-parallel-strategy"></a></dt>
 <dd><p>character. Parallelisation backend
-(default <code>"multicore"</code>).</p></dd>
+(default <code>"multisession"</code>).
+Asking for <code>"multicore"</code> is accepted and converted to
+<code>"multisession"</code>: it means fork(), which is unsafe with this
+package's native thread pool on every platform that offers it, and
+absent on Windows. The conversion is logged.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

@@ -62,7 +62,7 @@
       <h1>Association analysis — statistical models, correlation and group tests</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/drake69/semseeker/blob/main/vignettes/association-analysis.Rmd" class="external-link"><code>vignettes/association-analysis.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/corsaro-lab/SEMseeker/blob/main/vignettes/association-analysis.Rmd" class="external-link"><code>vignettes/association-analysis.Rmd</code></a></small>
       <div class="d-none name"><code>association-analysis.Rmd</code></div>
     </div>
 
@@ -283,9 +283,10 @@ integer rank weight</td>
 integer rank weight (default 4 bins)</td>
 </tr>
 <tr class="odd">
-<td><code>SIGNAL_MEAN</code></td>
-<td>Per-probe mean methylation signal (marker <code>SIGNAL</code>,
-figure <code>MEAN</code>)</td>
+<td><code>SIGNAL</code></td>
+<td>Per-probe methylation signal; its figure is the scale of the value —
+<code>BETA</code> for a proportion bounded in [0,1], <code>MVALUE</code>
+for the logit-transformed one</td>
 </tr>
 </tbody>
 </table>
@@ -773,15 +774,26 @@ names encode the full analysis specification:</p>
 <td>Nominal p-value</td>
 </tr>
 <tr class="even">
-<td>
-<code>Q</code> / <code>PVALUE_ADJ_ALL_BH</code>
+<td><code>PVALUE_ADJ_KEY_&lt;m&gt;</code></td>
+<td>Adjusted within the identity key — the instances tested for one
+<code>(MARKER, FIGURE, SCOPE, AREA, SUBAREA, AGGREGATION)</code>
 </td>
-<td>FDR-adjusted p-value (Benjamini-Hochberg)</td>
+</tr>
+<tr class="odd">
+<td><code>PVALUE_ADJ_SCOPE_&lt;m&gt;</code></td>
+<td>Adjusted across every row of the same <code>SCOPE</code> — all its
+region classes, figures and aggregations</td>
+</tr>
+<tr class="even">
+<td><code>PVALUE_ADJ_ALL_&lt;m&gt;</code></td>
+<td>Adjusted across the whole file — everything tested on this marker
+under this model</td>
 </tr>
 <tr class="odd">
 <td><code>SIGNIFICATIVE_ADJ</code></td>
 <td>
-<code>TRUE</code> if Q &lt; α (default 0.05)</td>
+<code>TRUE</code> if the <code>ALL</code> level is below α (default
+0.05)</td>
 </tr>
 <tr class="even">
 <td><code>FAMILY_TEST</code></td>
@@ -793,6 +805,22 @@ names encode the full analysis specification:</p>
 </tr>
 </tbody>
 </table>
+<p>The three adjusted columns differ <strong>only</strong> by the family
+the correction was controlled over, and <code>&lt;m&gt;</code> is the
+method the run declared (<code>multiple_test_adj</code>). Which one to
+report is an analytical choice that belongs in your Methods:</p>
+<ul>
+<li>at <code>SCOPE = INSTANCE</code> the <code>KEY</code> level is the
+usual one — its members are the genes (or islands, or cytobands) tested
+for one measurement;</li>
+<li>at <code>SCOPE = SAMPLE</code> the key holds a <strong>single
+row</strong>, so <code>PVALUE_ADJ_KEY_&lt;m&gt;</code> equals the raw
+p-value by arithmetic. The <code>SCOPE</code> level is the one with
+members to count there;</li>
+<li>the three are <strong>not</strong> a severity ladder.
+Benjamini-Hochberg is adaptive, so a wider family is usually — but not
+necessarily — more conservative.</li>
+</ul>
 <hr>
 </div>
 <div class="section level2">
@@ -827,20 +855,20 @@ semseeker provides functions to compare and meta-analyse results across
 studies:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Overlap significant hits across two studies</span></span>
-<span><span class="fu">assoc_inter_study_association_overlaps</span><span class="op">(</span></span>
+<span><span class="fu"><a href="../reference/meta_association_overlaps_studies.html">meta_association_overlaps_studies</a></span><span class="op">(</span></span>
 <span>  studies       <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"~/study_A/"</span>, <span class="st">"~/study_B/"</span><span class="op">)</span>,</span>
 <span>  result_folder <span class="op">=</span> <span class="st">"~/meta_results/"</span>,</span>
 <span>  pvalue_column <span class="op">=</span> <span class="st">"PVALUE_ADJ_ALL_BH"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Meta-analysis (combines p-values / effect sizes)</span></span>
-<span><span class="fu"><a href="../reference/assoc_inter_study_association_meta_analysis.html">assoc_inter_study_association_meta_analysis</a></span><span class="op">(</span></span>
+<span><span class="fu"><a href="../reference/meta_association_across_studies.html">meta_association_across_studies</a></span><span class="op">(</span></span>
 <span>  studies       <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"~/study_A/"</span>, <span class="st">"~/study_B/"</span><span class="op">)</span>,</span>
 <span>  result_folder <span class="op">=</span> <span class="st">"~/meta_results/"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Subsample stability analysis (bootstrap cohort sub-sampling)</span></span>
-<span><span class="fu">assoc_intra_study_association_subsamples_overlaps</span><span class="op">(</span></span>
+<span><span class="fu"><a href="../reference/meta_association_overlaps_subsamples.html">meta_association_overlaps_subsamples</a></span><span class="op">(</span></span>
 <span>  result_folder <span class="op">=</span> <span class="st">"~/semseeker_results/"</span>,</span>
 <span>  n_subsamples  <span class="op">=</span> <span class="fl">100</span>,</span>
 <span>  fraction      <span class="op">=</span> <span class="fl">0.8</span></span>
@@ -907,13 +935,13 @@ the studied cohort. CSV files are written to
 <div class="section level2">
 <h2 id="cross-study-replication">Cross-study replication<a class="anchor" aria-label="anchor" href="#cross-study-replication"></a>
 </h2>
-<p><code><a href="../reference/assoc_intra_study_association_replication.html">assoc_intra_study_association_replication()</a></code> reruns the
-association on a target study restricted to the regions that were
-already significant in a reference study, then merges the two result
-sets. It’s the standard “replication / validation” workflow when you
-have a discovery cohort and a validation cohort.</p>
+<p><code><a href="../reference/meta_association_replication.html">meta_association_replication()</a></code> reruns the association on
+a target study restricted to the regions that were already significant
+in a reference study, then merges the two result sets. It’s the standard
+“replication / validation” workflow when you have a discovery cohort and
+a validation cohort.</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/assoc_intra_study_association_replication.html">assoc_intra_study_association_replication</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/meta_association_replication.html">meta_association_replication</a></span><span class="op">(</span></span>
 <span>  inference_details_origin <span class="op">=</span> <span class="va">inference_discovery</span>,</span>
 <span>  inference_details        <span class="op">=</span> <span class="va">inference_validation</span>,</span>
 <span>  result_folder            <span class="op">=</span> <span class="st">"~/semseeker_replication/"</span>,</span>

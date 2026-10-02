@@ -6,6 +6,7 @@
 <url><loc>https://corsaro-lab.github.io/SEMseeker/articles/index.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/articles/pathway-analysis.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/authors.html</loc></url>
+<url><loc>https://corsaro-lab.github.io/SEMseeker/google606fb593a72e8644.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/index.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/news/index.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/anno_annotate_position_pivots.html</loc></url>
@@ -24,8 +25,6 @@
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/assoc_compute_spearman_permutation.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/assoc_exact_pvalue.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/assoc_glm_model.html</loc></url>
-<url><loc>https://corsaro-lab.github.io/SEMseeker/reference/assoc_inter_study_association_meta_analysis.html</loc></url>
-<url><loc>https://corsaro-lab.github.io/SEMseeker/reference/assoc_intra_study_association_replication.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/assoc_mean_permutation.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/assoc_mediation_linear_model.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/assoc_model_performance.html</loc></url>
@@ -33,6 +32,7 @@
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/assoc_quantile_permutation_model.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/assoc_quantreg_model.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/assoc_quantreg_permutation_model.html</loc></url>
+<url><loc>https://corsaro-lab.github.io/SEMseeker/reference/assoc_run_marker.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/assoc_spearman_permutation.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/assoc_test_model.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/assoc_validate_inference_schema.html</loc></url>
@@ -54,8 +54,7 @@
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/dot-anno_pkg_to_df.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/dot-anno_smart_split_area_name.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/enrich_find_unique_gene_sets.html</loc></url>
-<url><loc>https://corsaro-lab.github.io/SEMseeker/reference/enrich_inter_study_enrichment_compare.html</loc></url>
-<url><loc>https://corsaro-lab.github.io/SEMseeker/reference/enrich_intra_study_enrichment_subsamples_overlaps.html</loc></url>
+<url><loc>https://corsaro-lab.github.io/SEMseeker/reference/enrich_hypothesis.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/enrich_wrap_it.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/enrichment_analysis.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/index.html</loc></url>
@@ -71,6 +70,12 @@
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/io_normalize_signal_input.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/io_pivot_to_long_format.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/io_probe_id_to_coord.html</loc></url>
+<url><loc>https://corsaro-lab.github.io/SEMseeker/reference/meta_association_across_studies.html</loc></url>
+<url><loc>https://corsaro-lab.github.io/SEMseeker/reference/meta_association_overlaps_studies.html</loc></url>
+<url><loc>https://corsaro-lab.github.io/SEMseeker/reference/meta_association_overlaps_subsamples.html</loc></url>
+<url><loc>https://corsaro-lab.github.io/SEMseeker/reference/meta_association_replication.html</loc></url>
+<url><loc>https://corsaro-lab.github.io/SEMseeker/reference/meta_enrichment_compare_studies.html</loc></url>
+<url><loc>https://corsaro-lab.github.io/SEMseeker/reference/meta_enrichment_overlaps_subsamples.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/metrics_properties.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/plot_create_heatmap.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/plot_manhattan_plot_per_area.html</loc></url>
@@ -86,8 +91,6 @@
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/sem_mvalue_to_beta.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/sem_prepare_batch_signal.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/sem_prepare_study_for_analysis.html</loc></url>
-<url><loc>https://corsaro-lab.github.io/SEMseeker/reference/sem_run_depth1_marker.html</loc></url>
-<url><loc>https://corsaro-lab.github.io/SEMseeker/reference/sem_run_depth_n_marker.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/sem_signal_range_values.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/sem_signal_single_sample.html</loc></url>
 <url><loc>https://corsaro-lab.github.io/SEMseeker/reference/semseeker.html</loc></url>

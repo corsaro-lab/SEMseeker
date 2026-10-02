@@ -36,7 +36,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Diagnostic performance (sensitivity &amp; specificity) of SEMseeker mutations and lesions</h1>
-      <small class="dont-index">Source: <a href="https://github.com/drake69/semseeker/blob/main/R/assoc_diagnostic_performance.R" class="external-link"><code>R/assoc_diagnostic_performance.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/corsaro-lab/SEMseeker/blob/main/R/assoc_diagnostic_performance.R" class="external-link"><code>R/assoc_diagnostic_performance.R</code></a></small>
       <div class="d-none name"><code>diagnostic_performance.Rd</code></div>
     </div>
 
@@ -52,7 +52,7 @@
 <span>  <span class="va">result_folder</span>,</span>
 <span>  independent_variable <span class="op">=</span> <span class="st">"Sample_Group"</span>,</span>
 <span>  maxResources <span class="op">=</span> <span class="fl">90</span>,</span>
-<span>  parallel_strategy <span class="op">=</span> <span class="st">"multicore"</span>,</span>
+<span>  parallel_strategy <span class="op">=</span> <span class="st">"multisession"</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -86,9 +86,13 @@ grouping variable (default <code>"Sample_Group"</code>).</p></dd>
 
 
 <dt id="arg-parallel-strategy">parallel_strategy<a class="anchor" aria-label="anchor" href="#arg-parallel-strategy"></a></dt>
-<dd><p>character. Parallelisation backend; possible
-values: <code>"none"</code>, <code>"multisession"</code>, <code>"sequential"</code>,
-<code>"multicore"</code>, <code>"cluster"</code> (default <code>"multicore"</code>).</p></dd>
+<dd><p>character. Parallelisation backend; one of
+<code>"multisession"</code>, <code>"sequential"</code>, <code>"cluster"</code>
+(default <code>"multisession"</code>).
+Asking for <code>"multicore"</code> is accepted and converted to
+<code>"multisession"</code>: it means fork(), which is unsafe with this
+package's native thread pool on every platform that offers it, and
+absent on Windows. The conversion is logged.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

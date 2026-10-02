@@ -29,7 +29,7 @@ assoc_compute_quantile_delta_permutation(
 
 - quantile:
 
-  quantile level (0–1) at which to compute the group difference; default
+  quantile level (0-1) at which to compute the group difference; default
   0.5 (median)
 
 ## Value

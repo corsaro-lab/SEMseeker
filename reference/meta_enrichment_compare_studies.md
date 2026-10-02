@@ -3,13 +3,12 @@
 Compares enrichment (pathway/term) results across two or more
 independent studies stored under \`result_folder\` and produces Venn
 diagrams of the overlapping enriched terms. Part of the cross-study
-replication workflow, alongside
-\[assoc_inter_study_association_overlaps()\].
+replication workflow, alongside \[meta_association_overlaps_studies()\].
 
 ## Usage
 
 ``` r
-enrich_inter_study_enrichment_compare(result_folder, ...)
+meta_enrichment_compare_studies(result_folder, ...)
 ```
 
 ## Arguments
@@ -31,8 +30,8 @@ under \`result_folder\`.
 
 ## See also
 
-\[assoc_inter_study_association_overlaps()\],
-\[enrich_intra_study_enrichment_subsamples_overlaps()\]
+\[meta_association_overlaps_studies()\],
+\[meta_enrichment_overlaps_subsamples()\]
 
 ## Examples
 

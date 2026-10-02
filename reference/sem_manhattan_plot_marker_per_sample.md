@@ -56,7 +56,11 @@ sem_manhattan_plot_marker_per_sample(
 
 - parallel_strategy:
 
-  character. Parallelisation backend (default `"multicore"`).
+  character. Parallelisation backend (default `"multisession"`). Asking
+  for `"multicore"` is accepted and converted to `"multisession"`: it
+  means fork(), which is unsafe with this package's native thread pool
+  on every platform that offers it, and absent on Windows. The
+  conversion is logged.
 
 - ...:
 

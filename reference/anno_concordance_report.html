@@ -48,7 +48,7 @@ and reports the concordance rate per area."><script>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Cross-pipeline annotation concordance report (Illumina manifest vs WGBS)</h1>
-      <small class="dont-index">Source: <a href="https://github.com/drake69/semseeker/blob/main/R/anno_concordance_report.R" class="external-link"><code>R/anno_concordance_report.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/corsaro-lab/SEMseeker/blob/main/R/anno_concordance_report.R" class="external-link"><code>R/anno_concordance_report.R</code></a></small>
       <div class="d-none name"><code>anno_concordance_report.Rd</code></div>
     </div>
 
@@ -117,12 +117,12 @@ Default <code>"K850"</code>.</p></dd>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Concordance categories (informational, returned in the <code>category</code> column):</p><ul><li><p><code>"bundled"</code> — both pipelines use the same bundled data
+    <p>Concordance categories (informational, returned in the <code>category</code> column):</p><ul><li><p><code>"bundled"</code> - both pipelines use the same bundled data
     (<code>cytoband_hg19.rda</code>, <code>dmr_annotation.rda</code>). Expected rate: 1.0.</p></li>
-<li><p><code>"txdb"</code> — WGBS path uses <code>TxDb</code> UCSC <code>knownGene</code>
+<li><p><code>"txdb"</code> - WGBS path uses <code>TxDb</code> UCSC <code>knownGene</code>
     while the Illumina manifest uses RefSeq. Some probes map to different
     gene symbols between the two sources.</p></li>
-<li><p><code>"annotationhub"</code> — WGBS path uses CpG island BED from
+<li><p><code>"annotationhub"</code> - WGBS path uses CpG island BED from
     <code>AnnotationHub</code> (UCSC). Expected to be near-identical to the
     manifest but boundary probes may shift across shore/shelf strata.</p></li>
 </ul><p>Two concordance rates are returned:</p><ul><li><p><code>concordance_rate_strict</code>: label sets (split on <code>;</code>)

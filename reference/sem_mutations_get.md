@@ -12,7 +12,7 @@ sem_mutations_get(values, figure, thresholds, sampleName)
 
 - values:
 
-  values of methylation — data.frame with columns CHR, START, END and a
+  values of methylation - data.frame with columns CHR, START, END and a
   fourth numeric VALUE column.
 
 - figure:
@@ -21,7 +21,7 @@ sem_mutations_get(values, figure, thresholds, sampleName)
 
 - thresholds:
 
-  threshold to use for comparison — data.frame with columns CHR, START,
+  threshold to use for comparison - data.frame with columns CHR, START,
   END, signal_inferior_thresholds, signal_superior_thresholds.
 
 - sampleName:

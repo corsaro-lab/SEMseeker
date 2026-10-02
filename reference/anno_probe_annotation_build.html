@@ -42,7 +42,7 @@ dmr_annotation reference data."><script>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Build the Illumina probe annotation table</h1>
-      <small class="dont-index">Source: <a href="https://github.com/drake69/semseeker/blob/main/R/anno_probe_annotation_build.R" class="external-link"><code>R/anno_probe_annotation_build.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/corsaro-lab/SEMseeker/blob/main/R/anno_probe_annotation_build.R" class="external-link"><code>R/anno_probe_annotation_build.R</code></a></small>
       <div class="d-none name"><code>anno_probe_annotation_build.Rd</code></div>
     </div>
 
@@ -73,6 +73,13 @@ platform, joining the bundled <code><a href="cytoband_hg19.html">cytoband_hg19</
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data frame of per-probe annotation columns.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>The result is cached on disk under <code>tools::R_user_dir("SEMseeker",
+"cache")</code>, keyed by technology and genome build, and memoised in the package
+environment for the rest of the process. It is deliberately NOT stored in
+<code>ssEnv</code> - see the note above this function.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

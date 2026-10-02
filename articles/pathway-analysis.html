@@ -62,7 +62,7 @@
       <h1>Pathway and enrichment analysis</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/drake69/semseeker/blob/main/vignettes/pathway-analysis.Rmd" class="external-link"><code>vignettes/pathway-analysis.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/corsaro-lab/SEMseeker/blob/main/vignettes/pathway-analysis.Rmd" class="external-link"><code>vignettes/pathway-analysis.Rmd</code></a></small>
       <div class="d-none name"><code>pathway-analysis.Rmd</code></div>
     </div>
 
@@ -147,8 +147,8 @@ association_analysis()    →  statistical associations (CSV in Inference/)
       ↓
 pathway_*()               →  enriched pathways / networks (CSV in Pathway/)
       ↓
-enrich_inter_study_enrichment_compare()       →  cross-cohort Venn diagrams
-enrich_intra_study_enrichment_subsamples_overlaps()   →  stability across subsamples</code></pre>
+meta_enrichment_compare_studies()       →  cross-cohort Venn diagrams
+meta_enrichment_overlaps_subsamples()   →  stability across subsamples</code></pre>
 <p>The <code>inference_details</code> object passed to the pathway
 functions is the <strong>same</strong> data frame used in
 <code><a href="../reference/association_analysis.html">association_analysis()</a></code>. It tells the pathway functions
@@ -812,27 +812,27 @@ FDR)</td>
 <h2 id="cross-study-and-cross-subsample-comparison">Cross-study and cross-subsample comparison<a class="anchor" aria-label="anchor" href="#cross-study-and-cross-subsample-comparison"></a>
 </h2>
 <div class="section level3">
-<h3 id="enrich_inter_study_enrichment_compare">
-<code>enrich_inter_study_enrichment_compare()</code><a class="anchor" aria-label="anchor" href="#enrich_inter_study_enrichment_compare"></a>
+<h3 id="meta_enrichment_compare_studies">
+<code>meta_enrichment_compare_studies()</code><a class="anchor" aria-label="anchor" href="#meta_enrichment_compare_studies"></a>
 </h3>
 <p>Compares enriched pathways across two or more independent cohorts and
 produces Venn diagrams <span class="citation">(Chen and Boutros
 2011)</span> of overlapping terms:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/enrich_inter_study_enrichment_compare.html">enrich_inter_study_enrichment_compare</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/meta_enrichment_compare_studies.html">meta_enrichment_compare_studies</a></span><span class="op">(</span></span>
 <span>  result_folder <span class="op">=</span> <span class="st">"~/meta_results/"</span>,</span>
 <span>  <span class="co"># studies A and B must already have Pathway/ results</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="enrich_intra_study_enrichment_subsamples_overlaps">
-<code>enrich_intra_study_enrichment_subsamples_overlaps()</code><a class="anchor" aria-label="anchor" href="#enrich_intra_study_enrichment_subsamples_overlaps"></a>
+<h3 id="meta_enrichment_overlaps_subsamples">
+<code>meta_enrichment_overlaps_subsamples()</code><a class="anchor" aria-label="anchor" href="#meta_enrichment_overlaps_subsamples"></a>
 </h3>
 <p>Tests the <strong>stability</strong> of pathway enrichment under
 random subsampling of the cohort. Run this to assess how robust the
 enriched pathways are to sample variability:</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/enrich_intra_study_enrichment_subsamples_overlaps.html">enrich_intra_study_enrichment_subsamples_overlaps</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/meta_enrichment_overlaps_subsamples.html">meta_enrichment_overlaps_subsamples</a></span><span class="op">(</span></span>
 <span>  inference_details  <span class="op">=</span> <span class="va">inference_details</span>,</span>
 <span>  result_folder      <span class="op">=</span> <span class="st">"~/semseeker_results/"</span>,</span>
 <span>  pathway_package    <span class="op">=</span> <span class="st">"WebGestalt"</span>,            <span class="co"># "" = compare all backends</span></span>
@@ -894,11 +894,11 @@ enriched pathways are to sample variability:</p>
 </tr>
 <tr class="even">
 <td>Replication across cohorts</td>
-<td><code><a href="../reference/enrich_inter_study_enrichment_compare.html">enrich_inter_study_enrichment_compare()</a></code></td>
+<td><code><a href="../reference/meta_enrichment_compare_studies.html">meta_enrichment_compare_studies()</a></code></td>
 </tr>
 <tr class="odd">
 <td>Bootstrap stability check</td>
-<td><code><a href="../reference/enrich_intra_study_enrichment_subsamples_overlaps.html">enrich_intra_study_enrichment_subsamples_overlaps()</a></code></td>
+<td><code><a href="../reference/meta_enrichment_overlaps_subsamples.html">meta_enrichment_overlaps_subsamples()</a></code></td>
 </tr>
 </tbody>
 </table>

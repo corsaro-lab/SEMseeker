@@ -32,7 +32,7 @@ core_init_env(result_folder, maxResources = 90, ...)
 
   :   reference genome assembly: `"hg19"` (default, matches Illumina
       array annotation), `"hg38"` (GRCh38, typical for long-read /
-      Nanopore data), `"mm10"` (mouse — requires C-05). Stored in
+      Nanopore data), `"mm10"` (mouse - requires C-05). Stored in
       `ssEnv$genome_build` and written to session provenance metadata
       (C-06).
 

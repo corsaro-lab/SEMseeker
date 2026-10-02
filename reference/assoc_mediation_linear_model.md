@@ -1,8 +1,8 @@
 # Mediation analysis using linear models
 
 Fits a causal mediation model via `mediate`, testing whether the effect
-of `treatment` on `outcome` is (partially) mediated by a `mediator`
-variable. The formula must follow the convention
+of `treatment` on `outcome` methods::is (partially) mediated by a
+`mediator` variable. The formula must follow the convention
 `mediator ~ outcome + treatment [+ covariates]`.
 
 ## Usage

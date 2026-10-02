@@ -36,7 +36,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Title</h1>
-      <small class="dont-index">Source: <a href="https://github.com/drake69/semseeker/blob/main/R/io_data_preparation.R" class="external-link"><code>R/io_data_preparation.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/corsaro-lab/SEMseeker/blob/main/R/io_data_preparation.R" class="external-link"><code>R/io_data_preparation.R</code></a></small>
       <div class="d-none name"><code>io_data_preparation.Rd</code></div>
     </div>
 
@@ -53,9 +53,7 @@
 <span>  <span class="va">independent_variable</span>,</span>
 <span>  <span class="va">g_start</span>,</span>
 <span>  <span class="va">g_end</span>,</span>
-<span>  <span class="va">dototal</span>,</span>
 <span>  <span class="va">covariates</span>,</span>
-<span>  <span class="va">depth_analysis</span>,</span>
 <span>  <span class="va">key</span>,</span>
 <span>  transformation_x <span class="op">=</span> <span class="st">"none"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -89,20 +87,18 @@
 <dd><p>index of the last burden column in tempDataFrame</p></dd>
 
 
-<dt id="arg-dototal">dototal<a class="anchor" aria-label="anchor" href="#arg-dototal"></a></dt>
-<dd><p>logical; if TRUE, append a column with the total (row-sum) burden</p></dd>
-
-
 <dt id="arg-covariates">covariates<a class="anchor" aria-label="anchor" href="#arg-covariates"></a></dt>
 <dd><p>vector of covariates to be found in the sample sheet</p></dd>
 
 
-<dt id="arg-depth-analysis">depth_analysis<a class="anchor" aria-label="anchor" href="#arg-depth-analysis"></a></dt>
-<dd><p>1 only sample, 2 chr, 3 alle genomic areas</p></dd>
-
-
 <dt id="arg-key">key<a class="anchor" aria-label="anchor" href="#arg-key"></a></dt>
-<dd><p>named list with AREA, SUBAREA, MARKER and FIGURE identifiers (used to name TOTAL columns)</p></dd>
+<dd><p>named list with AREA, SUBAREA, MARKER and FIGURE identifiers, used
+to name the artefact in the log when degenerate columns are dropped</p></dd>
+
+
+<dt id="arg-transformation-x">transformation_x<a class="anchor" aria-label="anchor" href="#arg-transformation-x"></a></dt>
+<dd><p>transformation to apply to the independent variable
+before the fit; "none" leaves it untouched</p></dd>
 
 </dl></div>
     <div class="section level2">

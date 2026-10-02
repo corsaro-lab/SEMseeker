@@ -65,14 +65,14 @@ A `data.frame` with one row per area and columns: `area`, `category`,
 Concordance categories (informational, returned in the `category`
 column):
 
-- `"bundled"` — both pipelines use the same bundled data
+- `"bundled"` - both pipelines use the same bundled data
   (`cytoband_hg19.rda`, `dmr_annotation.rda`). Expected rate: 1.0.
 
-- `"txdb"` — WGBS path uses `TxDb` UCSC `knownGene` while the Illumina
+- `"txdb"` - WGBS path uses `TxDb` UCSC `knownGene` while the Illumina
   manifest uses RefSeq. Some probes map to different gene symbols
   between the two sources.
 
-- `"annotationhub"` — WGBS path uses CpG island BED from `AnnotationHub`
+- `"annotationhub"` - WGBS path uses CpG island BED from `AnnotationHub`
   (UCSC). Expected to be near-identical to the manifest but boundary
   probes may shift across shore/shelf strata.
 

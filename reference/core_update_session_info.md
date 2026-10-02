@@ -19,8 +19,8 @@ core_update_session_info(ssEnv, save_to_disk = TRUE)
 - save_to_disk:
 
   logical. If TRUE (default, backward-compatible) writes the session to
-  disk as well as in-memory. If FALSE, only updates the in-memory cache
-  — fast path for worker bodies inside \`foreach %dorng%\`.
+  disk as well as in-memory. If FALSE, only updates the in-memory
+  cache - fast path for worker bodies inside \`foreach %dorng%\`.
 
 ## Value
 
@@ -31,5 +31,5 @@ ssEnv, invisibly.
 \*\*Hot-path callers (inside foreach loops) MUST pass \`save_to_disk =
 FALSE\`\*\* to avoid hammering the disk with one 15 MB rds write per
 gene per worker. The on-disk persistence is meant for end-of-job
-snapshots, not per-iteration state syncs. See SEMseeker backlog AI-041
-for the rationale and the regression that triggered this split.
+snapshots, not per-iteration state syncs: the split exists because
+per-iteration writes were a measured performance regression.

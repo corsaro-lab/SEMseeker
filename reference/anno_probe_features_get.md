@@ -36,7 +36,7 @@ CHR_CYTOBAND, DMR\_\*) are resolved via
 and
 [`GenomicRanges::findOverlaps()`](https://rdrr.io/pkg/IRanges/man/findOverlaps-methods.html).
 
-## PROBE_WHOLE vs POSITION_WHOLE — technology semantics
+## PROBE_WHOLE vs POSITION_WHOLE - technology semantics
 
 The area `PROBE_WHOLE` has different meanings depending on technology:
 
@@ -55,7 +55,7 @@ The area `PROBE_WHOLE` has different meanings depending on technology:
   coordinate (`CHR\_START`, e.g. `"1\_10000"`). The statistical test is
   performed at the individual-position level. Two WGBS datasets can be
   compared only if they share the same reference genome
-  (`ssEnv\$genome_build`) — mismatches are detected by the session
+  (`ssEnv\$genome_build`) - mismatches are detected by the session
   provenance guard (C-06).
 
 In both cases the downstream analysis pipeline is identical; the

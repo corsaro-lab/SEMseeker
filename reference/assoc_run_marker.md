@@ -8,7 +8,7 @@ and merges with sample_names, then applies the stat model per chunk.
 ## Usage
 
 ``` r
-sem_run_depth_n_marker(
+assoc_run_marker(
   prep,
   marker,
   family_test,

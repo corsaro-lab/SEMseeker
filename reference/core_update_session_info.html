@@ -40,7 +40,7 @@ onto disk as `session_info.rds` and `&amp;lt;YYYY-MM-DD&amp;gt;_session_info.rds
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Persist the session environment</h1>
-      <small class="dont-index">Source: <a href="https://github.com/drake69/semseeker/blob/main/R/core_update_session_info.R" class="external-link"><code>R/core_update_session_info.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/corsaro-lab/SEMseeker/blob/main/R/core_update_session_info.R" class="external-link"><code>R/core_update_session_info.R</code></a></small>
       <div class="d-none name"><code>core_update_session_info.Rd</code></div>
     </div>
 
@@ -66,7 +66,7 @@ onto disk as `session_info.rds` and `&lt;YYYY-MM-DD&gt;_session_info.rds` inside
 <dt id="arg-save-to-disk">save_to_disk<a class="anchor" aria-label="anchor" href="#arg-save-to-disk"></a></dt>
 <dd><p>logical. If TRUE (default, backward-compatible) writes
 the session to disk as well as in-memory. If FALSE, only updates the
-in-memory cache — fast path for worker bodies inside `foreach %dorng%`.</p></dd>
+in-memory cache - fast path for worker bodies inside `foreach %dorng%`.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -78,8 +78,8 @@ in-memory cache — fast path for worker bodies inside `foreach %dorng%`.</p></d
     <p>**Hot-path callers (inside foreach loops) MUST pass `save_to_disk = FALSE`**
 to avoid hammering the disk with one 15 MB rds write per gene per worker.
 The on-disk persistence is meant for end-of-job snapshots, not per-iteration
-state syncs. See SEMseeker backlog AI-041 for the rationale and the
-regression that triggered this split.</p>
+state syncs: the split exists because per-iteration writes were a
+measured performance regression.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -46,7 +46,7 @@ resolve to the same on-disk path."><script>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Build a canonical output file path</h1>
-      <small class="dont-index">Source: <a href="https://github.com/drake69/semseeker/blob/main/R/io_file_path_build.R" class="external-link"><code>R/io_file_path_build.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/corsaro-lab/SEMseeker/blob/main/R/io_file_path_build.R" class="external-link"><code>R/io_file_path_build.R</code></a></small>
       <div class="d-none name"><code>io_file_path_build.Rd</code></div>
     </div>
 
@@ -96,7 +96,7 @@ written to disk as `SAMPLE_SHEET_RESULT.csv`. On case-INsensitive file
 systems (macOS APFS/HFS, Windows NTFS) `file.exists()` finds either
 spelling; on case-SENSITIVE ones (Linux ext4) only the uppercase form
 resolves. Tests that hard-code an expected path must therefore use the
-uppercase form, or — preferably — discover the file via [list.files()]
+uppercase form, or - preferably - discover the file via [list.files()]
 or by re-calling `io_file_path_build()` with the same arguments.</p>
     </div>
 

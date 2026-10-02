@@ -1,10 +1,9 @@
 # Smart split of a multi-gene AREA name with prefix recovery
 
-AI-107 (2026-06-09). Bioconductor and external annotations sometimes
-encode multiple genes in a compact slash-separated form where ALL suffix
-tokens inherit a prefix from the first token. The naive \`strsplit(s,
-"/")\` loses the prefix and produces unintelligible single-letter or
-digit-only tokens:
+Bioconductor and external annotations sometimes encode multiple genes in
+a compact slash-separated form where ALL suffix tokens inherit a prefix
+from the first token. The naive \`strsplit(s, "/")\` loses the prefix
+and produces unintelligible single-letter or digit-only tokens:
 
 ## Usage
 
@@ -43,7 +42,7 @@ with the recovered prefix (avoids double-prepending on inputs like
 ## Examples
 
 ``` r
-# Internal helper — not exported. Reach it via ::: so R CMD check --as-cran
+# Internal helper - not exported. Reach it via ::: so R CMD check --as-cran
 # can run the examples block under CheckExEnv (which only sees exports).
 SEMseeker:::.anno_smart_split_area_name("HLA-A/B/C")    # c("HLA-A","HLA-B","HLA-C")
 #> [1] "HLA-A" "HLA-B" "HLA-C"

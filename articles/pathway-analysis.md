@@ -40,8 +40,8 @@ pick it up automatically via `core_get_session_info()`.
           ↓
     pathway_*()               →  enriched pathways / networks (CSV in Pathway/)
           ↓
-    enrich_inter_study_enrichment_compare()       →  cross-cohort Venn diagrams
-    enrich_intra_study_enrichment_subsamples_overlaps()   →  stability across subsamples
+    meta_enrichment_compare_studies()       →  cross-cohort Venn diagrams
+    meta_enrichment_overlaps_subsamples()   →  stability across subsamples
 
 The `inference_details` object passed to the pathway functions is the
 **same** data frame used in
@@ -435,20 +435,20 @@ Sorts by adjusted p-value
 
 ## Cross-study and cross-subsample comparison
 
-### `enrich_inter_study_enrichment_compare()`
+### `meta_enrichment_compare_studies()`
 
 Compares enriched pathways across two or more independent cohorts and
 produces Venn diagrams (Chen and Boutros 2011) of overlapping terms:
 
 ``` r
 
-enrich_inter_study_enrichment_compare(
+meta_enrichment_compare_studies(
   result_folder = "~/meta_results/",
   # studies A and B must already have Pathway/ results
 )
 ```
 
-### `enrich_intra_study_enrichment_subsamples_overlaps()`
+### `meta_enrichment_overlaps_subsamples()`
 
 Tests the **stability** of pathway enrichment under random subsampling
 of the cohort. Run this to assess how robust the enriched pathways are
@@ -456,7 +456,7 @@ to sample variability:
 
 ``` r
 
-enrich_intra_study_enrichment_subsamples_overlaps(
+meta_enrichment_overlaps_subsamples(
   inference_details  = inference_details,
   result_folder      = "~/semseeker_results/",
   pathway_package    = "WebGestalt",            # "" = compare all backends
@@ -481,8 +481,8 @@ enrich_intra_study_enrichment_subsamples_overlaps(
 | Partial pathway activation (sparse hits) | `enrich_pathfindR()` |
 | Environmental/chemical exposure study | `enrich_ctdR()` |
 | Known disease hypothesis | `enrich_Phenolyzer_WebGestalt()` or `enrich_Phenolyzer_STRINGdb()` |
-| Replication across cohorts | [`enrich_inter_study_enrichment_compare()`](https://corsaro-lab.github.io/SEMseeker/reference/enrich_inter_study_enrichment_compare.md) |
-| Bootstrap stability check | [`enrich_intra_study_enrichment_subsamples_overlaps()`](https://corsaro-lab.github.io/SEMseeker/reference/enrich_intra_study_enrichment_subsamples_overlaps.md) |
+| Replication across cohorts | [`meta_enrichment_compare_studies()`](https://corsaro-lab.github.io/SEMseeker/reference/meta_enrichment_compare_studies.md) |
+| Bootstrap stability check | [`meta_enrichment_overlaps_subsamples()`](https://corsaro-lab.github.io/SEMseeker/reference/meta_enrichment_overlaps_subsamples.md) |
 
 ## Session info
 

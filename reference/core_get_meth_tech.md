@@ -25,12 +25,12 @@ technology is accessible via `core_get_session_info()$tech`.
 
 ## Details
 
-1.  **Annotation-package overlap** — probe IDs are matched against each
+1.  **Annotation-package overlap** - probe IDs are matched against each
     installed `IlluminaHumanMethylation*anno` package; the technology
     with the most matching probes wins. Accurate for any subset size
     (e.g. 20 k probes out of 866 k).
 
-2.  **Row-count heuristics** — last resort for WGBS or unknown probe
+2.  **Row-count heuristics** - last resort for WGBS or unknown probe
     naming schemes.
 
 The detected technology and beta/M-value flag are written to the session
