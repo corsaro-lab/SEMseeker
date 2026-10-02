@@ -6,7 +6,7 @@
 <!-- badges: start -->
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5095416.svg)](https://doi.org/10.5281/zenodo.5095416)
-[![](https://img.shields.io/badge/devel%20version-0.99.4-blue.svg)](https://github.com/corsaro-lab/SEMseeker)
+[![](https://img.shields.io/badge/devel%20version-0.99.5-blue.svg)](https://github.com/corsaro-lab/SEMseeker)
 [![](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 [![](https://codecov.io/gh/corsaro-lab/SEMseeker/branch/main/graph/badge.svg)](https://codecov.io/gh/corsaro-lab/SEMseeker)
 [![](https://img.shields.io/github/last-commit/corsaro-lab/SEMseeker.svg)](https://github.com/corsaro-lab/SEMseeker/commits/main)
