@@ -231,7 +231,7 @@ jobs:
       # job died without a log.
       - name: Upload check directory
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: check-${{ matrix.config.os }}-${{ matrix.config.r }}
           path: |
