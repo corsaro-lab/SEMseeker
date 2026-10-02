@@ -14,13 +14,13 @@ Source:
 Corsaro L (2026). *SEMseeker: Stochastic Epigenetic Mutations SEM
 Seeker*.
 [doi:10.5281/zenodo.5095416](https://doi.org/10.5281/zenodo.5095416). R
-package version 0.99.4, <https://github.com/corsaro-lab/SEMseeker>.
+package version 0.99.5, <https://github.com/corsaro-lab/SEMseeker>.
 
     @Manual{,
       title = {SEMseeker: Stochastic Epigenetic Mutations SEM Seeker},
       author = {Luigi Corsaro},
       year = {2026},
-      note = {R package version 0.99.4},
+      note = {R package version 0.99.5},
       url = {https://github.com/corsaro-lab/SEMseeker},
       doi = {10.5281/zenodo.5095416},
     }
