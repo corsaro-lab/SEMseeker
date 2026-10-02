@@ -32,16 +32,18 @@ jobs:
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
-      # NEWS.md sections use the format "## semseeker X.Y.Z" (optionally
-      # followed by a parenthesised suffix like " (dev)"). Extract the
-      # section matching the current DESCRIPTION version.
+      # NEWS.md sections use the format "# semseeker X.Y.Z" (optionally
+      # followed by a parenthesised suffix like " (dev)"). The level is not a
+      # style choice: pkgdown only recognises version headings at level 1, and
+      # while they sat at level 2 the published changelog page rendered empty.
+      # Extract the section matching the current DESCRIPTION version.
       - name: Extract NEWS section for this version
         if: steps.check.outputs.exists == 'false'
         run: |
           v="${{ steps.ver.outputs.version }}"
           awk -v ver="$v" '
-            $0 ~ "^## semseeker " ver "( |$)" { in_section = 1; next }
-            /^## semseeker / && in_section       { exit }
+            $0 ~ "^# semseeker " ver "( |$)" { in_section = 1; next }
+            /^# semseeker / && in_section        { exit }
             in_section                            { print }
           ' NEWS.md > release_notes.md
           if [ ! -s release_notes.md ]; then

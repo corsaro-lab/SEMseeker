@@ -1,8 +1,6 @@
-# semseeker NEWS
+# semseeker 0.99.5
 
-## semseeker 0.99.5
-
-### Breaking changes
+## Breaking changes
 
 - **`association_analysis()` runs one aggregation per request, and it has to be
   named.** `SCOPE` has two values: `SAMPLE` reduces the positions of a region
@@ -234,7 +232,7 @@
   alive so that working code goes on working, and none of these six could run:
   each of them read at least one variable that was never assigned.
 
-### Bug fixes
+## Bug fixes
 
 - **The row filter wrote into the workspace of whoever was using the package.**
   `assoc_filter_sql()` registered the table it was about to query in the global
@@ -374,7 +372,7 @@
   predicate had been false on every row since, so its two branches had quietly
   become one.
 
-### New features
+## New features
 
 - **`PROMOTER` is a region class of its own, masked once instead of grouped on
   read.** `AREA = GENE` gains `SUBAREA = PROMOTER`: the positions annotated to
@@ -466,7 +464,7 @@
   the probes of the region, not by summing the per-gene pivot: summing the
   latter would count a multi-gene probe once per gene.
 
-### Dependencies
+## Dependencies
 
 - **Nine declared dependencies the package never called are gone.** `FSA`, `fst`,
   `future.apply`, `gridExtra` and `zoo` leave `Imports`; `fitdistrplus`, `openai`,
@@ -476,7 +474,7 @@
   whether or not anything reaches it, so what this removes is install time for
   every user rather than source lines.
 
-### Documentation
+## Documentation
 
 - The vignettes now show the names this version writes: `SIGNAL` pivots carry
   the scale of the run (`SIGNAL_BETA_*`, or `SIGNAL_MVALUE_*`), file names are
@@ -484,9 +482,9 @@
   pattern. `sem_coverage_analysis_report()` describes its `signal_data` path
   the same way.
 
-## semseeker 0.99.4
+# semseeker 0.99.4
 
-### Breaking changes
+## Breaking changes
 
 - **The per-sample burden moved out of `SAMPLE_SHEET_RESULT.csv` into a new
   sibling file, `SAMPLE_STATS_RESULT.csv`.** The columns that used to
@@ -501,7 +499,7 @@
   0.99.5: the sibling file no longer exists, the join is composed from the
   `SCOPE = SAMPLE` artefacts, and `N_PROBES` returned to the sample sheet.)*
 
-### New features
+## New features
 
 - **Per-sample signal descriptors.** Alongside the burden, the new
   sibling carries `SAMPLE_MEDIAN`, `SAMPLE_MEAN`, `SAMPLE_VARIANCE`,
@@ -534,14 +532,14 @@
   the coverage report skips, so on a default run the charts were previously
   never produced.
 
-### Documentation
+## Documentation
 
 - `inst/CITATION` now carries the Zenodo DOI `10.5281/zenodo.5095416` instead
   of a Bioconductor DOI that does not resolve (the package is not on
   Bioconductor yet), and the README no longer says a Zenodo DOI "will be
   registered" — the archive has existed since 2021.
 
-### Bug fixes
+## Bug fixes
 
 - **A sample sheet that shares no identifier with the computed pivots no
   longer produces a silently empty result.**
@@ -571,9 +569,9 @@
   the same normalised name, and identifiers without a matching signal column,
   are reported explicitly instead of failing later.
 
-## semseeker 0.99.3
+# semseeker 0.99.3
 
-### Documentation
+## Documentation
 
 - Aligned the delta-metric documentation in the vignettes and README with the
   implementation: the `DELTAS`/`DELTAR`/`DELTAP`/`DELTARP`/`DELTAQ`/`DELTARQ`
@@ -582,7 +580,7 @@
   `Data/Pivots/<MARKER>/<MARKER>_<FIGURE>_<AREA>_<SUBAREA>_<build>.parquet` and
   updated a stale `enrichment_analysis()` reference.
 
-### Bug fixes
+## Bug fixes
 
 - **`plot_box_plot()`: fixed R CMD check ERROR under ggplot2 >= 4.0.**
   `ggpubr::stat_compare_means(label = "p.format")` builds an internal
@@ -596,14 +594,14 @@
   p-value only; the per-pair `ggpubr` brackets have been dropped. Also fixed
   the `unit=`/`units=` partial-argument-match warning in `ggsave()`.
 
-### Dependencies
+## Dependencies
 
 - Bumped pinned GitHub Actions: `actions/cache` 4→6, `actions/upload-artifact`
   4→7, `actions/dependency-review-action` 4→5, `codecov/codecov-action` 4→7.
 
-## semseeker 0.99.2
+# semseeker 0.99.2
 
-### Breaking changes
+## Breaking changes
 
 - **LESIONS detection now uses genomic distance, not probe count.**
   The legacy `sliding_window_size` parameter (probe-count based, default 11)
@@ -622,7 +620,7 @@
   formula; the metric has changed). Multi-window sensitivity will be tackled
   in a later release (vector-valued `LESIONS_BP`).
 
-### New features
+## New features
 
 - **CpG-island subareas aligned to Illumina `Relation_to_Island`.**
   The `ISLAND` area now exposes all six Illumina contexts plus the whole
@@ -696,7 +694,7 @@
   with a clear message when origin results carry a different `GENOME_BUILD` than
   the current session.
 
-### Breaking changes
+## Breaking changes
 
 - **`semseeker()` no longer auto-converts M-values to beta.**
   The `auto_convert_mvalues` parameter has been removed and the
@@ -712,7 +710,7 @@
   The Shiny UI exposes this as a checkbox ("Delete result folder before running",
   unchecked by default).
 
-### Bug fixes
+## Bug fixes
 
 - **macOS: tests default to `multisession` instead of `multicore`** (E-14).
   `multicore` (fork) is unsafe on macOS with Polars' C++ thread pool — forked
@@ -758,7 +756,7 @@
     start of `sem_analyze_population()` before the per-sample loop). Emitted once per batch:
     `input_positions | beta_range_positions | covered_by_inner_join`.
 
-### Bug fixes (A-09: assoc_bayes_analysis rewrite)
+## Bug fixes (A-09: assoc_bayes_analysis rewrite)
 
 - **`assoc_bayes_analysis()`: 9 bugs fixed** (A-09).
   - **Loop off-by-one** (bug 1): `for (a in length(markers))` iterated only once
@@ -783,7 +781,7 @@
   - **Hardcoded thresholds** (bug 9): 0.9 / 0.1 are now `bayes_case_threshold` and
     `bayes_control_threshold` parameters with the original values as defaults.
 
-### Statistical model changes
+## Statistical model changes
 
 - **`sem_lesions_get()`: replaced hypergeometric with binomial test** (A-01).
   The sliding window advances one probe at a time, so each probe participates
@@ -796,9 +794,9 @@
   impact: more conservative lesion calls, better calibration for samples
   with low or high global methylation variation.
 
-## semseeker 0.11.0
+# semseeker 0.11.0
 
-### New features
+## New features
 
 - Added three pkgdown vignettes: Getting started, Association analysis (all 15+
   model families), Pathway and enrichment analysis (all 6 backends).
@@ -807,13 +805,13 @@
 - Added `./ci-local.sh` for local Docker-based CI reproduction (`check` and
   `coverage` modes).
 
-### Bug fixes
+## Bug fixes
 
 - Fixed `future::plan(multicore, workers = 0)` crash when `availableCores()`
   returns 1 (e.g. in covr subprocess): added `max(1L, nCore)` guard in
   `parallel_session.R`.
 
-### Documentation
+## Documentation
 
 - Corrected SEM citations: replaced Teschendorff with correct attribution to
   Gentilini et al. 2015 (doi:10.18632/aging.100792) and Corsaro et al. 2023
@@ -821,6 +819,6 @@
 - Added differential signal analysis section (SIGNAL_MEAN) to
   getting-started vignette.
 
-## semseeker 0.10.0 and earlier
+# semseeker 0.10.0 and earlier
 
 See git log for earlier changes.
