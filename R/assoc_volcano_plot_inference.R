@@ -8,15 +8,15 @@
 #' convention so the visual artifact is one-to-one traceable to the
 #' analytic output:
 #'
-#'   `{MARKER}_DEPTH_{depth}_{IV}_{transformation_y}_{family}_{covariates}_{areas_sql_condition}_{AREA}_{SUBAREA}.png`
+#'   `<MARKER>_<IV>_<transformation_y>_<family>_<covariates>_<areas_sql_condition>_<AREA>_<SUBAREA>.png`
 #'
 #' (passed through `core_name_cleaning()` which uppercases + replaces
 #' comparison operators with `_GT_` / `_LT_` / `_EQ_` etc.)
 #'
 #' @param inference_detail A single row of `inference_details` (data.frame
-#'   or list) — the same shape consumed by `association_analysis()`. Must
+#'   or list) - the same shape consumed by `association_analysis()`. Must
 #'   carry `independent_variable`, `family_test`, `covariates`,
-#'   `covariates_dummy`, `transformation_y`, `depth_analysis`,
+#'   `covariates_dummy`, `transformation_y`,
 #'   `areas_sql_condition`, `samples_sql_condition`.
 #' @param result_folder Project results folder (e.g.
 #'   `~/.../results/GSE225845`). The function reads CSVs from
@@ -37,6 +37,8 @@
 #' @param dpi Plot resolution. Defaults to `ssEnv$plot_resolution_ppi`
 #'   (typically 600).
 #' @param overwrite If FALSE (default) skip PNGs that already exist.
+#' @param pvalue_column Name of the p-value column to plot on the y axis. NULL
+#'   lets the function pick the adjusted column matching the inference request
 #'
 #' @return Invisibly, a character vector of the PNG paths written
 #'   (or that would have been written, when `overwrite = FALSE` and
@@ -45,8 +47,24 @@
 #' @export
 #' @examples
 #' # Stub: see vignette('imprinting-disorders', package = 'SEMseeker') for a
-#' # runnable Beckwith-Wiedemann workflow on the GSE133774 subset (AI-112b).
+#' # runnable Beckwith-Wiedemann workflow on the GSE133774 subset.
 #' invisible(NULL)
+# The marker an inference file name begins with.
+#
+# io_inference_file_name() composes the name as the marker, then the independent
+# variable, the transformation and the family, so the marker is the leading token.
+#
+# This was read as the part before "_DEPTH_" until the taxonomy stopped saying the
+# granularity of an artefact with an integer. The names have not carried that token
+# since, so strsplit() found no separator and handed back the whole name: the marker
+# became the file name, and the lookup that follows matched nothing, which is a
+# function that draws nothing and says it found no match.
+.assoc_volcano_marker_from_name <- function(file_name) {
+  # The extension comes off first, so a name with no other token still answers the
+  # marker rather than the marker with ".csv" stuck to it.
+  sub("_.*$", "", tools::file_path_sans_ext(basename(as.character(file_name))))
+}
+
 assoc_volcano_plot_inference <- function(inference_detail,
                                     result_folder,
                                     markers       = NULL,
@@ -93,9 +111,9 @@ assoc_volcano_plot_inference <- function(inference_detail,
 
   # AI-044 (2026-06-09): pvalue_column resolution order:
   #   1. explicit `pvalue_column` argument (caller override)
-  #   2. `inference_detail$pvalue_column` (forward-compat — not yet in
+  #   2. `inference_detail$pvalue_column` (forward-compat - not yet in
   #      assoc_validate_inference_schema but accepted if user supplies)
-  #   3. default `PVALUE_ADJ_ALL_FDR` — the one column SEMseeker writes
+  #   3. default `PVALUE_ADJ_ALL_FDR` - the one column SEMseeker writes
   #      for every association run regardless of family/engine.
   if (is.null(pvalue_column) || !nzchar(pvalue_column)) {
     pvalue_column <- if (!is.null(inference_detail$pvalue_column) &&
@@ -109,7 +127,6 @@ assoc_volcano_plot_inference <- function(inference_detail,
   covariates_dummy <- as.character(inference_detail$covariates_dummy)
   transformation_y <- as.character(inference_detail$transformation_y)
   if (!nzchar(transformation_y)) transformation_y <- "none"
-  depth_analysis   <- as.integer(inference_detail$depth_analysis)
   areas_sql        <- as.character(inference_detail$areas_sql_condition)
   if (length(areas_sql) == 0L || !nzchar(areas_sql)) areas_sql <- ""
 
@@ -118,7 +135,7 @@ assoc_volcano_plot_inference <- function(inference_detail,
                                             c("VOLCANO"))
 
   # If markers not supplied, scan Inference/ for CSVs that match the
-  # current inference_detail shape (same IV/family/depth) and extract
+  # current inference_detail shape (same IV and family) and extract
   # the leading MARKER token from the file basename.
   if (is.null(markers) || length(markers) == 0L) {
     candidate_csvs <- list.files(inference_folder, pattern = "\\.csv$",
@@ -135,9 +152,7 @@ assoc_volcano_plot_inference <- function(inference_detail,
                 " family=", family_test, " in ", inference_folder)
       return(invisible(character(0)))
     }
-    markers <- unique(vapply(matches, function(fn) {
-      strsplit(fn, "_DEPTH_", fixed = TRUE)[[1]][1]
-    }, character(1)))
+    markers <- unique(vapply(matches, .assoc_volcano_marker_from_name, character(1)))
   }
 
   written <- character(0)
@@ -153,7 +168,7 @@ assoc_volcano_plot_inference <- function(inference_detail,
         core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
                   " assoc_volcano_plot_inference: io_inference_file_name failed for ",
                   marker, ": ", conditionMessage(e),
-                  " — falling back to manual list.files() scan.")
+                  " - falling back to manual list.files() scan.")
         NULL
       }
     )
@@ -161,18 +176,17 @@ assoc_volcano_plot_inference <- function(inference_detail,
     # success above and the manual-scan path further down).
     csv_basename <- if (!is.null(csv_path))
       tools::file_path_sans_ext(basename(csv_path)) else
-      paste(c(marker, "DEPTH", depth_analysis,
+      paste(c(marker,
               core_name_cleaning(iv),
               core_name_cleaning(transformation_y),
               core_name_cleaning(family_test)), collapse = "_")
 
     if (is.null(csv_path) || !file.exists(csv_path)) {
       # Permissive fallback: scan Inference/ for a file starting with
-      # `{MARKER}_DEPTH_{depth}_{IV}_` and matching family. Useful when
+      # `<MARKER>_<IV>_` and matching family. Useful when
       # the inference_detail row has changed slightly since the CSV was
       # written (e.g. additional dummy covariates added downstream).
-      prefix <- core_name_cleaning(paste(c(marker, "DEPTH", depth_analysis,
-                                      iv), collapse = "_"))
+      prefix <- core_name_cleaning(paste(c(marker, iv), collapse = "_"))
       fam_tok <- core_name_cleaning(family_test)
       candidates <- list.files(inference_folder, pattern = "\\.csv$",
                                 full.names = TRUE)
@@ -187,13 +201,13 @@ assoc_volcano_plot_inference <- function(inference_detail,
       } else if (length(candidates) > 1L) {
         core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
                   " assoc_volcano_plot_inference: ambiguous match for marker '",
-                  marker, "' — ", length(candidates),
+                  marker, "' - ", length(candidates),
                   " CSVs share the prefix. Skipping.")
         next
       } else {
         core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
                   " assoc_volcano_plot_inference: no CSV for marker '", marker,
-                  "' in ", inference_folder, " — skipping.")
+                  "' in ", inference_folder, " - skipping.")
         next
       }
     }
@@ -216,7 +230,7 @@ assoc_volcano_plot_inference <- function(inference_detail,
       core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
                 " assoc_volcano_plot_inference: ", csv_path,
                 " missing columns: ", paste(missed, collapse = ", "),
-                " (pvalue_column='", pvalue_column, "') — skipping.")
+                " (pvalue_column='", pvalue_column, "') - skipping.")
       next
     }
 
@@ -229,7 +243,7 @@ assoc_volcano_plot_inference <- function(inference_detail,
     if (is.null(estimate_col)) {
       core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
                 " assoc_volcano_plot_inference: ", csv_path,
-                " — could not identify primary ESTIMATE column. Skipping.")
+                " - could not identify primary ESTIMATE column. Skipping.")
       next
     }
 
@@ -271,7 +285,7 @@ assoc_volcano_plot_inference <- function(inference_detail,
             name = NULL) +
           ggplot2::labs(
             title = util_pretty_label(sprintf(
-              "%s — %s / %s — %s vs %s",
+              "%s - %s / %s - %s vs %s",
               marker, area, subarea, iv, family_test)),
             subtitle = util_pretty_label(sprintf(
               "areas_sql=%s | covariates=%s",

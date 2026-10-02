@@ -1,9 +1,8 @@
 test_that("anno_create_position_pivots", {
 
-  tempFolder <- tempFolders[1]
+  tempFolder <- sem_test_folder()
   unlink(tempFolder, recursive = TRUE, force = TRUE)
   # message(tempFolder)
-  tempFolders <<- tempFolders[-1]
   ssEnv <- SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy, inpute="median", start_fresh =TRUE)
 
   ####################################################################################
@@ -45,7 +44,10 @@ test_that("anno_create_position_pivots", {
     FIGURE = c("HYPER","HYPO")
   )
   area <- "POSITION"
-  subarea <- ""
+  # AI-255: every coordinate is explicit. The registry gives POSITION its
+  # subarea (WHOLE) like every other area; "" was this test writing a hole by
+  # hand, and the key composer now refuses it instead of filling it in.
+  subarea <- "WHOLE"
 
   # prova con un subset di colonne che non ha le lesioni
 

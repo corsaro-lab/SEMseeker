@@ -22,7 +22,7 @@ util_data_frame_add_column <- function(df,col_name, value)
     df[,col_name] <- value
   else
   {
-    tmp <- setNames(data.frame(value, stringsAsFactors = FALSE), col_name)
+    tmp <- stats::setNames(data.frame(value, stringsAsFactors = FALSE), col_name)
     if (nrow(df)==0)
       df <- tmp
     else

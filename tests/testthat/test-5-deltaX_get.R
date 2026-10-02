@@ -1,9 +1,8 @@
 test_that("sem_deltaX_get", {
 
-  tempFolder <- tempFolders[1]
+  tempFolder <- sem_test_folder()
   unlink(tempFolder, recursive = TRUE)
   # message(tempFolder)
-  tempFolders <<- tempFolders[-1]
   ssEnv <- SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
     bonferroni_threshold = bonferroni_threshold,
     inpute="median", start_fresh=TRUE)
@@ -62,7 +61,7 @@ test_that("sem_deltaX_get", {
   keys <- subset(keys, MARKER != "SIGNAL")
 
 
-  for (k in 1:nrow(keys))
+  for (k in seq_len(nrow(keys)))
   {
     # k <- 1
     key <- keys[k,]

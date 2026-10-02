@@ -1,0 +1,77 @@
+#' Cross-study meta-analysis of association results
+#'
+#' Pools the association results of several studies: for each region class
+#' (marker, figure, area, subarea) and each instance within it, it combines the
+#' per-study effect sizes and their standard errors and reports fixed-effect and
+#' random-effect estimates with heterogeneity statistics.
+#'
+#' @section Not implemented:
+#' This function refuses every call. It is exported and named because its
+#' contract is settled, but its body was never executed once: the step that
+#' reads the per-study results was missing, so every call died on an unbound
+#' variable before reaching the model. Rather than leave a function that fails
+#' on a missing object, or guess a body that cannot be run, it refuses at the
+#' door and says so.
+#'
+#' The contract it will honour, so that a caller can be written against it:
+#'
+#' \itemize{
+#'   \item \code{studies} is a vector of paths, one per study. The label of a
+#'     study is the element's name when it has one, otherwise the final
+#'     component of its path. Studies are therefore not required to sit under a
+#'     common parent, and there is no second argument that can disagree with the
+#'     first. Two studies whose paths end in the same component are refused:
+#'     they would become one label and merge silently.
+#'   \item \code{result_folder} is where the meta-analysis writes. It is the
+#'     opposite direction from the study paths, which are read.
+#'   \item the space of the meta-analysis is the \strong{strict intersection} of
+#'     the region classes the studies have in common, read from each study's own
+#'     session and with no filter applied. Classes left out of the intersection
+#'     are reported, with how many and which studies lacked them.
+#'   \item \code{markers}, \code{figures}, \code{areas} and \code{subareas} are
+#'     the caller's selection, checked against that space one coordinate at a
+#'     time: a value no study measured is refused and named. The classes
+#'     analysed are the selection intersected with the space, and the number of
+#'     combinations that fell outside is reported. The selection is deliberately
+#'     not passed on to the per-study sessions: filtering them first would
+#'     compute the intersection over the narrowed space, and a class missing
+#'     from one study would vanish from the space instead of falling outside it.
+#'   \item estimates are pooled within one region class at a time. Combining
+#'     across markers or areas would average effects that are not the same
+#'     effect and return something with the shape of a meta-analysis.
+#' }
+#'
+#' @param studies Character vector of study result paths, optionally named. The
+#'   name, or else the final path component, labels the study.
+#' @param result_folder Directory the meta-analysis writes to.
+#' @param inference_detail One row of the inference specification, identifying
+#'   the request whose per-study results are pooled.
+#' @param markers,figures,areas,subareas Optional selection within the space of
+#'   the meta-analysis. \code{NULL} takes the whole space.
+#' @param statistic_parameter Name of the effect-size column to pool.
+#' @param pvalue_column Name of the adjusted p-value column carried alongside.
+#' @param alpha Significance threshold passed to the per-study readers.
+#' @param adjustment_method Multiple-testing correction passed to the per-study
+#'   readers.
+#' @param ... Passed to the per-study session setup.
+#'
+#' @return Nothing: the call stops. When implemented, one row per region class
+#'   and instance with the pooled estimate, its confidence intervals, the
+#'   p-values and the heterogeneity statistics, plus the coordinates that
+#'   identify the class the row came from.
+#'
+#' @export
+#' @examples
+#' # This function refuses every call; see the "Not implemented" section for the
+#' # contract it will honour.
+#' invisible(NULL)
+meta_association_across_studies <- function(studies, result_folder, inference_detail,
+  markers = NULL, figures = NULL, areas = NULL, subareas = NULL,
+  statistic_parameter = "BETA", pvalue_column = "PVALUE_ADJ_ALL_BH",
+  alpha = 0.05, adjustment_method = "BH", ...)
+{
+  stop("meta_association_across_studies() is not implemented. Its previous body ",
+       "never read the per-study results, so it could not run; it was removed ",
+       "rather than left to fail on a missing object. See ?meta_association_across_studies ",
+       "for the contract it will honour.")
+}

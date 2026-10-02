@@ -2,7 +2,7 @@
 #
 # Why a separate batch path:
 #   - Per-area limma (one area at a time) feeds lmFit a 1-row matrix, so
-#     eBayes shrinkage collapses to OLS t-stat — same answer as
+#     eBayes shrinkage collapses to OLS t-stat - same answer as
 #     stats::lm(), no statistical gain.
 #   - voom literally cannot work per-area: the precision weights come
 #     from the empirical mean-variance trend estimated ACROSS areas. A
@@ -27,7 +27,7 @@
 #' @param g_start integer index of the first area column (everything
 #'   before it is sample-level metadata: IV + covariates).
 #' @param family_test character, of the form 'limma_<degree>' or
-#'   'voom_<degree>' (optional '_<partition>' suffix is ignored —
+#'   'voom_<degree>' (optional '_<partition>' suffix is ignored -
 #'   eBayes shrinkage replaces train/test holdout).
 #' @param covariates character vector of covariate column names.
 #' @param key data.frame row carrying MARKER/FIGURE/AREA/SUBAREA.
@@ -44,10 +44,9 @@
 #' @noRd
 assoc_apply_stat_model_batch <- function(tempDataFrame, g_start, family_test,
                                     covariates = NULL, key,
-                                    transformation_y, dototal,
+                                    transformation_y,
                                     session_folder,
                                     independent_variable,
-                                    depth_analysis = 3,
                                     samples_sql_condition,
                                     inference_detail = NULL, ...) {
 
@@ -74,7 +73,7 @@ assoc_apply_stat_model_batch <- function(tempDataFrame, g_start, family_test,
   transformation_x_local <- if (!is.null(inference_detail$transformation_x)) as.character(inference_detail$transformation_x) else "none"
   prepared <- io_data_preparation(family_test, transformation_y, tempDataFrame,
                                 independent_variable, g_start, ncol(tempDataFrame),
-                                FALSE, covariates, depth_analysis, key,
+                                covariates, key,
                                 transformation_x = transformation_x_local)
   tempDataFrame <- prepared$tempDataFrame
 
@@ -83,7 +82,7 @@ assoc_apply_stat_model_batch <- function(tempDataFrame, g_start, family_test,
   if (g_start > g_end) return(NULL)
   area_cols <- cols[g_start:g_end]
 
-  # Drop areas with no variance — uninformative, would crash lmFit.
+  # Drop areas with no variance - uninformative, would crash lmFit.
   area_keep <- vapply(area_cols, function(a) {
     v <- tempDataFrame[, a]
     length(unique(v[!is.na(v)])) >= 2L
@@ -104,7 +103,7 @@ assoc_apply_stat_model_batch <- function(tempDataFrame, g_start, family_test,
   if (nrow(td) < min_n) {
     core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
               " assoc_apply_stat_model_batch: too few complete samples (",
-              nrow(td), " < ", min_n, ") — skip.")
+              nrow(td), " < ", min_n, ") - skip.")
     return(NULL)
   }
 
@@ -219,7 +218,7 @@ assoc_apply_stat_model_batch <- function(tempDataFrame, g_start, family_test,
   #     same coef. Pseudo-R² analog: Higher = stronger evidence.
   #   F_STAT_MODERATED: moderated F for the joint contrast of ALL non-intercept
   #     coefs (e.g. poly_1 + poly_2 → "parabolic effect present?"). Per row.
-  #   POSTERIOR_RESIDUAL_VAR: s2.post — posterior residual variance per area.
+  #   POSTERIOR_RESIDUAL_VAR: s2.post - posterior residual variance per area.
   #     Lower = better fit; useful as a diagnostic alongside the t-stat.
   if (ncol(fit$coefficients) >= 2L) {
     result_temp$T_STAT_MODERATED <- as.numeric(fit$t[, 2L])
@@ -228,7 +227,7 @@ assoc_apply_stat_model_batch <- function(tempDataFrame, g_start, family_test,
     }
   }
   # Joint F-statistic across ALL non-intercept coefs (i.e. excluding intercept).
-  # Computed lazily — only when degree >= 2 since for degree 1 it equals t².
+  # Computed lazily - only when degree >= 2 since for degree 1 it equals t².
   if (ncol(fit$coefficients) >= 3L) {
     coef_idx_no_intercept <- seq_len(ncol(fit$coefficients))[-1L]
     f_obj <- tryCatch(
@@ -247,7 +246,7 @@ assoc_apply_stat_model_batch <- function(tempDataFrame, g_start, family_test,
   # Top-level PVALUE = first non-intercept (= first poly term) pvalue,
   # so the BH adjustment + significativity selector in the assoc_apply_stat_model
   # caller path can hook into it the same way it does for polynomial.
-  first_poly_pcol <- pnames[2L]  # coef 1 is (Intercept), coef 2 is poly_1
+  first_poly_pcol <- pnames[2L]  # coef 1 methods::is (Intercept), coef 2 is poly_1
   if (!is.null(first_poly_pcol) && first_poly_pcol %in% colnames(result_temp)) {
     result_temp$PVALUE <- result_temp[[first_poly_pcol]]
   }

@@ -18,7 +18,7 @@
 ## Run from the package root:
 ##     Rscript data-raw/build_test_master_features.R
 ##
-## set.seed(20210713) — date of v.0.1.9 Zenodo release (DOI 10.5281/zenodo.5095417).
+## set.seed(20210713) — date of v.0.1.9 Zenodo release (DOI 10.5281/zenodo.5095416).
 ## ============================================================================
 
 suppressPackageStartupMessages({

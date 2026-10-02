@@ -14,3 +14,15 @@
 ^dev$
 ^bench$
 ^data-raw$
+^pkgdown$
+^\.dockerignore$
+^Dockerfile\.ci$
+^ci-local\.sh$
+^\.gitleaks\.toml$
+^\.gitleaksignore$
+^\.zenodo\.json$
+^_pkgdown\.yml$
+^\.code_reader$
+^\.coding_agent$
+^ci-check-output$
+^tests/testthat/NA$

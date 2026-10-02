@@ -98,10 +98,26 @@ test_that("assoc_execute_model rejects family_test='limma_2' with an install hin
   # Instead override the binding inside base for the duration of the
   # call. SEMseeker:::assoc_execute_model resolves requireNamespace from base
   # at call time, so this rewrites what it actually sees.
+  #
+  # The original is captured HERE, before the binding is replaced, and not
+  # looked up inside the replacement. The earlier version did
+  #   get("requireNamespace", envir = baseenv(), inherits = FALSE)(package, ...)
+  # to reach the real function, but that is the very binding
+  # local_mocked_bindings(.package = "base") has just overwritten: the lookup
+  # returned the mock, and any call for a package other than limma called
+  # itself. `.orig` closes over the function value taken before the swap, so it
+  # cannot be the mock whatever happens to the binding.
+  #
+  # It went unnoticed because the recursion needs a SECOND caller: nothing in
+  # this test asks for a package other than limma, so the else branch never ran
+  # while the mock was installed. Running the test files in parallel put other
+  # machinery in that window, the branch fired, and the run died with
+  # "evaluation nested too deeply". The defect was always here; only the
+  # conditions that reach it are new.
+  .orig_require <- base::requireNamespace
   testthat::local_mocked_bindings(
     requireNamespace = function(package, ...) {
-      if (package == "limma") FALSE
-      else get("requireNamespace", envir = baseenv(), inherits = FALSE)(package, ...)
+      if (package == "limma") FALSE else .orig_require(package, ...)
     },
     .package = "base"
   )

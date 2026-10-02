@@ -9,9 +9,13 @@
 #'   grouping variable (default \code{"Sample_Group"}).
 #' @param maxResources numeric. Maximum percentage of CPU cores to use
 #'   (default 90).
-#' @param parallel_strategy character. Parallelisation backend; possible
-#'   values: \code{"none"}, \code{"multisession"}, \code{"sequential"},
-#'   \code{"multicore"}, \code{"cluster"} (default \code{"multicore"}).
+#' @param parallel_strategy character. Parallelisation backend; one of
+#'   \code{"multisession"}, \code{"sequential"}, \code{"cluster"}
+#'   (default \code{"multisession"}).
+#'   Asking for \code{"multicore"} is accepted and converted to
+#'   \code{"multisession"}: it means fork(), which is unsafe with this
+#'   package's native thread pool on every platform that offers it, and
+#'   absent on Windows. The conversion is logged.
 #' @param ... Additional arguments passed to \code{core_init_env()}.
 #'
 #' @return Invisibly \code{NULL}. Sensitivity / specificity tables are written
@@ -28,7 +32,7 @@
 #' }
 #' @export
 diagnostic_performance <-
-  function(samples_sql_selection="",combinations,result_folder,independent_variable = "Sample_Group",maxResources = 90,parallel_strategy  = "multicore",...)
+  function(samples_sql_selection="",combinations,result_folder,independent_variable = "Sample_Group",maxResources = 90,parallel_strategy  = "multisession",...)
   {
     j <- 0
     k <- 0
@@ -81,13 +85,24 @@ diagnostic_performance <-
       }
 
       nkeys <- nrow(keys)
-      variables_to_export_nested <- c("variables_to_export","keys","result_folderPivot","sample_names","ssEnv","io_file_path_build")
       if (nrow(keys) > 0)
         for (k in seq_len(nkeys))
         {
           # k <- 3
           key <- keys [k, ]
-          fname <- io_pivot_file_name_parquet(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
+          # AI-255: the diagnostic reads the same artefact the inference tested,
+          # so it has to name the same aggregation. Defaulting to the produced
+          # one keeps the historical behaviour for callers that do not pass an
+          # inference detail.
+          aggregation <- util_aggregations_allowed(key$MARKER, key$FIGURE,
+                                                   discrete = isTRUE(key$DISCRETE),
+                                                   default  = TRUE,
+                                                   scope    = "INSTANCE",
+                                                   area     = key$AREA)[1]
+          fname <- io_pivot_file_name_parquet(key$MARKER, key$FIGURE, key$AREA,
+                                              key$SUBAREA,
+                                              aggregation = aggregation,
+                                              scope = "INSTANCE")
           if (file.exists(fname))
           {
             core_log_event("INFO: ",
@@ -137,7 +152,7 @@ diagnostic_performance <-
             tempDataFrame[is.na(tempDataFrame)] <- 0
             # AI-106 (2026-06-09): same sanitize+memo+counter-rename pattern
             # as apply_stat_model.R. Colnames hold AREA_OF_TEST gene/CpG
-            # island names that may carry ' ', '-', ':', '/', "'" — all
+            # island names that may carry ' ', '-', ':', '/', "'" - all
             # invalid as R identifiers. Sanitise here only for internal
             # formula safety; the result's AREA_OF_TEST is reverse-mapped
             # back to the raw name before writing the CSV (preserves the
@@ -147,7 +162,7 @@ diagnostic_performance <-
             if (anyDuplicated(safe_cols)) {
               safe_cols <- make.unique(safe_cols, sep = "_")
             }
-            safe_to_real <- setNames(real_cols, safe_cols)
+            safe_to_real <- stats::setNames(real_cols, safe_cols)
             colnames(tempDataFrame) <- safe_cols
 
             tempDataFrame[,independent_variable] <- as.character(tempDataFrame[,independent_variable])

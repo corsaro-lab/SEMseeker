@@ -6,17 +6,18 @@
 #' @param independent_variable regressor
 #' @param g_start index of the first burden column in tempDataFrame
 #' @param g_end index of the last burden column in tempDataFrame
-#' @param dototal logical; if TRUE, append a column with the total (row-sum) burden
 #' @param covariates vector of covariates to be found in the sample sheet
-#' @param depth_analysis 1 only sample, 2 chr, 3 alle genomic areas
-#' @param key named list with AREA, SUBAREA, MARKER and FIGURE identifiers (used to name TOTAL columns)
+#' @param key named list with AREA, SUBAREA, MARKER and FIGURE identifiers, used
+#'   to name the artefact in the log when degenerate columns are dropped
+#' @param transformation_x transformation to apply to the independent variable
+#'   before the fit; "none" leaves it untouched
 #'
 #' @return A named list with two elements: \code{tempDataFrame} (the prepared
 #'   and optionally transformed data.frame) and \code{independent_variableLevels}
 #'   (the factor levels of the independent variable, or \code{NULL} for continuous
 #'   outcomes).
 #'
-io_data_preparation <- function(family_test,transformation_y,tempDataFrame, independent_variable, g_start, g_end, dototal, covariates, depth_analysis, key, transformation_x = "none")
+io_data_preparation <- function(family_test,transformation_y,tempDataFrame, independent_variable, g_start, g_end, covariates, key, transformation_x = "none")
 {
 
   #
@@ -66,21 +67,22 @@ io_data_preparation <- function(family_test,transformation_y,tempDataFrame, inde
   burden_values <- as.data.frame(burden_values)
 
   df_colnames <- colnames(tempDataFrame)
-  if( !is.null(dim(burden_values))  & dototal) {
-    sum_area <- apply(burden_values, 1, sum)
-    total_label <- paste("TOTAL_",key$MARKER,"_",key$FIGURE, sep="")
-    if(depth_analysis==2)
-    {
-      #select just column of independent variables, remove columns burden value, preserve only total
-      df_colnames <- c(df_colnames[!(df_colnames %in% colnames(burden_values))],total_label)
-      burden_values <- data.frame(total_label=sum_area)
-    }
-    else
-    {
-      burden_values <- data.frame(burden_values,total_label=sum_area)
-      df_colnames <- c(df_colnames,total_label)
-    }
-  }
+
+  # AI-255: the TOTAL column is gone, and with it the last use of depth.
+  #
+  # It was `apply(burden_values, 1, sum)` - the sum of the per-area aggregates -
+  # and `depth_analysis == 2` meant "test only that". But the partition into
+  # areas is NOT disjoint: the annotation maps one probe onto several genes and
+  # the explode replicates it, so a probe on three genes entered that total three
+  # times. It was the composition of aggregates the taxonomy forbids, hiding in
+  # the one place where nobody looked for it - and the old depth scale gave it a
+  # rung of its own.
+  #
+  # The quantity it meant to compute - "the whole region class, one number per
+  # sample" - is an artefact in its own right now: SCOPE = SAMPLE on that
+  # (AREA, SUBAREA), derived from the masked position pivot where every position
+  # counts once. It is produced by the same consumer as everything else, so
+  # there is nothing left to synthesise here.
 
   if(grepl("log",transformation_y))
   {
@@ -125,7 +127,7 @@ io_data_preparation <- function(family_test,transformation_y,tempDataFrame, inde
 
   # AI-044 (2026-06-08): universal degenerate-burden filter.
   # Burden columns where the response Y is constant (variance == 0) across
-  # samples carry no signal — they produce NaN/garbage stats in every model:
+  # samples carry no signal - they produce NaN/garbage stats in every model:
   #   - binomial GLM: MLE diverges (intercept-only fit, NaN coeffs/p-values)
   #   - limma/voom lmFit: 0-effect, NaN t-statistic (misleading "no signal")
   #   - polynomial / gaussian glm: rank-deficient, NaN coefficients
@@ -133,7 +135,7 @@ io_data_preparation <- function(family_test,transformation_y,tempDataFrame, inde
   # samples (manifest-aligned pivot, retained for positional join with
   # annotations). Filtering here covers ALL downstream callers in one place:
   # apply_stat_model.R (per-probe foreach) and apply_stat_model_batch.R
-  # (limma/voom batch) — their existing variance checks become safety nets.
+  # (limma/voom batch) - their existing variance checks become safety nets.
   if (ncol(burden_values) > 0L) {
     is_degenerate <- vapply(burden_values, function(x) {
       u <- unique(stats::na.omit(as.numeric(x)))

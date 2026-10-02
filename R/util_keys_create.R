@@ -31,7 +31,12 @@ util_keys_create <- function(ssEnv, arguments)
   keys_markers_figures_default_continuos <- merge(keys_markers_default_continuos, keys_figures_default_continuos, by = NULL)
   rm(keys_figures_default_continuos, keys_markers_default_continuos)
 
-  keys_figures_default_continuos_mono_figure <-  data.frame("FIGURE"=c("MEAN"))
+  # AI-248: the figure of SIGNAL is the SCALE of the value (BETA / MVALUE), not
+  # a way of aggregating it - "MEAN" used to sit here as a placeholder that made
+  # the key unique. The scale is unknown at init (no data read yet), so this is
+  # the bounded default; core_get_meth_tech() realigns it via
+  # util_keys_signal_figure_refresh() as soon as the first batch is seen.
+  keys_figures_default_continuos_mono_figure <-  data.frame("FIGURE"=c(io_signal_figure()))
   keys_markers_default_continuos_mono_figure <-  data.frame("MARKER"=c("SIGNAL"))
   keys_markers_default_continuos_mono_figure$SUFFIX <-  c("")
   # keys_markers_default$SUFFIX <-  c("","","","", ssEnv$epiquantile ,"",ssEnv$epiquantile)
@@ -67,7 +72,11 @@ util_keys_create <- function(ssEnv, arguments)
 
   keys_areas_default <- data.frame("AREA"=c("GENE","ISLAND","DMR","CHR","PROBE"))
 
-  keys_gene_subareas_default <- data.frame("AREA"="GENE", "SUBAREA"=c("BODY","TSS1500","TSS200","1STEXON","3UTR","5UTR","EXONBND","WHOLE"))
+  # PROMOTER is a window of its own here, not a shorthand read back later: the
+  # positions of TSS200, TSS1500 and 1STEXON are masked once, so one gene gets one
+  # measure. Grouped at read time it would reach three families of results, and a
+  # gene with three p-values has none.
+  keys_gene_subareas_default <- data.frame("AREA"="GENE", "SUBAREA"=c("BODY","TSS1500","TSS200","1STEXON","3UTR","5UTR","EXONBND","PROMOTER","WHOLE"))
   # ISLAND context (Illumina Relation_to_Island, 6 categories): WHOLE = whole
   # neighbourhood (core+shores+shelves, like GENE_WHOLE), ISLAND = core only,
   # OPENSEA = CpGs outside every neighbourhood. See island_opensea.R.

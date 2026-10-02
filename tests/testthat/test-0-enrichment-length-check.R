@@ -8,8 +8,10 @@
 # post-AI-035 it lists each array with its actual length and tells the
 # user where to fix it.
 
-# Minimal inference_details with depth_analysis == 3 so the function gets
-# past its first subset() filter before reaching the length check.
+# Minimal inference_details: enough to get past the first subset() filter of
+# enrichment_analysis() and reach the length check. It used to say
+# "with depth_analysis == 3"; that column is retired, and the row never carried
+# it in the first place.
 minimal_inf_details <- function() {
   data.frame(
     independent_variable = "Tumour_Stage_N",
@@ -18,7 +20,6 @@ minimal_inf_details <- function() {
     covariates_dummy     = "Tissue_Locus",
     transformation_y     = "none",
     transformation_x     = "none",
-    depth_analysis       = 3,
     filter_p_value       = FALSE,
     samples_sql_condition       = "",
     areas_sql_condition         = "",
@@ -30,8 +31,7 @@ minimal_inf_details <- function() {
 }
 
 test_that("enrichment_analysis rejects mismatched array lengths", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
 
   expect_error(
     SEMseeker::enrichment_analysis(
@@ -57,8 +57,7 @@ test_that("enrichment_analysis rejects mismatched array lengths", {
 })
 
 test_that("enrichment_analysis error lists each array's actual length", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
 
   err <- tryCatch(
     SEMseeker::enrichment_analysis(
@@ -97,8 +96,7 @@ test_that("enrichment_analysis accepts matched array lengths (does not throw on 
   # We pass matched lengths and EXPECT the length check to pass. The function
   # will of course fail later (no real Inference CSV on disk) so we tolerate
   # any non-"length"-related error.
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
 
   err <- tryCatch(
     SEMseeker::enrichment_analysis(

@@ -3,7 +3,7 @@
 #' @param sig.formula formula to apply
 #' @param df dataframe to use
 #' @param shuffle logical; if TRUE, permute the independent variable before fitting
-#' @param quantile quantile level (0–1) at which to compute the group difference; default 0.5 (median)
+#' @param quantile quantile level (0-1) at which to compute the group difference; default 0.5 (median)
 #'
 #' @return A numeric scalar: the observed quantile difference between groups
 #'   (used as the test statistic in the permutation test).
@@ -69,19 +69,26 @@ assoc_quantile_permutation_model <- function(family_test, sig.formula, tempDataF
   pvalue_limit_sup <- 1 - (pvalue_limit/2)
 
   # Compute signal and p-value for n_permutations replications
-  res$statistic_parameter <-  assoc_compute_quantile_delta_permutation(sig.formula=sig.formula, df=tempDataFrame, shuffle = FALSE)
-  permutation_vector <- replicate(n_permutations_test, assoc_compute_quantile_delta_permutation(sig.formula=sig.formula, df=tempDataFrame, shuffle = TRUE, quantile = tau))
-  res$pvalue <- mean(abs(permutation_vector) >= abs(statistic_parameter))
+  # The statistic and the p-value are kept in local variables and then
+  # written to the result columns. They used to be assigned straight into
+  # res$... and read back as bare names three lines later, which are two
+  # different things: the bare names never existed and the function died
+  # here every time it was called.
+  statistic_parameter <- assoc_compute_quantile_delta_permutation(sig.formula = sig.formula, df = tempDataFrame, shuffle = FALSE)
   res$statistic_parameter <- statistic_parameter
-  if (pvalue>1)
-    res$pvalue <- 1
+  permutation_vector <- replicate(n_permutations_test, assoc_compute_quantile_delta_permutation(sig.formula=sig.formula, df=tempDataFrame, shuffle = TRUE, quantile = tau))
+  pvalue <- mean(abs(permutation_vector) >= abs(statistic_parameter))
+  if (pvalue > 1)
+    pvalue <- 1
+  res$pvalue <- pvalue
   # Compute average signal and p-value
   if ((pvalue < pvalue_limit) && (n_permutations_test < n_permutations))
     permutation_vector <- replicate(n_permutations, assoc_compute_quantile_delta_permutation(sig.formula=sig.formula, df=tempDataFrame, shuffle=TRUE, quantile = tau))
   res$r_model <- "assoc_quantile_permutation_model"
   if(length(permutation_vector) == n_permutations_test)
     res$n_permutations <- n_permutations_test
-  res$pvalue <- mean(abs(permutation_vector) >= abs(statistic_parameter))
+  pvalue <- mean(abs(permutation_vector) >= abs(statistic_parameter))
+  res$pvalue <- pvalue
   ci <- stats::quantile(permutation_vector, probs = c(pvalue_limit_inf, pvalue_limit_sup))
   res$ci.lower <- ci[1]
   res$ci.upper <- ci[2]

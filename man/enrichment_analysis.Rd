@@ -26,13 +26,13 @@ enrichment_analysis(
   ctdR = FALSE,
   result_folder,
   maxResources = 90,
-  parallel_strategy = "multicore",
+  parallel_strategy = "multisession",
   ...
 )
 }
 \arguments{
 \item{inference_details}{data.frame. Inference parameter table (must contain
-a \code{depth_analysis} column; rows with \code{depth_analysis == 3} are
+the per-gene artefacts (SCOPE = INSTANCE, AREA = GENE) are
 processed).}
 
 \item{adjust_per_area_s}{logical vector. Whether to adjust p-values per area
@@ -86,7 +86,11 @@ backend (default \code{FALSE}).}
 (default 90).}
 
 \item{parallel_strategy}{character. Parallelisation backend (default
-\code{"multicore"}).}
+\code{"multisession"}).
+Asking for \code{"multicore"} is accepted and converted to
+\code{"multisession"}: it means fork(), which is unsafe with this
+package's native thread pool on every platform that offers it, and
+absent on Windows. The conversion is logged.}
 
 \item{...}{Additional named arguments passed to \code{core_init_env()}.}
 }

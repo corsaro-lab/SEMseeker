@@ -1,13 +1,40 @@
 # Shared fixture for the burden / per-sample statistics tests.
 # Lives in a helper because testthat isolates each test file's environment:
 # test-8-burden-integration.R and test-0-sample-stats-sibling.R both use it.
-
-.burden_setup_signal_with_outliers <- function(seed = 12345L) {
+#
+# AI-254 — why every fixture is a PARAMETER and nothing is read from the
+# surrounding scope.
+#
+# This function used to read `nsamples`, `probe_features`, `mySampleSheet` and
+# `signal_data` as free variables, and it was the only helper in the suite doing
+# so. That made it the only one whose result depended on HOW the tests were run:
+#
+#   devtools::test()  -> the closure of a helper is `package:SEMseeker`, whose
+#                        parent chain is devtools_shims -> package:testthat ->
+#                        ... -> base -> R_EmptyEnv. Neither R_GlobalEnv (where
+#                        setup.R's `<<-` lands) nor setup.R's own source
+#                        environment (where its `<-` lands) is on that chain, so
+#                        NEITHER form of assignment reaches here and the function
+#                        died on its first free variable.
+#   R CMD check       -> the package is installed and attached, the chain does
+#                        reach them, and the same code worked.
+#
+# The measured consequence was five tests that failed locally, passed in CI, and
+# — worse — died before reaching a single assertion, hiding real defects behind
+# an environment problem.
+#
+# helper-bedmethyl.R never had the issue because it takes everything it needs as
+# arguments. That is the convention; this file had departed from it.
+.burden_setup_signal_with_outliers <- function(seed = 12345L,
+                                               n_samples,
+                                               probe_features,
+                                               sample_sheet,
+                                               signal_data) {
   set.seed(seed)
   n_probes_b  <- 200L
-  n_samples_b <- nsamples
+  n_samples_b <- n_samples
   local_probes  <- probe_features[1:n_probes_b, ]
-  local_samples <- mySampleSheet
+  local_samples <- sample_sheet
 
   # Background: mostly methylated (Beta(90, 10)).
   # IMPORTANT: outliers are detected per-probe across samples (IQR × 3 on
@@ -43,6 +70,13 @@
 # AI-223: the burden lives in the statistics sibling under the SAMPLE scope,
 # so the column names carry the scope prefix. Composed here the same way
 # io_burden_colname() composes them on the package side.
-.burden_cols <- paste0("SAMPLE_",
-                       c(paste0(.burden_required_markers, "_HYPER"),
-                         paste0(.burden_required_markers, "_HYPO")))
+# AI-248: the name carries the aggregation, and which one is produced by
+# default depends on the class of the marker — a count is summed, a continuous
+# deviation carries the descriptor set (of which MEAN is the historical value).
+.burden_discrete_markers   <- c("MUTATIONS", "DELTAP", "DELTAQ", "DELTARP", "DELTARQ")
+.burden_continuous_markers <- c("DELTAS", "DELTAR")
+.burden_cols <- c(
+  paste0("SAMPLE_", c(paste0(.burden_discrete_markers, "_HYPER"),
+                      paste0(.burden_discrete_markers, "_HYPO")), "_SUM"),
+  paste0("SAMPLE_", c(paste0(.burden_continuous_markers, "_HYPER"),
+                      paste0(.burden_continuous_markers, "_HYPO")), "_MEAN"))

@@ -1,8 +1,7 @@
 test_that(" SEMseeker:::sem_sample_group_check", {
 
 
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy, iqrTimes = iqrTimes, inpute="median")
 
   ####################################################################################

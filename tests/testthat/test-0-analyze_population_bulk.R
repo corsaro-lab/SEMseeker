@@ -39,7 +39,10 @@ test_that("sem_analyze_population_bulk - synthetic 10x5 produces correct pivots"
     stringsAsFactors = FALSE
   )
 
-  signal_path <- SEMseeker:::io_pivot_file_name_parquet("SIGNAL", "MEAN",
+  # The FIGURE of SIGNAL is the scale of the session, resolved by the same
+  # function sem_analyze_population_bulk() uses to look this pivot up.
+  signal_path <- SEMseeker:::io_pivot_file_name_parquet("SIGNAL",
+                                                    SEMseeker:::io_signal_figure(),
                                                     "POSITION", "WHOLE")
   dir.create(dirname(signal_path), recursive = TRUE, showWarnings = FALSE)
   polars::as_polars_df(probe_df)$write_parquet(signal_path)

@@ -16,7 +16,7 @@
 #   - In FRESH mode (pivot must be built): keep R-side materialisation
 #     for sem_inpute_missing_values (median needs row-wise access) and for the
 #     io_signal_save fresh-path write. BUT skip the R-side probe_features
-#     match+sort — io_signal_save's per-chr chunked sort is the canonical
+#     match+sort - io_signal_save's per-chr chunked sort is the canonical
 #     sort gate (see `single-sort-gate-at-pivot-save` memory) so the input
 #     row order doesn't matter.
 #
@@ -30,19 +30,19 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
  
   ssEnv <- core_get_session_info()
   batch_id <- ssEnv$running_batch_id
-  # AI-224: idempotent — sem_core() already normalised the sheet, but
+  # AI-224: idempotent - sem_core() already normalised the sheet, but
   # sem_analyze_batch() is also called directly (tests, resume tooling).
   sample_sheet <- core_normalize_sample_ids(sample_sheet)$sample_sheet
 
   # AI-027: read via unified dispatcher. CASE 2 (streaming merge) lets
-  # the SEM step pick up raw bed/bedgraph files when the SIGNAL_MEAN
+  # the SEM step pick up raw bed/bedgraph files when the SIGNAL
   # pivot has not been materialised yet.
-  signal_pivot <- io_read_pivot("SIGNAL", "MEAN", "POSITION", "WHOLE")
+  signal_pivot <- io_read_pivot("SIGNAL", io_signal_figure(), "POSITION", "WHOLE")
   resume_mode  <- !is.null(signal_pivot)
 
   if (resume_mode) {
     # ----------------------------------------------------------------
-    # RESUME PATH — lazy passthrough
+    # RESUME PATH - lazy passthrough
     # ----------------------------------------------------------------
     # AI-061+ (2026-06-09): extract schema + row count from the RAW
     # POSITION pivot (signal_pivot) BEFORE the anno_position_pivot_to_probe
@@ -50,7 +50,7 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
     # collect_schema() and select(pl$len())$collect() resolve from the
     # parquet footer (O(1) metadata read). After anno_position_pivot_to_probe
     # builds the join LazyFrame, those same calls FORCE the join to
-    # execute — Polars cannot infer the post-join schema/count without
+    # execute - Polars cannot infer the post-join schema/count without
     # running the join, which on ewas-scale (367k × 4014 cols) allocates
     # ~12 GB of Rust heap and triggers jetsam silently (v18, v21, v25-v30).
     # Sample columns are the SAME pre/post join (only CHR/START/END are
@@ -120,7 +120,7 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
               " post-probe_ids_collect mem_MB=", round(sum(gc()[, "(Mb)"]), 1),
               " n_probe_ids=", length(probe_ids_vec))
 
-    # AI-074: the gate applies to the resume path too — resuming from a SIGNAL
+    # AI-074: the gate applies to the resume path too - resuming from a SIGNAL
     # pivot still runs the SEM detection downstream.
     sem_coverage_gate(probe_ids_vec)
 
@@ -136,8 +136,8 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
     core_log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),
               " post-probe_features_filter mem_MB=", round(sum(gc()[, "(Mb)"]), 1),
               " n_rows=", nrow(probe_features))
-    # NO anno_sort_by_chr_and_start — sort gate is io_signal_save (already written).
-    # NO signal_data row reorder — pivot rows are already canonical.
+    # NO anno_sort_by_chr_and_start - sort gate is io_signal_save (already written).
+    # NO signal_data row reorder - pivot rows are already canonical.
 
     # sem_sample_group_check expects something with colnames(signal_data) →
     # pass a zero-row placeholder with the right sample-column names.
@@ -149,7 +149,7 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
     rm(signal_data_check)
 
     # io_signal_save would early-return (POSITION pivot exists). Skip the
-    # call entirely — saves a function frame and the misleading log line.
+    # call entirely - saves a function frame and the misleading log line.
     core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
               " Signal data already saved (resume mode); skipping signal_save.")
 
@@ -205,7 +205,7 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
         probe_features    = probe_features
       )
       # AI-061+ (2026-06-09): release the thresholds R data.frame after
-      # the bulk pass — sem_analyze_population_bulk copied the data into
+      # the bulk pass - sem_analyze_population_bulk copied the data into
       # polars (Rust heap) and rm()'d its own local binding, but R
       # would otherwise keep this parent-frame reference alive for the
       # rest of sem_analyze_batch's body (which we are about to return from
@@ -255,7 +255,7 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
   }
 
   # ------------------------------------------------------------------
-  # FRESH PATH — R-side materialisation required for inpute + io_signal_save
+  # FRESH PATH - R-side materialisation required for inpute + io_signal_save
   # ------------------------------------------------------------------
   core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
             " working on batch:", batch_id, " of ", nrow(signal_data),
@@ -276,7 +276,7 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
   core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
             " I will work on:", nrow(signal_data), " PROBES.")
 
-  # AI-074: mandatory coverage gate — charts are produced on every run and the
+  # AI-074: mandatory coverage gate - charts are produced on every run and the
   # run stops when the input barely overlaps the reference annotation.
   sem_coverage_gate(rownames(signal_data))
 
@@ -319,7 +319,7 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
 
   # Reference population subset and thresholds. probe IDs are kept as
   # rownames (preserved by data.frame column subsetting). NO extra
-  # PROBE column wrapper — sem_signal_range_values reads probe IDs from
+  # PROBE column wrapper - sem_signal_range_values reads probe IDs from
   # rownames.
   referencePopulationSampleSheet <- sample_sheet[sample_sheet$Sample_Group == "Reference", ]
   core_log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),

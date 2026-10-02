@@ -8,7 +8,7 @@
 ##   assoc_covariates_model        — no-op pass-through (no scaling, no PCA, no dummies)
 ##   assoc_model_polynomial — polynomial lm, degree in result  [requires caret]
 ##
-## All tests use separate entries from tempFolders (indices 20–30) to avoid
+## Each test takes its own session folder from sem_test_folder(), to avoid
 ## collisions with other test files.
 
 # ---------------------------------------------------------------------------
@@ -32,7 +32,7 @@
 # ---------------------------------------------------------------------------
 
 test_that("assoc_quantreg_model returns a data.frame with tau column", {
-  tf <- tempFolders[20]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -58,7 +58,7 @@ test_that("assoc_quantreg_model returns a data.frame with tau column", {
 })
 
 test_that("assoc_quantreg_model: tau is preserved correctly for 0.25 quantile", {
-  tf <- tempFolders[21]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -87,7 +87,7 @@ test_that("assoc_quantreg_model: tau is preserved correctly for 0.25 quantile", 
 # ---------------------------------------------------------------------------
 
 test_that("assoc_mean_permutation returns a data.frame with pvalue", {
-  tf <- tempFolders[22]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -112,7 +112,7 @@ test_that("assoc_mean_permutation returns a data.frame with pvalue", {
 })
 
 test_that("assoc_mean_permutation: well-separated groups give small p-value", {
-  tf <- tempFolders[23]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -142,7 +142,7 @@ test_that("assoc_mean_permutation: well-separated groups give small p-value", {
 # ---------------------------------------------------------------------------
 
 test_that("assoc_test_model_paired wilcoxon.paired returns data.frame with pvalue", {
-  tf <- tempFolders[24]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -173,7 +173,7 @@ test_that("assoc_test_model_paired wilcoxon.paired returns data.frame with pvalu
 })
 
 test_that("assoc_test_model_paired wilcoxon.paired: pre/post shift gives small p-value", {
-  tf <- tempFolders[25]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -206,7 +206,7 @@ test_that("assoc_test_model_paired wilcoxon.paired: pre/post shift gives small p
 })
 
 test_that("assoc_test_model_paired: >2 group levels returns NA pvalue early", {
-  tf <- tempFolders[26]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -238,7 +238,7 @@ test_that("assoc_test_model_paired: >2 group levels returns NA pvalue early", {
 # ---------------------------------------------------------------------------
 
 test_that("assoc_covariates_model: no-op returns list with covariates and study_summary", {
-  tf <- tempFolders[27]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -260,7 +260,6 @@ test_that("assoc_covariates_model: no-op returns list with covariates and study_
     transformation_x      = "none",
     family_test           = "wilcoxon",
     transformation_y      = "none",
-    depth_analysis        = "FULL",
     samples_sql_condition = NULL
   )
 
@@ -279,7 +278,7 @@ test_that("assoc_covariates_model: no-op returns list with covariates and study_
 test_that("assoc_model_polynomial: degree-2 no-covariate returns PL_DEGREE", {
   skip_if_not_installed("caret")
 
-  tf <- tempFolders[28]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -306,7 +305,7 @@ test_that("assoc_model_polynomial: degree-2 no-covariate returns PL_DEGREE", {
 test_that("assoc_model_polynomial: with covariate exercises assoc_polynomial_formula_build", {
   skip_if_not_installed("caret")
 
-  tf <- tempFolders[29]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 

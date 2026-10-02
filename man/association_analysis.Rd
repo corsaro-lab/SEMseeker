@@ -8,41 +8,87 @@ association_analysis(
   inference_details,
   result_folder,
   maxResources = 90,
-  parallel_strategy = "multicore",
+  parallel_strategy = "multisession",
   start_fresh = FALSE,
   ...
 )
 }
 \arguments{
 \item{inference_details}{data.frame. Each row defines one analysis run.
-Required columns:
-\describe{
-  \item{independent_variable}{Sample sheet column used as grouping /
-    covariate variable.}
-  \item{family_test}{Statistical model: \code{"wilcoxon"},
-    \code{"stats::t.test"}, \code{"gaussian"}, \code{"poisson"},
-    \code{"binomial"}, \code{"pearson"}, \code{"kendall"},
-    \code{"spearman"}, or quantile regression as
-    \code{"quantreg_<tau>_<runs>"} (e.g. \code{"quantreg_0.25_2000"}).}
-  \item{transformation_y}{Transformation applied to the dependent variable:
-    \code{"none"}, \code{"scale"}, \code{"log"}, \code{"log2"},
-    \code{"log10"}, \code{"exp"}, or
-    \code{"quantile_<n>"} (e.g. \code{"quantile_3"}).}
-  \item{marker}{SEM metric column prefix (e.g. \code{"DELTARP"},
-    \code{"MUTATIONS"}).}
-  \item{depth_analysis}{Integer depth: \code{1} = sample level,
-    \code{2} = type level (gene, DMR, CpG island),
-    \code{3} = genomic area (TSS1550, WHOLE, TSS200, …).}
-}}
+  Required columns:
+  \describe{
+    \item{independent_variable}{Sample sheet column used as grouping /
+      covariate variable.}
+    \item{family_test}{Statistical model: \code{"wilcoxon"},
+      \code{"stats::t.test"}, \code{"gaussian"}, \code{"poisson"},
+      \code{"binomial"}, \code{"pearson"}, \code{"kendall"},
+      \code{"spearman"}, or quantile regression as
+      \code{"quantreg_<tau>_<runs>"} (e.g. \code{"quantreg_0.25_2000"}).}
+    \item{transformation_y}{Transformation applied to the dependent variable:
+      \code{"none"}, \code{"scale"}, \code{"log"}, \code{"log2"},
+      \code{"log10"}, \code{"exp"}, or
+      \code{"quantile_<n>"} (e.g. \code{"quantile_3"}).}
+    \item{scope}{Required. Which of the two aggregations to run, over the
+      region classes of the call (\code{areas}, \code{subareas}).
+      \code{"SAMPLE"} reduces the positions of each class to one number per
+      sample: the burden, or its density, or a descriptor of the signal.
+      \code{"INSTANCE"} reduces them to one number per instance of the class:
+      one row per gene, per island, per cytoband, per probe.
+
+      The two are \strong{mutually exclusive}. They used to be produced
+      together and written into the same file, which made every result the
+      union of two different questions; a request that wants both now writes
+      two rows, and each carries its own \code{SCOPE} in the output.
+
+      It has no default on purpose. Any default would answer half of what was
+      asked and say nothing about the other half.}
+    \item{aggregation}{Required. How the positions are reduced to the one
+      number the model is fitted on: \code{"SUM"}, \code{"MEAN"},
+      \code{"MEDIAN"}, \code{"VARIANCE"}, \code{"IQR"}, \code{"MODELOW"} or
+      \code{"MODEHIGH"}. While every marker admitted exactly one operator
+      this could stay implicit; a scope now carries several, so the request
+      has to name the one it wants. Which are admissible depends on the
+      marker: a count carries \code{SUM} (the burden) and \code{MEAN} (the
+      density, the form comparable across regions of different size), while
+      its median and IQR are degenerate; the two modes exist only for the
+      signal on the beta scale. A request no marker of the run admits is
+      dropped with a warning naming it, not answered with an empty result.}
+  }
+
+  The markers are \strong{not} named in \code{inference_details} either.
+  They are chosen by the \code{markers} argument of this call and every row
+  of the request is tested on all of them, one result file per marker. A
+  \code{marker} column was documented here for a long time and never existed
+  in the vocabulary, so a request written from that description was rejected
+  as carrying an unknown column.
+
+  The region classes are \strong{not} named in \code{inference_details}: they
+  are the \code{(AREA, SUBAREA)} pairs of the run, declared with the
+  \code{areas} and \code{subareas} arguments of this call and built at
+  runtime. Both scopes range over the same pairs, so
+  \code{scope = "SAMPLE"} with \code{areas = c("GENE", "PROBE")} gives the
+  burden over the gene probes and the burden over the whole sample, and
+  \code{scope = "INSTANCE"} gives one row per gene and one row per probe.
+  The artefact is built on the way in if it does not exist yet, so a class no
+  previous run foresaw costs one scan of the position pivot rather than a
+  rerun.
+
+  Result rows carry the coordinates as columns: \code{MARKER},
+  \code{FIGURE}, \code{SCOPE}, \code{AREA}, \code{SUBAREA},
+  \code{AGGREGATION}, never a class name squashed into one of them.}
 
 \item{result_folder}{character. Path to the SEMseeker result folder.}
 
 \item{maxResources}{numeric. Maximum percentage of CPU cores to use
 (default 90).}
 
-\item{parallel_strategy}{character. Parallelisation backend; possible
-values: \code{"none"}, \code{"multisession"}, \code{"sequential"},
-\code{"multicore"}, \code{"cluster"} (default \code{"multicore"}).}
+\item{parallel_strategy}{character. Parallelisation backend; one of
+\code{"multisession"}, \code{"sequential"}, \code{"cluster"}
+(default \code{"multisession"}).
+Asking for \code{"multicore"} is accepted and converted to
+\code{"multisession"}: it means fork(), which is unsafe with this
+package's native thread pool on every platform that offers it, and
+absent on Windows. The conversion is logged.}
 
 \item{start_fresh}{logical. If \code{TRUE}, delete previous inference
 results before running (default \code{FALSE}).}
@@ -69,10 +115,13 @@ association_analysis(
     independent_variable = "Sample_Group",
     family_test          = "wilcoxon",
     transformation_y     = "none",
-    marker               = "DELTARP",
-    areas                = "GENE"
+    aggregation          = "MEAN",
+    scope                = "INSTANCE"
   ),
   result_folder     = "~/semseeker_results/",
+  markers           = "DELTARP",
+  areas             = "GENE",
+  subareas          = "WHOLE",
   multiple_test_adj = "BH"
 )
 }

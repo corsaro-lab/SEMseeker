@@ -4,6 +4,11 @@ enrich_phenotype_phenolyzer <- function(study,
   inference_detail, significance = TRUE)
 {
 
+  # AI-311: what an enrichment can be about is declared once, not written
+  # out again here. A pathway is a set of genes, so the input is one row
+  # per gene (SCOPE = INSTANCE) of the GENE region class.
+  .enrich_in <- enrich_input_invariant()
+
   # start_fresh <- FALSE
   # ssEnv <- core_init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = start_fresh, ...)
   ssEnv <- core_get_session_info()
@@ -58,8 +63,11 @@ enrich_phenotype_phenolyzer <- function(study,
     results_inference <- assoc_results_get(
       inference_detail =  inference_detail,
       marker = keys[i,"MARKER"],
-      adjust_per_area= adjust_per_area,
-      adjust_globally = adjust_globally,
+      # AI-257: neither coordinate was declared here, so this read took the
+      # GENE default and every scope - the collapsed rows included. A pathway
+      # needs a p-value per gene; a per-sample burden has no genes to list.
+      area  = .enrich_in$area,
+      scope = .enrich_in$scope,
       pvalue_column=  pvalue_column,
       adjustment_method= adjustment_method,
       significance = TRUE)
@@ -105,8 +113,8 @@ enrich_phenotype_phenolyzer <- function(study,
 
     file_term <- file.path(tempFolder, paste0("term_",random_string,".txt"))
     file_genes <- file.path(tempFolder, paste0("genes_",random_string,".txt"))
-    write.table(unique(gene_set[,"AREA_OF_TEST"]), file_genes, quote = FALSE, row.names = FALSE, col.names = FALSE)
-    write.table(diseases, file_term, quote = FALSE, row.names = FALSE, col.names = FALSE)
+    utils::write.table(unique(gene_set[,"AREA_OF_TEST"]), file_genes, quote = FALSE, row.names = FALSE, col.names = FALSE)
+    utils::write.table(diseases, file_term, quote = FALSE, row.names = FALSE, col.names = FALSE)
 
     #
     nCore <-  ssEnv$parallel$nCore

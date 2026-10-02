@@ -95,8 +95,8 @@ test_that("assoc_apply_stat_model_batch_lazy does NOT '-'→'_' rewrite AREA (bu
   )
 })
 
-test_that("sem_run_depth_n_marker does NOT '-'→'_' rewrite AREA before resume match", {
-  src <- paste(deparse(SEMseeker:::sem_run_depth_n_marker), collapse = "\n")
+test_that("assoc_run_marker does NOT '-'→'_' rewrite AREA before resume match", {
+  src <- paste(deparse(SEMseeker:::assoc_run_marker), collapse = "\n")
   expect_false(
     grepl('gsub\\(\\s*"-"\\s*,\\s*"_"\\s*,\\s*tempDataFrame\\$AREA\\s*\\)', src),
     info = "AI-106 removed the AI-062 AREA rewrite — keep it removed"
@@ -120,7 +120,7 @@ test_that("assoc_apply_stat_model carries the sanitize+memo+counter-rename patte
   )
   # Memo
   expect_true(
-    grepl("safe_to_real\\s*<-\\s*setNames\\(real_cols,\\s*safe_cols\\)", src),
+    grepl("safe_to_real\\s*<-\\s*(stats::)?setNames\\(real_cols,\\s*safe_cols\\)", src),
     info = "Per-gene path must memoise safe_to_real"
   )
   # Counter-rename when assigning AREA_OF_TEST
@@ -137,7 +137,7 @@ test_that("diagnostic_performance carries the same sanitize+memo+counter-rename 
     info = "diagnostic_performance must build safe_cols from real_cols"
   )
   expect_true(
-    grepl("safe_to_real\\s*<-\\s*setNames\\(real_cols,\\s*safe_cols\\)", src),
+    grepl("safe_to_real\\s*<-\\s*(stats::)?setNames\\(real_cols,\\s*safe_cols\\)", src),
     info = "diagnostic_performance must memoise safe_to_real"
   )
   expect_true(

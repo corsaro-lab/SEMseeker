@@ -1,6 +1,6 @@
 # install.packages("devtools")
 # require("devtools")
-# install_github("drake69/semseeker")
+# install_github("corsaro-lab/SEMseeker")
 # require("semseeker")
 # packageVersion('semseeker')
 #

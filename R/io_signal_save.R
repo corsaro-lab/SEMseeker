@@ -10,7 +10,7 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
   if (is.null(probe_features))
     probe_features <- attr(signal_data, "probe_features")
   core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), "Saving signal data.")
-  pivot_file_name_pos <- io_pivot_file_name_parquet("SIGNAL", "MEAN", "POSITION", "WHOLE")
+  pivot_file_name_pos <- io_pivot_file_name_parquet("SIGNAL", io_signal_figure(), "POSITION", "WHOLE")
   if (file.exists(pivot_file_name_pos)) {
     core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), "Signal data already saved.")
     return()
@@ -27,7 +27,7 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
   signal_data <- signal_data[, unique(sample_sheet$Sample_ID), drop = FALSE]
 
   # ------------------------------------------------------------------
-  # WGBS / LONGREAD path — coordinates are encoded in synthetic probe IDs.
+  # WGBS / LONGREAD path - coordinates are encoded in synthetic probe IDs.
   # No Bioconductor annotation join is needed.
   # ------------------------------------------------------------------
   if (ssEnv$tech %in% c("WGBS", "LONGREAD")) {
@@ -40,7 +40,7 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
     signal_probe$AREA      <- rownames(signal_data)
     signal_probe           <- signal_probe[, c(ncol(signal_probe),
                                                seq_len(ncol(signal_probe) - 1))]
-    pivot_file_name_probe  <- io_pivot_file_name_parquet("SIGNAL", "MEAN", "PROBE", "WHOLE")
+    pivot_file_name_probe  <- io_pivot_file_name_parquet("SIGNAL", io_signal_figure(), "PROBE", "WHOLE")
     polars::as_polars_df(signal_probe)$write_parquet(pivot_file_name_probe)
     rm(signal_probe)
 
@@ -69,12 +69,12 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
   }
 
   # ------------------------------------------------------------------
-  # Illumina path — join with Bioconductor annotation to get CHR/START/END
+  # Illumina path - join with Bioconductor annotation to get CHR/START/END
   # ------------------------------------------------------------------
   signal_data$AREA <- rownames(signal_data)
   signal_data      <- signal_data[, c(ncol(signal_data), seq_len(ncol(signal_data) - 1))]
 
-  pivot_file_name_probe <- io_pivot_file_name_parquet("SIGNAL", "MEAN", "PROBE", "WHOLE")
+  pivot_file_name_probe <- io_pivot_file_name_parquet("SIGNAL", io_signal_figure(), "PROBE", "WHOLE")
   polars::as_polars_df(signal_data)$write_parquet(pivot_file_name_probe)
   core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), "Signal data saved with probe.")
 
@@ -122,7 +122,7 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
   # Scan parquet UNA SOLA VOLTA fuori dal loop: la lazy frame è immutabile,
   # ogni $filter/$join in iterazione produce una nuova lazy frame senza
   # ri-aprire il parquet. Riduce overhead per iter su big matrix.
-  sd_lazy <- io_read_pivot("SIGNAL", "MEAN", "PROBE", "WHOLE")$
+  sd_lazy <- io_read_pivot("SIGNAL", io_signal_figure(), "PROBE", "WHOLE")$
               with_columns(polars::pl$col("AREA")$alias("PROBE"))
 
   for (i in seq_along(chrs)) {
@@ -135,7 +135,7 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
     # viene interpretato come nomi di colonna invece che valori → "not found".
     sd_chr <- pp_lazy$filter(polars::pl$col("CHR") == ch)$
                       join(sd_lazy, on = "PROBE", how = "inner")$
-                      drop(c("PROBE", "AREA"))$  # pf already slim to CHR/START/END/PROBE — no PROBE_WHOLE to strip here
+                      drop(c("PROBE", "AREA"))$  # pf already slim to CHR/START/END/PROBE - no PROBE_WHOLE to strip here
                       sort(c("START", "END"), descending = FALSE)
     sd_chr$sink_parquet(chunk_file)
     # Defensive cleanup: rilascia R-side reference, forza gc() per evitare
@@ -146,7 +146,7 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
             " post-chunked-sort mem_MB=", round(sum(gc()[, "(Mb)"]), 1),
             " (wrote ", length(chrs), " chunks)")
 
-  # Libera pp_lazy + sd_lazy + pf prima del concat — la lazy frame del concat
+  # Libera pp_lazy + sd_lazy + pf prima del concat - la lazy frame del concat
   # streamerà i chunk dal filesystem, non serve mantenere queste references.
   rm(sd_lazy, pp_lazy, pf); invisible(gc(verbose = FALSE))
 

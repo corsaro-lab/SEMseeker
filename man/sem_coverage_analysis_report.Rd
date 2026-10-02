@@ -8,14 +8,16 @@ sem_coverage_analysis_report(
   signal_data,
   result_folder,
   maxResources = 90,
-  parallel_strategy = "multicore",
+  parallel_strategy = "multisession",
   ...
 )
 }
 \arguments{
-\item{signal_data}{character. Path to the signal parquet file (e.g.
-\code{Data/SIGNAL_MEAN_PROBE_WHOLE.parquet}) or a data.frame already
-loaded into memory.}
+\item{signal_data}{character. Path to the signal parquet file under
+\code{Data/Pivots/SIGNAL/}, or a data.frame already loaded into memory.
+The file is named \code{SIGNAL_<FIGURE>_PROBE_WHOLE_<GENOME_BUILD>.parquet},
+where \code{FIGURE} is the scale the run was written on - \code{BETA} for a
+proportion bounded in [0,1], \code{MVALUE} for the logit-transformed one.}
 
 \item{result_folder}{character. Path to the SEMseeker result folder.}
 
@@ -23,7 +25,11 @@ loaded into memory.}
 (default 90).}
 
 \item{parallel_strategy}{character. Parallelisation backend passed to
-\code{future} (default \code{"multicore"}).}
+\code{future} (default \code{"multisession"}).
+Asking for \code{"multicore"} is accepted and converted to
+\code{"multisession"}: it means fork(), which is unsafe with this
+package's native thread pool on every platform that offers it, and
+absent on Windows. The conversion is logged.}
 
 \item{...}{Additional named arguments passed to \code{core_init_env()}.}
 }
@@ -40,8 +46,10 @@ Generate a coverage analysis report for Illumina methylation
 \examples{
 result_dir <- tempdir()
 \dontrun{
+# BETA is the scale this particular run was written on; a run on the
+# logit scale produces SIGNAL_MVALUE_PROBE_WHOLE_HG19.parquet instead.
 sem_coverage_analysis_report(
-  signal_data   = "~/semseeker_results/Data/SIGNAL_MEAN_PROBE_WHOLE.parquet",
+  signal_data   = "~/semseeker_results/Data/Pivots/SIGNAL/SIGNAL_BETA_PROBE_WHOLE_HG19.parquet",
   result_folder = "~/semseeker_results/"
 )
 }

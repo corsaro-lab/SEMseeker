@@ -29,11 +29,14 @@
 # (MUTATIONS + DELTA*) set exercises the whole derive-and-aggregate path.
 
 test_that("sample_sheet_result.csv has populated burden columns for all discrete + continuous markers (AI-086, canary for AI-083)", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   unlink(tempFolder, recursive = TRUE)
 
-  syn <- .burden_setup_signal_with_outliers()
+  syn <- .burden_setup_signal_with_outliers(
+    n_samples      = nsamples,
+    probe_features = probe_features,
+    sample_sheet   = mySampleSheet,
+    signal_data    = signal_data)
 
   # inpute="median" is defensive: harmless when the input has no NAs (the
   # guard at inpute_missing_values.R:7 short-circuits), useful if a future
@@ -53,25 +56,31 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
     verbosity         = verbosity
   )
 
+  # semseeker() closes the session it opened, so reading its artefacts needs the
+  # session back, and the reopen has to name the same coordinates as the run: an
+  # option the reopen leaves out is filled with its default, not with what the run
+  # asked for. Before the close emptied the session these reads were answered by
+  # the one it had left standing in memory, which is why they named nothing.
+  SEMseeker:::core_init_env(result_folder = tempFolder,
+                            parallel_strategy = "sequential",
+                            areas = c("POSITION"),
+                            markers = c("MUTATIONS", "LESIONS",
+                                        "DELTAP", "DELTAQ", "DELTARP", "DELTARQ",
+                                        "DELTAS", "DELTAR"),
+                            start_fresh = FALSE)
+
   # SEMseeker writes via io_file_path_build() → core_name_cleaning() → toupper(),
   # so the on-disk file is SAMPLE_SHEET_RESULT.csv (not the lowercase form
   # used in the API contract). macOS/Windows file systems are case-insensitive
   # by default so either spelling works; Linux ext4 is case-sensitive and
   # only the uppercase form resolves. Use uppercase here to be correct on
   # all three CI runners.
-  result_csv <- file.path(tempFolder, "Data", "SAMPLE_STATS_RESULT.csv")
+  # AI-255: the sibling CSV is gone. The per-sample table is composed on read
+  # from the SCOPE = SAMPLE artefacts and joined onto the sample sheet.
   sheet_csv  <- file.path(tempFolder, "Data", "SAMPLE_SHEET_RESULT.csv")
-  testthat::expect_true(
-    file.exists(result_csv),
-    info = sprintf(
-      "SAMPLE_STATS_RESULT.csv was not written by semseeker() — tempFolder=%s",
-      tempFolder
-    )
-  )
-  testthat::skip_if_not(file.exists(result_csv),
-                        "downstream assertions need the statistics sibling")
-
-  df <- utils::read.csv2(result_csv, stringsAsFactors = FALSE)
+  df <- SEMseeker:::sem_study_summary_get()
+  testthat::expect_true(!is.null(df) && nrow(df) > 0,
+    info = sprintf("no per-sample statistics composed — tempFolder=%s", tempFolder))
 
   # AI-223 net move: the sample sheet must NOT carry the burden any more
   sheet <- utils::read.csv2(sheet_csv, stringsAsFactors = FALSE)
@@ -87,11 +96,13 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
   required_markers <- c("MUTATIONS",
                         "DELTAP", "DELTAQ", "DELTARP", "DELTARQ",
                         "DELTAS", "DELTAR")
-  required_burden_cols <- paste0("SAMPLE_", c(
-    paste0(required_markers, "_HYPER"),
-    paste0(required_markers, "_HYPO")
-  ))
-  required_cols <- c("Sample_ID", required_burden_cols, "SAMPLE_N_PROBES")
+  # AI-248: composed once in helper-burden.R, where the aggregation each class
+  # produces by default is spelled out.
+  required_burden_cols <- .burden_cols
+  # AI-255: N_PROBES describes the sample, not a scope of it — it counts the
+  # positions the imputation left usable — so it comes in from the sample sheet
+  # under its own name.
+  required_cols <- c("Sample_ID", required_burden_cols, "N_PROBES")
 
   missing_cols <- setdiff(required_cols, colnames(df))
   testthat::expect_equal(
@@ -221,8 +232,7 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
 # ---------------------------------------------------------------------------
 
 test_that("burden survives mixed-case Sample_IDs and a polluted global temp_result (AI-083)", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   unlink(tempFolder, recursive = TRUE)
   on.exit({
     try(SEMseeker:::core_close_env(), silent = TRUE)
@@ -231,7 +241,11 @@ test_that("burden survives mixed-case Sample_IDs and a polluted global temp_resu
     unlink(tempFolder, recursive = TRUE)
   }, add = TRUE)
 
-  syn <- .burden_setup_signal_with_outliers()
+  syn <- .burden_setup_signal_with_outliers(
+    n_samples      = nsamples,
+    probe_features = probe_features,
+    sample_sheet   = mySampleSheet,
+    signal_data    = signal_data)
 
   # ewas_osteoporosis-style identifiers: core_name_cleaning() uppercases them
   # ("DNAm_sample1" -> "DNAM_SAMPLE1"), so sample sheet and pivot columns must
@@ -265,12 +279,18 @@ test_that("burden survives mixed-case Sample_IDs and a polluted global temp_resu
     verbosity         = verbosity
   )
 
-  result_csv <- file.path(tempFolder, "Data", "SAMPLE_STATS_RESULT.csv")
-  testthat::expect_true(file.exists(result_csv))
-  testthat::skip_if_not(file.exists(result_csv),
-                        "downstream assertions need the statistics sibling")
+  # Same reopen as above, with this run's own coordinates.
+  SEMseeker:::core_init_env(result_folder = tempFolder,
+                            parallel_strategy = "sequential",
+                            areas = c("POSITION"),
+                            markers = c("MUTATIONS", "LESIONS",
+                                        "DELTAP", "DELTAQ", "DELTARP", "DELTARQ",
+                                        "DELTAS", "DELTAR"),
+                            start_fresh = FALSE)
 
-  df <- utils::read.csv2(result_csv, stringsAsFactors = FALSE)
+  # AI-255: composed on read, no sibling file.
+  df <- SEMseeker:::sem_study_summary_get()
+  testthat::expect_true(!is.null(df) && nrow(df) > 0)
 
   # identifiers landed normalised on both sides
   testthat::expect_true(all(grepl("^DNAM_SAMPLE", df$Sample_ID)))
@@ -314,8 +334,12 @@ test_that("burden survives mixed-case Sample_IDs and a polluted global temp_resu
     showprogress      = FALSE,
     verbosity         = 1
   )
+  # AI-255: the check moved with the join. sem_sample_stats_build() now only
+  # materialises artefacts; it is sem_study_summary_get() that puts the sample
+  # sheet and the artefact columns side by side, so that is where a total
+  # identifier mismatch has to be caught rather than joined into a table of NAs.
   testthat::expect_error(
-    SEMseeker:::sem_sample_stats_build(),
+    SEMseeker:::sem_study_summary_get(),
     "no Sample_ID in common"
   )
 })

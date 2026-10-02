@@ -142,8 +142,10 @@ test_that("array, WGBS bedmethyl and LONGREAD bedmethyl produce convergent SEM c
   ## BED intermediates. Assert convergence via MUTATIONS_HYPO pivot existence
   ## and row-count parity across the three input formats.
   ## Full biological convergence (real GSE95486 beta values) is AI-117 + AI-123.
+  # AI-255: the name carries the scope and the aggregation. At POSITION the
+  # block is a single position, so the aggregation is VALUE — the identity.
   mut_pivot_rel <- file.path("Data","Pivots","MUTATIONS",
-                              "MUTATIONS_HYPO_POSITION_WHOLE_HG19.parquet")
+                              "MUTATIONS_HYPO_INSTANCE_POSITION_WHOLE_VALUE_HG19.parquet")
   expect_true(file.exists(file.path(out_array, mut_pivot_rel)))
   expect_true(file.exists(file.path(out_wgbs,  mut_pivot_rel)))
   expect_true(file.exists(file.path(out_lr,    mut_pivot_rel)))

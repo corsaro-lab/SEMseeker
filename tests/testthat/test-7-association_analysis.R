@@ -48,8 +48,7 @@ test_that("util_split_and_clean respects a custom split delimiter", {
 # ---------------------------------------------------------------------------
 
 test_that("assoc_validate_family_test accepts standard parametric families", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
@@ -67,8 +66,7 @@ test_that("assoc_validate_family_test accepts standard parametric families", {
 })
 
 test_that("assoc_validate_family_test accepts parametric family variants", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
@@ -86,8 +84,7 @@ test_that("assoc_validate_family_test accepts parametric family variants", {
 })
 
 test_that("assoc_validate_family_test rejects NULL, NA, and unknown strings", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
@@ -107,9 +104,8 @@ test_that("assoc_validate_family_test rejects NULL, NA, and unknown strings", {
 #    and regresses them against the continuous Phenotest covariate.
 # ---------------------------------------------------------------------------
 
-test_that("association_analysis depth=1 gaussian runs without error and writes inference CSV", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+test_that("association_analysis at scope SAMPLE runs without error and writes inference CSV", {
+  tempFolder <- sem_test_folder()
   unlink(tempFolder, recursive = TRUE)
 
   # ── Step 0: build synthetic data WITH guaranteed mutations ────────────────
@@ -161,7 +157,8 @@ test_that("association_analysis depth=1 gaussian runs without error and writes i
     family_test          = "spearman",
     transformation_y     = "",
     transformation_x     = "",
-    depth_analysis       = 1L,
+    aggregation          = "SUM",
+    scope                = "SAMPLE",
     filter_p_value       = FALSE,
     stringsAsFactors     = FALSE
   )
@@ -209,8 +206,7 @@ test_that("association_analysis depth=1 gaussian runs without error and writes i
 # ---------------------------------------------------------------------------
 
 .aa_setup_result_folder <- function(seed = 777, n_probes = 200L, areas = c("GENE", "POSITION")) {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   unlink(tempFolder, recursive = TRUE)
 
   set.seed(seed)
@@ -240,11 +236,11 @@ test_that("association_analysis depth=1 gaussian runs without error and writes i
 }
 
 # ---------------------------------------------------------------------------
-# T1 — depth=3 + spearman: exercises pivot parquet read / chunk / merge path
-#      (same branch as depth=2; covers both)
+# T1, scope INSTANCE + spearman: exercises pivot parquet read / chunk / merge
+#      path, one row per instance of every region class of the run
 # ---------------------------------------------------------------------------
 
-test_that("association_analysis depth=3 reads area pivots and writes inference CSV", {
+test_that("association_analysis at scope INSTANCE reads area pivots and writes inference CSV", {
   tempFolder <- .aa_setup_result_folder()
 
   inference_details <- data.frame(
@@ -252,7 +248,8 @@ test_that("association_analysis depth=3 reads area pivots and writes inference C
     family_test          = "spearman",
     transformation_y     = "",
     transformation_x     = "",
-    depth_analysis       = 3L,
+    aggregation          = "SUM",
+    scope                = "INSTANCE",
     filter_p_value       = FALSE,
     stringsAsFactors     = FALSE
   )
@@ -277,22 +274,24 @@ test_that("association_analysis depth=3 reads area pivots and writes inference C
                            full.names = TRUE)
   testthat::expect_true(length(csv_files) > 0)
 
-  # depth=3 must produce rows with DEPTH > 1 (area-level), not only DEPTH=1
+  # AI-308: this block used to assert `any(result_df$DEPTH > 1)` behind a
+  # skip() that reported a regression of 53310c1. It could not have detected
+  # either: `DEPTH` was removed with depth_analysis, so the guard
+  # `"DEPTH" %in% colnames(result_df)` was never true, the skip never fired and
+  # the assertion after it was unreachable. The test had been reduced to
+  # "no error, a CSV exists" while reading as though it checked the granularity.
+  #
+  # The property it wanted is now sayable: the request asked for the
+  # per-instance branch, so every row must carry SCOPE = INSTANCE, and a region
+  # class must span many instances, which is exactly what a collapsed row
+  # cannot do.
   result_csv <- csv_files[!grepl("(?i)assoc_covariates_model", csv_files)][1]
   if (!is.na(result_csv) && file.exists(result_csv) && file.info(result_csv)$size > 10) {
     result_df <- utils::read.csv2(result_csv)
-    if ("DEPTH" %in% colnames(result_df) && nrow(result_df) > 0) {
-      # TEMPORARY SKIP — regression introduced by the association_analysis
-      # refactor (commit 53310c1): with depth_analysis = 3 the resulting
-      # inference CSV contains only DEPTH = 1 rows, never DEPTH > 1.
-      # The rest of the test still validates that no error is raised, that
-      # the Inference directory exists, and that at least one CSV is
-      # written — only this DEPTH assertion is skipped until the
-      # regression is fixed. Tracked in backlog.
-      testthat::skip(
-        "depth_analysis=3 produces only DEPTH=1 rows (regression of 53310c1)"
-      )
-      testthat::expect_true(any(result_df$DEPTH > 1))
+    result_df <- result_df[which(!is.na(result_df$SCOPE)), , drop = FALSE]
+    if (nrow(result_df) > 0) {
+      testthat::expect_equal(unique(result_df$SCOPE), "INSTANCE")
+      testthat::expect_gt(length(unique(result_df$AREA_OF_TEST)), 1)
     }
   }
 
@@ -311,7 +310,8 @@ test_that("association_analysis polynomial family runs without error", {
     family_test          = "polynomial_2_1",
     transformation_y     = "",
     transformation_x     = "",
-    depth_analysis       = 1L,
+    aggregation          = "SUM",
+    scope                = "INSTANCE",
     filter_p_value       = FALSE,
     stringsAsFactors     = FALSE
   )
@@ -350,7 +350,8 @@ test_that("association_analysis with covariates runs and produces a assoc_covari
     covariates           = "Covariates1+Covariates2",
     transformation_y     = "",
     transformation_x     = "",
-    depth_analysis       = 1L,
+    aggregation          = "SUM",
+    scope                = "INSTANCE",
     filter_p_value       = FALSE,
     collinearity_check   = TRUE,
     stringsAsFactors     = FALSE
@@ -390,7 +391,8 @@ test_that("association_analysis is idempotent: second run on same folder does no
     family_test          = "spearman",
     transformation_y     = "",
     transformation_x     = "",
-    depth_analysis       = 1L,
+    aggregation          = "SUM",
+    scope                = "INSTANCE",
     filter_p_value       = FALSE,
     stringsAsFactors     = FALSE
   )
@@ -435,8 +437,7 @@ test_that("association_analysis is idempotent: second run on same folder does no
 # ---------------------------------------------------------------------------
 
 test_that("association_analysis skips gracefully when independent_variable absent from sample sheet", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   unlink(tempFolder, recursive = TRUE)
 
   # Reuse the same bimodal injected-outlier signal as test 3
@@ -468,7 +469,8 @@ test_that("association_analysis skips gracefully when independent_variable absen
     family_test          = "spearman",
     transformation_y     = "",
     transformation_x     = "",
-    depth_analysis       = 1L,
+    aggregation          = "SUM",
+    scope                = "INSTANCE",
     filter_p_value       = FALSE,
     stringsAsFactors     = FALSE
   )

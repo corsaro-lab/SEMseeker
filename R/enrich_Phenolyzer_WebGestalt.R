@@ -10,7 +10,7 @@ enrich_Phenolyzer_WebGestalt <- function(study,
   ssEnv <- core_get_session_info()
   pvalue_column <- core_name_cleaning(pvalue_column)
   keys <- unique(ssEnv$keys_for_pathway)
-  path <- io_dir_check_and_create(ssEnv$result_folderEnrichment,c("Phenolyzer_WebGestalt",core_name_cleaning(inference_detail$areas_sql_condition),core_name_cleaning(inference_detail$samples_sql_condition), core_name_cleaning(inference_detail$association_results_sql_condition)))
+  path <- io_enrichment_folder(inference_detail, "Phenolyzer_WebGestalt")
   tmp <- tempdir()
   tempFolder <- io_dir_check_and_create(tmp,c("/semseeker/",stringi::stri_rand_strings(1, 7, pattern = "[A-Za-z0-9]")))
 
@@ -45,7 +45,7 @@ enrich_Phenolyzer_WebGestalt <- function(study,
           pp <- utils::read.csv2(filenameResult,stringsAsFactors = FALSE)
           if(nrow(pp)==0)
             next
-          enrich_result_save(pp, pathway_report_path, "WebGestalt")
+          enrich_result_save(pp, filenameResult, "WebGestalt", study = study)
           next
         }
 
@@ -80,7 +80,7 @@ enrich_Phenolyzer_WebGestalt <- function(study,
 
         projectName <- enrich_phenotype_analysis_name( inference_detail = inference_detail,key = keys[i,], prefix="",suffix= paste(type,enrich_method, sep="_") , pvalue_column=pvalue_column, as.numeric(ssEnv$alpha), significance)
         geneFile <- file.path(system.file(package="WebGestaltR"),"extdata/interestingGenes.txt")
-        write.table(unique(gene_set$Gene),geneFile,row.names=FALSE,col.names = FALSE,quote =FALSE)
+        utils::write.table(unique(gene_set$Gene),geneFile,row.names=FALSE,col.names = FALSE,quote =FALSE)
 
         enrichDataBase <- switch(
           type,
@@ -190,7 +190,7 @@ enrich_Phenolyzer_WebGestalt <- function(study,
     {
       projectName <- enrich_phenotype_analysis_name( inference_detail = inference_detail,key = keys[i,], prefix="",suffix=""  , pvalue_column=pvalue_column, as.numeric(ssEnv$alpha), significance)
       filenameResult <- io_file_path_build(path,projectName,"csv")
-      enrich_result_save(enrichResultFinal, pathway_report_path, "WebGestalt")
+      enrich_result_save(enrichResultFinal, filenameResult, "WebGestalt", study = study)
     }
   }
 }

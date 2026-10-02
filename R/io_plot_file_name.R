@@ -15,7 +15,6 @@ io_plot_file_name <- function(inference_detail, folder,file_extension="png", pre
   family_test <- inference_detail$family_test
   transformation_y <- inference_detail$transformation_y
   independent_variable <- gsub(" ","", inference_detail$independent_variable)
-  depth_analysis <- inference_detail$depth_analysis
 
   file_suffix <- ""
 
@@ -52,7 +51,6 @@ io_plot_file_name <- function(inference_detail, folder,file_extension="png", pre
   file_suffix <- paste(file_suffix, suffix, sep = "_")
 
   file_result_prefix <- paste(as.character(family_test),as.character(independent_variable),as.character(transformation_y),sep="_")
-  file_result_prefix <- paste("DEPTH",depth_analysis, file_result_prefix,sep = "_")
   file_result_prefix <- paste(prefix, file_result_prefix, sep = "_")
 
   if(area != "")

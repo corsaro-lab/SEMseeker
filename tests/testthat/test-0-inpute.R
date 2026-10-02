@@ -1,7 +1,6 @@
 test_that("inpute", {
 
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
 
   # With the real GSE133774 fixture (ncol = 10), the removal threshold is
   # 0.1 * 10 = 1.  Any row with > 1 NA triggers the removal block, which then

@@ -6,14 +6,13 @@
 ##   core_check_session_compatibility()   cross-session build/tech enforcement
 ##   assoc_quantreg_metrics()             pinball loss / QQ metrics (no plot)
 ##
-## Session tests use tempFolders indices 44-46.
 
 # ---------------------------------------------------------------------------
 # core_session_metadata_write
 # ---------------------------------------------------------------------------
 
 test_that("core_session_metadata_write serialises provenance to JSON", {
-  tf <- tempFolders[44]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -33,7 +32,7 @@ test_that("core_session_metadata_write serialises provenance to JSON", {
 # ---------------------------------------------------------------------------
 
 test_that("core_pivot_sidecar_write writes a _meta.json next to the pivot", {
-  tf <- tempFolders[45]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -102,7 +101,7 @@ test_that("core_check_session_compatibility is a no-op for a single session", {
 # ---------------------------------------------------------------------------
 
 test_that("assoc_quantreg_metrics computes pinball loss and QQ metrics", {
-  tf <- tempFolders[46]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 

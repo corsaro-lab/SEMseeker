@@ -38,7 +38,7 @@ core_log_event <- function(...)
   #   - WARNING / ERROR: always augmented (mem/cpu snapshot at the
   #     moment a problem is logged is the most actionable diagnostic)
   #   - INFO: augmented only when the session is in DEBUG verbosity
-  #     (verbosity == 4) — keeps INFO logs compact at normal levels
+  #     (verbosity == 4) - keeps INFO logs compact at normal levels
   #     but turns them into a full trace under DEBUG.
   augment_now <- grepl("^DEBUG",   log_event_to_save) ||
                  grepl("^WARNING", log_event_to_save) ||
@@ -80,7 +80,7 @@ core_log_event <- function(...)
   }
 
   # `verbosity` already initialised at the top of the function for the
-  # augmentation policy — reuse the same value here.
+  # augmentation policy - reuse the same value here.
 
   cat(log_event_to_save, "\n", file = log_file, append = TRUE)
 

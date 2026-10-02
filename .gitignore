@@ -34,3 +34,10 @@ secrets/
 
 # Test side-effect garbage (created when init_env() runs with NA path)
 tests/testthat/NA/
+
+# Local test reports written by dev/run-suite.R (one per platform)
+dev/test-reports/
+
+# Dependency-analysis artifacts (dev/deps/snapshots is committed on purpose)
+dev/deps/output/
+dev/deps/cache/

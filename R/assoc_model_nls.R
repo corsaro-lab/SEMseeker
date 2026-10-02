@@ -117,7 +117,7 @@ assoc_model_nls <- function (family_test, tempDataFrame, sig.formula, transforma
     summary_result <- summary(nls_model_model_result)
     coefficients <- summary_result$coefficients
   }, error = function(e) {
-    nls_model_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"), "Error extracting coefficients from the model: ", e$message)
+    core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"), "Error extracting coefficients from the model: ", e$message)
     return(res)
   })
 

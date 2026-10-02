@@ -11,10 +11,8 @@ assoc_apply_stat_model(
   covariates = NULL,
   key,
   transformation_y,
-  dototal,
   session_folder,
   independent_variable,
-  depth_analysis = 3,
   samples_sql_condition,
   inference_detail = NULL,
   ...
@@ -33,15 +31,15 @@ assoc_apply_stat_model(
 
 \item{transformation_y}{transformation_y to apply to covariates, burden and independent variable}
 
-\item{dototal}{do a total per area}
-
 \item{session_folder}{where to save log file}
 
 \item{independent_variable}{independent variable name}
 
-\item{depth_analysis}{depth's analysis}
-
 \item{samples_sql_condition}{SQL condition string to filter samples}
+
+\item{inference_detail}{one row of the inference specification, carrying the
+per-request fields (scope, aggregation, transformation_x) that the model
+call needs; NULL falls back to the defaults}
 
 \item{...}{extra parameters}
 }

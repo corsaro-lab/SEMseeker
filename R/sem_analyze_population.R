@@ -8,7 +8,7 @@
 #' @param signal_thresholds thresholds defined to calculate epimutations
 #' @return files into the result folder with pivot table and bedgraph.
 #'   A BANNER is logged once per batch before the per-sample loop showing:
-#'   input_positions, beta_range_positions, covered_by_inner_join — allows
+#'   input_positions, beta_range_positions, covered_by_inner_join - allows
 #'   immediate audit of cross-run coverage (e.g. Nanopore sample vs Illumina reference).
 #' @importFrom doRNG %dorng%
 #'
@@ -28,7 +28,7 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
   }
 
   ### get signal_values ########################################################
-  # AI-224: idempotent normalisation of both sides — the per-sample subset
+  # AI-224: idempotent normalisation of both sides - the per-sample subset
   # below is name-based and must not depend on the caller having cleaned them.
   .normalized <- core_normalize_sample_ids(sample_sheet, signal_data)
   sample_sheet <- .normalized$sample_sheet
@@ -72,7 +72,7 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
     )
     candidates[grepl(paste0("/", pattern, "/"), candidates, fixed = TRUE)]
   }
-  existing_signal_mean <- .existing_bed_set("SIGNAL", "MEAN")
+  existing_signal_mean <- .existing_bed_set("SIGNAL", io_signal_figure())
   existing_mut_hyper   <- .existing_bed_set("MUTATIONS", "HYPER")
   existing_mut_hypo    <- .existing_bed_set("MUTATIONS", "HYPO")
   existing_deltas_hypo <- .existing_bed_set("DELTAS", "HYPO")
@@ -92,7 +92,7 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
     "signal_superior_thresholds","sem_deltar_single_sample","signal_inferior_thresholds","iqr","signal_median_values",
     "bt","bonferroni_threshold", "probe_features", "sem_analyze_single_sample_both", "sem_delta_single_sample", "progress_bar",
     "progression_index", "progression", "progressor_uuid", "owner_session_uuid", "trace","sem_signal_single_sample",
-    "core_get_session_info","io_bed_file_name","signal_thresholds","core_update_session_info","anno_normalize_chr",
+    "core_get_session_info","io_bed_file_name","signal_thresholds","core_update_session_info","anno_normalize_chr","io_signal_figure",
     "existing_signal_mean","existing_mut_hyper","existing_mut_hypo","existing_deltas_hypo","existing_deltar_hypo",
     "dir_known_signal_mean","dir_known_mut_hyper","dir_known_mut_hypo","dir_known_deltas_hypo","dir_known_deltar_hypo")
   i <- 1
@@ -101,7 +101,7 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
   # foreach::foreach(i =1:nrow(sample_sheet), .export = variables_to_export) %dorng% {
     local_sample_detail <- sample_sheet[i,]
     ssEnv <- core_get_session_info()
-    bed_filename <- io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "SIGNAL","MEAN", skip_dir_create = dir_known_signal_mean)
+    bed_filename <- io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "SIGNAL", io_signal_figure(), skip_dir_create = dir_known_signal_mean)
     if(!(bed_filename %in% existing_signal_mean)) {
       signal_values <- signal_data[,local_sample_detail$Sample_ID]
       sem_signal_single_sample( signal_values,local_sample_detail,probe_features)
@@ -111,7 +111,7 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
   }
   gc()
 
-  # ── Coverage banner — emitted ONCE before per-sample analysis ───────────────
+  # ── Coverage banner - emitted ONCE before per-sample analysis ───────────────
   # Shows how many positions in the current run are covered by signal_thresholds.
   # Especially important for cross-run analysis (e.g. Nanopore sample vs an
   # Illumina reference batch passed via populationControlRangeBetaValues):
@@ -121,7 +121,7 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
     coverage_first_sample <- sample_sheet[1L, ]
     coverage_bed <- io_bed_file_name(coverage_first_sample$Sample_ID,
                                   coverage_first_sample$Sample_Group,
-                                  "SIGNAL", "MEAN")
+                                  "SIGNAL", io_signal_figure())
     if (file.exists(coverage_bed)) {
       coverage_sig <- utils::read.delim(coverage_bed, header = FALSE, sep = "\t")
       colnames(coverage_sig) <- c("CHR", "START", "END", "VALUE")
@@ -139,7 +139,7 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
       )$collect()$height
       core_log_event(
         "BANNER: ", format(Sys.time(), "%a %b %d %X %Y"),
-        " [sem_analyze_population] Coverage —",
+        " [sem_analyze_population] Coverage -",
         " input_positions=", coverage_n_input,
         " | beta_range_positions=", coverage_n_ranges,
         " | covered_by_inner_join=", coverage_n_covered,
@@ -157,9 +157,16 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
 
   rm(signal_data)
   # for(i in 1:nrow(sample_sheet)) {
-  # .packages loads SEMseeker in each worker so SEMseeker::: lookups resolve.
-  # Internal helpers are prefixed with SEMseeker::: because they live in the
-  # namespace (not in the caller's frame) and .export does not cover them.
+  # How the internal helpers reach a worker. .packages attaches SEMseeker there,
+  # and an attach exposes the EXPORTED functions only, so it is not what carries
+  # them. .export is: it resolves each name in the frame this call is made from,
+  # and that frame's enclosure is the namespace, so a name living there is found
+  # and the function object travels with the task.
+  #
+  # Measured, because an earlier version of this comment asserted the opposite and
+  # the calls below were qualified with the namespace on that basis - while the
+  # same names were already in the list above. The prefix was doing nothing, and
+  # R CMD check was reporting it.
   foreach::foreach(
     i = seq_len(nrow(sample_sheet)),
     .export = variables_to_export,
@@ -168,23 +175,23 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
     # CRITICAL (E-14): multisession workers are fresh R processes where
     # .pkgglobalenv$ssEnv is empty. All internal helpers (io_bed_file_name,
     # sem_analyze_single_sample, etc.) call core_get_session_info() which reads from
-    # .pkgglobalenv — NOT from the exported `ssEnv` variable. Without this
+    # .pkgglobalenv - NOT from the exported `ssEnv` variable. Without this
     # call, multisession workers fail with "core_get_session_info called without
     # result folder". See engineering-decisions.md §1.3.
     # AI-041: in-memory only; saveRDS would happen N_samples × N_workers
     # times per SEM step otherwise (15 MB per write → catastrophic I/O).
-    SEMseeker:::core_update_session_info(ssEnv, save_to_disk = FALSE)
+    core_update_session_info(ssEnv, save_to_disk = FALSE)
 
     local_sample_detail <- sample_sheet[i,]
 
     # AI-075: precomputed existing-bed sets => O(1) %in% lookups instead of
     # 4 stat syscalls per sample (~16k saved on a 4000-sample population).
     # skip_dir_create=TRUE because all destination dirs were ensured ONCE at
-    # the top of sem_analyze_population — no per-sample dir_check_and_create.
-    bed_mut_hyper   <- SEMseeker:::io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "MUTATIONS","HYPER", skip_dir_create = dir_known_mut_hyper)
-    bed_mut_hypo    <- SEMseeker:::io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "MUTATIONS","HYPO", skip_dir_create = dir_known_mut_hypo)
-    bed_deltas_hypo <- SEMseeker:::io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "DELTAS","HYPO", skip_dir_create = dir_known_deltas_hypo)
-    bed_deltar_hypo <- SEMseeker:::io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "DELTAR","HYPO", skip_dir_create = dir_known_deltar_hypo)
+    # the top of sem_analyze_population - no per-sample dir_check_and_create.
+    bed_mut_hyper   <- io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "MUTATIONS","HYPER", skip_dir_create = dir_known_mut_hyper)
+    bed_mut_hypo    <- io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "MUTATIONS","HYPO", skip_dir_create = dir_known_mut_hypo)
+    bed_deltas_hypo <- io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "DELTAS","HYPO", skip_dir_create = dir_known_deltas_hypo)
+    bed_deltar_hypo <- io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "DELTAR","HYPO", skip_dir_create = dir_known_deltar_hypo)
     need_mut_hyper   <- !(bed_mut_hyper   %in% existing_mut_hyper)
     need_mut_hypo    <- !(bed_mut_hypo    %in% existing_mut_hypo)
     need_deltas_hypo <- !(bed_deltas_hypo %in% existing_deltas_hypo)
@@ -192,19 +199,24 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
 
     # Only pay the read.delim cost when at least one figure needs computing.
     if (need_mut_hyper || need_mut_hypo || need_deltas_hypo || need_deltar_hypo) {
-      bed_filename <- SEMseeker:::io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "SIGNAL","MEAN")
+      # Every call inside the worker has to be namespace-qualified: the foreach
+      # expression is evaluated in an environment that does not have the package
+      # namespace on its search path. io_signal_figure() was left unqualified
+      # when AI-248 introduced it, which resolves under an attached package but
+      # not in a parallel worker.
+      bed_filename <- io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "SIGNAL", io_signal_figure())
       signal_values <- utils::read.delim(bed_filename, header = FALSE, sep = "\t")
       colnames(signal_values) <- c("CHR", "START", "END", "VALUE")
-      signal_values$CHR <- SEMseeker:::anno_normalize_chr(signal_values$CHR, "internal")
+      signal_values$CHR <- anno_normalize_chr(signal_values$CHR, "internal")
 
       if (need_mut_hyper)
-        SEMseeker:::sem_analyze_single_sample( values = signal_values,thresholds = signal_thresholds, figure="HYPER", sample_detail = local_sample_detail)
+        sem_analyze_single_sample( values = signal_values,thresholds = signal_thresholds, figure="HYPER", sample_detail = local_sample_detail)
       if (need_mut_hypo)
-        SEMseeker:::sem_analyze_single_sample( values = signal_values,thresholds = signal_thresholds, figure="HYPO", sample_detail = local_sample_detail)
+        sem_analyze_single_sample( values = signal_values,thresholds = signal_thresholds, figure="HYPO", sample_detail = local_sample_detail)
       if (need_deltas_hypo)
-        SEMseeker:::sem_delta_single_sample( values = signal_values,thresholds = signal_thresholds , sample_detail = local_sample_detail)
+        sem_delta_single_sample( values = signal_values,thresholds = signal_thresholds , sample_detail = local_sample_detail)
       if (need_deltar_hypo)
-        SEMseeker:::sem_deltar_single_sample ( values = signal_values, thresholds = signal_thresholds,sample_detail = local_sample_detail)
+        sem_deltar_single_sample ( values = signal_values, thresholds = signal_thresholds,sample_detail = local_sample_detail)
     }
 
     if(ssEnv$showprogress)

@@ -10,12 +10,12 @@
 #'
 #' Concordance categories (informational, returned in the \code{category} column):
 #' \itemize{
-#'   \item \code{"bundled"} — both pipelines use the same bundled data
+#'   \item \code{"bundled"} - both pipelines use the same bundled data
 #'     (\code{cytoband_hg19.rda}, \code{dmr_annotation.rda}). Expected rate: 1.0.
-#'   \item \code{"txdb"} — WGBS path uses \code{TxDb} UCSC \code{knownGene}
+#'   \item \code{"txdb"} - WGBS path uses \code{TxDb} UCSC \code{knownGene}
 #'     while the Illumina manifest uses RefSeq. Some probes map to different
 #'     gene symbols between the two sources.
-#'   \item \code{"annotationhub"} — WGBS path uses CpG island BED from
+#'   \item \code{"annotationhub"} - WGBS path uses CpG island BED from
 #'     \code{AnnotationHub} (UCSC). Expected to be near-identical to the
 #'     manifest but boundary probes may shift across shore/shelf strata.
 #' }

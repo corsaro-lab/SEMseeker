@@ -5,7 +5,7 @@
 #
 # install.packages("devtools")
 # require("devtools")
-# install_github("drake69/semseeker", force=TRUE)
+# install_github("corsaro-lab/SEMseeker", force=TRUE)
 # require("semseeker")
 # require(ChAMP)
 #

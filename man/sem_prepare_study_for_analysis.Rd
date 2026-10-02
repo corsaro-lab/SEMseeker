@@ -15,7 +15,7 @@ sem_prepare_study_for_analysis(inference_detail, study_summary, family_test)
 }
 \value{
 list(study_summary, covariates, sample_names, independent_variable,
-  depth_analysis, transformation_y, inference_detail, file_result_prefix)
+  transformation_y, inference_detail, file_result_prefix)
   OR NULL if the job must be skipped (logged via core_log_event).
 }
 \description{

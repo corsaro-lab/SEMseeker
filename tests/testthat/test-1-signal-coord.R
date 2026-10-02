@@ -115,7 +115,7 @@ test_that("io_normalize_signal_input: preserves beta values after conversion", {
 # ---------------------------------------------------------------------------
 
 test_that("core_get_meth_tech: coord-format signal sets tech to WGBS (not an Illumina array)", {
-  tf <- tempFolders[50]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -133,7 +133,7 @@ test_that("core_get_meth_tech: coord-format signal sets tech to WGBS (not an Ill
 # ---------------------------------------------------------------------------
 
 test_that("sem_mutations_get: coord-derived values + coord thresholds — HYPO counts injected outliers", {
-  tf <- tempFolders[34]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -168,7 +168,7 @@ test_that("sem_mutations_get: coord-derived values + coord thresholds — HYPO c
 })
 
 test_that("sem_mutations_get: coord-derived HYPER — detects injected high-beta outliers", {
-  tf <- tempFolders[35]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -196,7 +196,7 @@ test_that("sem_mutations_get: coord-derived HYPER — detects injected high-beta
 })
 
 test_that("sem_mutations_get: coord values on different chromosomes than thresholds → zero results", {
-  tf <- tempFolders[36]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -232,7 +232,7 @@ test_that("sem_delta_single_sample: coord input runs without error and returns N
   # are built from the same samples as the test sample, no outlier is detected and
   # no file is written (correct behaviour — this test verifies no crash).
   # For a test with expected file output, see test-2-bed-file.R and test-2-delta_single_sample.R.
-  tf <- tempFolders[33]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -267,7 +267,7 @@ test_that("sem_delta_single_sample: coord input runs without error and returns N
 test_that("sem_delta_single_sample: detects outliers when thresholds come from separate reference", {
   # Build reference from 3 background samples (all ~0.8), then test against a
   # sample that has 5 genuine HYPO outliers (values ≈ 0.02).
-  tf <- tempFolders[20]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -314,7 +314,7 @@ test_that("sem_delta_single_sample: detects outliers when thresholds come from s
 # ---------------------------------------------------------------------------
 
 test_that("sem_signal_single_sample: writes bedgraph file for coordinate-format sample", {
-  tf <- tempFolders[32]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE, inpute = "median")
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -338,7 +338,10 @@ test_that("sem_signal_single_sample: writes bedgraph file for coordinate-format 
   )
 
   ssEnv       <- SEMseeker:::core_get_session_info()
-  folder      <- file.path(ssEnv$result_folderData, "Control", "SIGNAL_MEAN")
+  # The FIGURE of SIGNAL is the scale of the session, resolved by the same
+  # function the writer uses: the test follows BETA or MVALUE.
+  folder      <- file.path(ssEnv$result_folderData, "Control",
+                           paste0("SIGNAL_", SEMseeker:::io_signal_figure()))
   bed_files   <- list.files(folder, pattern = "\\.bedgraph(\\.gz)?$", recursive = TRUE)
   expect_gte(length(bed_files), 1L)
 })

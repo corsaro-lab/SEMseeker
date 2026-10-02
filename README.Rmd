@@ -21,13 +21,13 @@ knitr::opts_chunk$set(
 ```{r, echo = FALSE, results='asis'}
 library("badger")
 cat(
-  badge_devel("drake69/semseeker", "blue"),
+  badge_devel("corsaro-lab/SEMseeker", "blue"),
   badge_lifecycle("experimental"),
-  badge_codecov("drake69/semseeker"),
-  badge_last_commit("drake69/semseeker"),
-  badge_github_actions("drake69/semseeker"),
+  badge_codecov("corsaro-lab/SEMseeker"),
+  badge_last_commit("corsaro-lab/SEMseeker"),
+  badge_github_actions("corsaro-lab/SEMseeker"),
   badge_repostatus("Active"),
-  "[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5095417.svg)](https://doi.org/10.5281/zenodo.5095417)"
+  "[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5095416.svg)](https://doi.org/10.5281/zenodo.5095416)"
 )
 ```
 <!-- badges: end -->
@@ -57,7 +57,7 @@ Install from GitHub using devtools:
 ```r
 install.packages("devtools")
 library(devtools)
-install_github("drake69/semseeker")
+install_github("corsaro-lab/SEMseeker")
 ```
 
 ### Dependencies
@@ -192,6 +192,6 @@ citation("semseeker")
 ```
 
 The package is archived on Zenodo under the concept DOI
-[10.5281/zenodo.5095417](https://doi.org/10.5281/zenodo.5095417), which always
+[10.5281/zenodo.5095416](https://doi.org/10.5281/zenodo.5095416), which always
 resolves to the latest archived version; every release tag also gets its own
 version DOI.

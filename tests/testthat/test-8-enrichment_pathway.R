@@ -17,8 +17,7 @@
 # ---------------------------------------------------------------------------
 
 test_that("enrich_analysy_add_category returns data unchanged for empty input", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
@@ -30,8 +29,7 @@ test_that("enrich_analysy_add_category returns data unchanged for empty input", 
 })
 
 test_that("enrich_analysy_add_category adds SS_CATEGORY='CHEMICAL' for ctdR source", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
@@ -61,8 +59,7 @@ test_that("enrich_analysy_add_category adds SS_CATEGORY='CHEMICAL' for ctdR sour
 })
 
 test_that("enrich_analysy_add_category maps GO types for WebGestalt source", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
@@ -99,8 +96,7 @@ test_that("enrich_analysy_add_category maps GO types for WebGestalt source", {
 # ---------------------------------------------------------------------------
 
 test_that("enrich_WebGestalt returns NULL gracefully when WebGestaltR not installed", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
@@ -112,7 +108,8 @@ test_that("enrich_WebGestalt returns NULL gracefully when WebGestaltR not instal
       family_test          = "spearman",
       transformation_y     = "",
       transformation_x     = "",
-      depth_analysis       = 1L,
+      aggregation          = "SUM",
+      scope                = "INSTANCE",
       filter_p_value       = FALSE,
       areas_sql_condition  = NA,
       samples_sql_condition = NA,
@@ -135,8 +132,7 @@ test_that("enrich_WebGestalt returns NULL gracefully when WebGestaltR not instal
 })
 
 test_that("enrich_STRINGdb returns NULL gracefully when STRINGdb not installed", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
@@ -146,7 +142,8 @@ test_that("enrich_STRINGdb returns NULL gracefully when STRINGdb not installed",
       family_test          = "spearman",
       transformation_y     = "",
       transformation_x     = "",
-      depth_analysis       = 1L,
+      aggregation          = "SUM",
+      scope                = "INSTANCE",
       filter_p_value       = FALSE,
       stringsAsFactors = FALSE
     )
@@ -165,8 +162,7 @@ test_that("enrich_STRINGdb returns NULL gracefully when STRINGdb not installed",
 })
 
 test_that("enrich_pathfindR returns NULL gracefully when pathfindR not installed", {
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
@@ -176,7 +172,8 @@ test_that("enrich_pathfindR returns NULL gracefully when pathfindR not installed
       family_test          = "spearman",
       transformation_y     = "",
       transformation_x     = "",
-      depth_analysis       = 1L,
+      aggregation          = "SUM",
+      scope                = "INSTANCE",
       filter_p_value       = FALSE,
       stringsAsFactors = FALSE
     )
@@ -207,8 +204,7 @@ test_that("enrich_ctdR runs without error on synthetic association results", {
     testthat::skip("ctdR not installed")
   }
 
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   unlink(tempFolder, recursive = TRUE)
 
   # ── Build synthetic data with injected mutations ──────────────────────────
@@ -236,13 +232,17 @@ test_that("enrich_ctdR runs without error on synthetic association results", {
     verbosity         = verbosity
   )
 
-  # ── association_analysis (depth=3 to produce GENE-area pivot results) ─────
+  # ── association_analysis at scope INSTANCE: enrichment reads SCOPE = INSTANCE
+  #    and AREA = GENE (assoc_results_get()), so the collapsed branch would leave
+  #    it nothing to read ─────────────────────────────────────────────────────
   inference_details <- data.frame(
     independent_variable = "Phenotest",
     family_test          = "spearman",
     transformation_y     = "",
     transformation_x     = "",
-    depth_analysis       = 3L,       # depth=3 reads gene-level pivot files
+
+    aggregation          = "SUM",
+    scope                = "INSTANCE",
     filter_p_value       = FALSE,
     stringsAsFactors     = FALSE
   )
@@ -274,12 +274,15 @@ test_that("enrich_ctdR runs without error on synthetic association results", {
     )
   )
 
-  # Pathway folder should have been created — but skip if the depth=3 regression
-  # (53310c1) is still in effect: depth_analysis=3 produces only DEPTH=1 rows,
-  # leaving no gene-area pivot material for ctdR enrichment.
+  # AI-308: the skip here used to blame a "depth_analysis = 3 regression"
+  # producing only DEPTH = 1 rows. That diagnosis outlived the column it named:
+  # depth was retired, and the run above now asks for SCOPE = INSTANCE
+  # explicitly, which is what enrichment reads. The conditional stays because
+  # ctdR can legitimately produce nothing on a synthetic fixture, but it no
+  # longer asserts a cause it cannot observe.
   pathway_dir <- file.path(tempFolder, "Pathway")
   if (!dir.exists(pathway_dir)) {
-    testthat::skip("Pathway dir not created — depth_analysis=3 regression of 53310c1 leaves no gene-area results for ctdR")
+    testthat::skip("ctdR produced no Pathway output on this fixture")
   }
   testthat::expect_true(dir.exists(pathway_dir))
 

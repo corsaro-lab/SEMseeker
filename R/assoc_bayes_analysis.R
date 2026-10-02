@@ -9,9 +9,13 @@
 #'   case/control grouping variable (default \code{"Sample_Group"}).
 #' @param maxResources numeric. Maximum percentage of CPU cores to use
 #'   (default 90).
-#' @param parallel_strategy character. Parallelisation backend; possible
-#'   values: \code{"none"}, \code{"multisession"}, \code{"sequential"},
-#'   \code{"multicore"}, \code{"cluster"} (default \code{"multicore"}).
+#' @param parallel_strategy character. Parallelisation backend; one of
+#'   \code{"multisession"}, \code{"sequential"}, \code{"cluster"}
+#'   (default \code{"multisession"}).
+#'   Asking for \code{"multicore"} is accepted and converted to
+#'   \code{"multisession"}: it means fork(), which is unsafe with this
+#'   package's native thread pool on every platform that offers it, and
+#'   absent on Windows. The conversion is logged.
 #' @param bayes_case_threshold numeric. Minimum P(case | epimutated) required
 #'   to report a hit (default 0.9).
 #' @param bayes_control_threshold numeric. Maximum P(control | epimutated)
@@ -35,7 +39,7 @@ assoc_bayes_analysis <- function(
     result_folder,
     independent_variable    = "Sample_Group",
     maxResources            = 90,
-    parallel_strategy       = "multicore",
+    parallel_strategy       = "multisession",
     bayes_case_threshold    = 0.9,   # A-09 fix 9: exposed as parameter
     bayes_control_threshold = 0.1,   # A-09 fix 9: exposed as parameter
     ...)
@@ -131,7 +135,7 @@ assoc_bayes_analysis <- function(
       tempDataFrame <- tempDataFrame[, colnames(tempDataFrame) != "Sample_ID",
                                      drop = FALSE]
 
-      # A-09 fix 4: column reference, not string literal — "x" != "y" is always TRUE
+      # A-09 fix 4: column reference, not string literal - "x" != "y" is always TRUE
       tempDataFrame <- subset(tempDataFrame, Sample_Group != "Reference")
       tempDataFrame <- subset(tempDataFrame, Sample_Group != 0)
       tempDataFrame <- as.data.frame(tempDataFrame)
@@ -153,7 +157,7 @@ assoc_bayes_analysis <- function(
         core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
           " [assoc_bayes_analysis] Skipping ", key$MARKER, "/", key$FIGURE,
           "/", key$AREA, "/", key$SUBAREA,
-          " — n_case=", n_case, " n_control=", n_control)
+          " - n_case=", n_case, " n_control=", n_control)
         next
       }
 

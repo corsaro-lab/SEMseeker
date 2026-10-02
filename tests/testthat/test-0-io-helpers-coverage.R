@@ -7,7 +7,6 @@
 ##   io_inference_file_name()       inference-result path assembly (session)
 ##   io_save_latex_table()          data.frame -> .tex via xtable
 ##
-## Session test uses tempFolders index 42.
 
 # ---------------------------------------------------------------------------
 # io_guess_decimal_separator
@@ -59,8 +58,8 @@ test_that(".io_make_probe_id strips the chr prefix and joins with START", {
 # io_inference_file_name
 # ---------------------------------------------------------------------------
 
-test_that("io_inference_file_name assembles a DEPTH/marker path", {
-  tf <- tempFolders[42]
+test_that("io_inference_file_name assembles a marker path", {
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -72,7 +71,6 @@ test_that("io_inference_file_name assembles a DEPTH/marker path", {
     transformation_y      = "",
     independent_variable  = "AGE",
     transformation_x      = "",
-    depth_analysis        = "3",
     samples_sql_condition = NULL
   )
 
@@ -81,7 +79,8 @@ test_that("io_inference_file_name assembles a DEPTH/marker path", {
 
   expect_type(path, "character")
   expect_length(path, 1L)
-  expect_match(path, "DEPTH", ignore.case = TRUE)
+  # AI-255: DEPTH left the path with the concept it named.
+  expect_false(grepl("DEPTH", path, ignore.case = TRUE))
   expect_match(path, "MUTATIONS", ignore.case = TRUE)
   expect_match(path, "\\.csv$", ignore.case = TRUE)
 })

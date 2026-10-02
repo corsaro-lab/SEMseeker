@@ -1,6 +1,34 @@
+#' Compare association results across subsamples of one study
+#'
+#' Same comparison as \code{\link{meta_association_overlaps_studies}} but
+#' within a single study, across the subsamples produced by a replication run.
+#' It joins the per-subsample inference results on the area taxonomy and writes,
+#' per area, which subsamples called it significant.
+#'
+#' @param inference_details Inference specification rows identifying the
+#'   requests whose results are compared.
+#' @param alpha Significance threshold applied to \code{pvalue_column}.
+#' @param adjust_per_area Adjust p-values within each area separately.
+#' @param adjust_globally Adjust p-values across the whole result set.
+#' @param pvalue_column Name of the p-value column to test against
+#'   \code{alpha}. Defaults to the all-scope BH-adjusted column.
+#' @param statistic_parameter Name of the effect-size column carried into the
+#'   comparison table alongside the p-value.
+#' @param adjustment_method Multiple-testing correction passed to
+#'   \code{stats::p.adjust()}.
+#' @param old_label,new_label Optional relabelling of the subsample names in
+#'   the output table.
+#' @param run_prefix Prefix prepended to the output file names, to keep the
+#'   results of several runs side by side.
+#' @param result_folder Folder holding the subsamples' results and receiving
+#'   the comparison output.
+#' @param ... Passed through to the session setup.
+#'
+#' @return Called for its side effect: CSV files written under the inference
+#'   folder. Returns \code{NULL} invisibly, and early if no results are found.
 # compare inference associations of different sub samples
 #' @export
-assoc_intra_study_association_subsamples_overlaps <- function(inference_details,alpha = 0.05, adjust_per_area = FALSE,
+meta_association_overlaps_subsamples <- function(inference_details,alpha = 0.05, adjust_per_area = FALSE,
   adjust_globally = FALSE,pvalue_column="PVALUE_ADJ_ALL_BH",statistic_parameter, adjustment_method = "BH",
   old_label = NULL, new_label = NULL, run_prefix = "",
   result_folder, ...)
@@ -37,8 +65,9 @@ assoc_intra_study_association_subsamples_overlaps <- function(inference_details,
     for (i in seq_len(nrow(inference_details)))
     {
       # get the inference detail
-      temp_res <- assoc_results_get(inference_detail = inference_details[i,], marker = MARKER, area= AREA,
-        adjust_per_area = adjust_per_area, adjust_globally = adjust_globally, pvalue_column= pvalue_column,
+      temp_res <- assoc_results_get(inference_detail = inference_details[i,], marker = MARKER,
+        area = AREA, scope = "INSTANCE",
+        pvalue_column= pvalue_column,
         adjustment_method = adjustment_method, significance = NULL)
       if(nrow(temp_res) != 0)
       {
@@ -61,7 +90,8 @@ assoc_intra_study_association_subsamples_overlaps <- function(inference_details,
     for (marker in unique(aggregated_results$MARKER))
     {
       tt <- subset(aggregated_results, MARKER == marker)
-      tt <- subset(tt, DEPTH == 3 )
+      # AI-255: per-instance artefacts, said by the taxonomy
+      tt <- subset(tt, SCOPE == "INSTANCE")
 
       tt$KEY <- paste0(tt$AREA,"_",tt$SUBAREA,"_",tt$MARKER,"_",tt$FIGURE,"_",tt$AREA_OF_TEST)
       SPLIT <- split(tt$KEY, tt$SAMPLES_SQL_CONDITION)
@@ -74,10 +104,10 @@ assoc_intra_study_association_subsamples_overlaps <- function(inference_details,
 
       if(statistic_parameter!="")
       {
-        tt <- tt[,c("AREA","SUBAREA","MARKER","FIGURE","AREA_OF_TEST","DEPTH",statistic_parameter, pvalue_column)]
-        # get only "AREA","SUBAREA","MARKER","FIGURE","AREA_OF_TEST","DEPTH" common to SAMPLES_SQL_CONDITION
+        tt <- tt[,c("MARKER","FIGURE","SCOPE","AREA","SUBAREA","AGGREGATION","AREA_OF_TEST",statistic_parameter, pvalue_column)]
+        # get only the taxonomy key + AREA_OF_TEST common to SAMPLES_SQL_CONDITION
         tt <- tt %>%
-          dplyr::group_by(.data$AREA, .data$SUBAREA, .data$MARKER, .data$FIGURE, .data$AREA_OF_TEST, .data$DEPTH) %>%
+          dplyr::group_by(.data$AREA, .data$SUBAREA, .data$MARKER, .data$FIGURE, .data$SCOPE, .data$AGGREGATION, .data$AREA_OF_TEST) %>%
           dplyr::summarise(
             alpha = max(get(pvalue_column), na.rm = TRUE),
             statistic_parameter = mean(get(statistic_parameter), na.rm = TRUE)
@@ -87,10 +117,10 @@ assoc_intra_study_association_subsamples_overlaps <- function(inference_details,
       }
       else
       {
-        tt <- tt[,c("AREA","SUBAREA","MARKER","FIGURE","AREA_OF_TEST","DEPTH",pvalue_column)]
+        tt <- tt[,c("MARKER","FIGURE","SCOPE","AREA","SUBAREA","AGGREGATION","AREA_OF_TEST",pvalue_column)]
         # summarise grouping by "AREA","SUBAREA","MARKER","FIGURE","AREA_OF_TEST" and calculate the max of the pvalues
         tt <- tt %>%
-          dplyr::group_by(.data$AREA, .data$SUBAREA, .data$MARKER, .data$FIGURE, .data$AREA_OF_TEST, .data$DEPTH) %>%
+          dplyr::group_by(.data$AREA, .data$SUBAREA, .data$MARKER, .data$FIGURE, .data$SCOPE, .data$AGGREGATION, .data$AREA_OF_TEST) %>%
           dplyr::summarise(
             alpha = max(get(pvalue_column), na.rm = TRUE)
           ) %>%
@@ -118,8 +148,9 @@ assoc_intra_study_association_subsamples_overlaps <- function(inference_details,
       # for each SAMPLES_SQL_CONDITION in inference_details
       for (i in seq_len(nrow(inference_details)))
       {
-        temp_res <- assoc_results_get(inference_detail = inference_details[i,], marker = MARKER, area= AREA,
-          adjust_per_area = adjust_per_area, adjust_globally = adjust_globally, pvalue_column= pvalue_column,
+        temp_res <- assoc_results_get(inference_detail = inference_details[i,], marker = MARKER,
+          area = AREA, scope = "INSTANCE",
+          pvalue_column= pvalue_column,
           adjustment_method = adjustment_method, significance = signif)
         if(nrow(temp_res) != 0)
           temp_res$SAMPLES_SQL_CONDITION <- core_name_cleaning(inference_details[i,"samples_sql_condition"])

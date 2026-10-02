@@ -5,12 +5,12 @@
 
 <!-- badges: start -->
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5095417.svg)](https://doi.org/10.5281/zenodo.5095417)
-[![](https://img.shields.io/badge/devel%20version-0.11.0-blue.svg)](https://github.com/drake69/semseeker)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5095416.svg)](https://doi.org/10.5281/zenodo.5095416)
+[![](https://img.shields.io/badge/devel%20version-0.99.4-blue.svg)](https://github.com/corsaro-lab/SEMseeker)
 [![](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
-[![](https://codecov.io/gh/drake69/semseeker/branch/main/graph/badge.svg)](https://codecov.io/gh/drake69/semseeker)
-[![](https://img.shields.io/github/last-commit/drake69/semseeker.svg)](https://github.com/drake69/semseeker/commits/main)
-[![R build status](https://github.com/drake69/semseeker/workflows/R-CMD-check/badge.svg)](https://github.com/drake69/semseeker/actions)
+[![](https://codecov.io/gh/corsaro-lab/SEMseeker/branch/main/graph/badge.svg)](https://codecov.io/gh/corsaro-lab/SEMseeker)
+[![](https://img.shields.io/github/last-commit/corsaro-lab/SEMseeker.svg)](https://github.com/corsaro-lab/SEMseeker/commits/main)
+[![R build status](https://github.com/corsaro-lab/SEMseeker/workflows/R-CMD-check/badge.svg)](https://github.com/corsaro-lab/SEMseeker/actions)
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 
 <!-- badges: end -->
@@ -40,7 +40,7 @@ Install from GitHub using devtools:
 ```r
 install.packages("devtools")
 library(devtools)
-install_github("drake69/semseeker")
+install_github("corsaro-lab/SEMseeker")
 ```
 
 ### System requirements
@@ -209,6 +209,6 @@ citation("semseeker")
 ```
 
 The package is archived on Zenodo under the concept DOI
-[10.5281/zenodo.5095417](https://doi.org/10.5281/zenodo.5095417), which always
+[10.5281/zenodo.5095416](https://doi.org/10.5281/zenodo.5095416), which always
 resolves to the latest archived version; every release tag also gets its own
 version DOI.

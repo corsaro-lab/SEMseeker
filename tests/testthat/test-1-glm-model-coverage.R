@@ -6,14 +6,13 @@
 ## Uses synthetic data — this exercises the statistical plumbing, not a
 ## biological claim, so a controlled random design is appropriate.
 ##
-## Uses tempFolders indices 40-41 to avoid collision with other test files.
 
 .glm_key <- function() {
   list(AREA = "GENE", SUBAREA = "TSS200", MARKER = "MUTATIONS", FIGURE = "K850")
 }
 
 test_that("assoc_glm_model (gaussian) returns AIC/BIC, p-values and residual diagnostics", {
-  tf <- tempFolders[40]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
@@ -41,7 +40,7 @@ test_that("assoc_glm_model (gaussian) returns AIC/BIC, p-values and residual dia
 })
 
 test_that("assoc_glm_model (binomial) fits a logistic model and reports AIC", {
-  tf <- tempFolders[41]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 

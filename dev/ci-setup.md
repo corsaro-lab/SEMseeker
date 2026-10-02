@@ -36,7 +36,7 @@ re-enabled once macOS CI was confirmed green (run `23841500938`, 18m42s).
 - All active CI checks must pass before merge (`strict: true`)
 - Configured with:
   ```bash
-  gh api --method PUT repos/drake69/semseeker/branches/main/protection --input - <<'EOF'
+  gh api --method PUT repos/corsaro-lab/SEMseeker/branches/main/protection --input - <<'EOF'
   {
     "required_status_checks": {
       "strict": true,

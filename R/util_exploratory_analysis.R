@@ -296,7 +296,7 @@ util_exploratory_analysis <- function(categorical_variables,numerical_variables,
       # calculate mean and standard deviation
       mean <- paste(round(mean(sample_sheet[,variable], na.rm = TRUE),2) ," \u00b1",round(sd(sample_sheet[,variable], na.rm = TRUE),2))
       # calculate median
-      median <- round(median(sample_sheet[,variable], na.rm = TRUE))
+      median <- round(stats::median(sample_sheet[,variable], na.rm = TRUE))
       # calculate min and max
       min <- round(min(sample_sheet[,variable], na.rm = TRUE),2)
       max <- round(max(sample_sheet[,variable], na.rm = TRUE),2)
@@ -378,7 +378,7 @@ util_exploratory_analysis <- function(categorical_variables,numerical_variables,
   rm(signal_data)
   gc()
   signal_data <- io_source_data_get(signal_data_original)
-  # AI-224: same normalisation as above — sample_sheet identifiers were already
+  # AI-224: same normalisation as above - sample_sheet identifiers were already
   # normalised, so only the freshly reloaded matrix needs it here.
   signal_data <- core_normalize_sample_ids(sample_sheet = NULL,
                                            signal_data = signal_data,

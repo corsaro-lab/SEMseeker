@@ -71,8 +71,8 @@ test_that("AI-098 AREA skip: POSITION is no-op on Illumina", {
   }
 })
 
-test_that("AI-098 source-level: skip predicates live in sem_run_depth_n_marker", {
-  src <- paste(deparse(SEMseeker:::sem_run_depth_n_marker), collapse = "\n")
+test_that("AI-098 source-level: skip predicates live in assoc_run_marker", {
+  src <- paste(deparse(SEMseeker:::assoc_run_marker), collapse = "\n")
   expect_true(
     grepl('key\\$AREA\\s*==\\s*"POSITION"\\s*&&\\s*!tech_is_longread', src),
     info = "AI-098 POSITION skip on Illumina must be present"

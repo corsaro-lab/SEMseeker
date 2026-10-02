@@ -1,13 +1,44 @@
-# compare inference associations of differente studies
+#' Compare association results across studies
+#'
+#' Reads the inference results of several studies from a shared result folder,
+#' joins them on the area taxonomy (marker, figure, area, subarea) and reports,
+#' per area, which studies called it significant. The aggregated table and one
+#' table per marker are written as CSV under the inference folder; the function
+#' is called for those files and returns nothing.
+#'
+#' @param inference_detail One row of the inference specification identifying
+#'   the request whose results are compared. If more than one row is passed the
+#'   first supplies the run-level parameters.
+#' @param studies Character vector of study names to compare. Each must have
+#'   its results already present under \code{result_folder}.
+#' @param alpha Significance threshold applied to \code{pvalue_column}.
+#' @param adjust_per_area Adjust p-values within each area separately.
+#' @param adjust_globally Adjust p-values across the whole result set.
+#' @param pvalue_column Name of the p-value column to test against
+#'   \code{alpha}. Defaults to the all-scope BH-adjusted column.
+#' @param statistic_parameter Name of the effect-size column carried into the
+#'   comparison table alongside the p-value.
+#' @param adjustment_method Multiple-testing correction passed to
+#'   \code{stats::p.adjust()}.
+#' @param result_folder Folder holding the studies' results and receiving the
+#'   comparison output.
+#' @param ... Passed through to the session setup.
+#'
+#' @return Called for its side effect: CSV files written under the inference
+#'   folder. Returns \code{NULL} invisibly, and early if no results are found.
+# compare inference associations of different studies
 #' @export
-assoc_inter_study_association_overlaps <- function(inference_detail, studies,alpha = 0.05, adjust_per_area = FALSE,
+meta_association_overlaps_studies <- function(inference_detail, studies,alpha = 0.05, adjust_per_area = FALSE,
   adjust_globally = FALSE,pvalue_column="PVALUE_ADJ_ALL_BH",statistic_parameter, adjustment_method = "BH",
   result_folder, ...)
 {
 
   pvalue_column <- core_name_cleaning(pvalue_column)
-  if (nrow(inference_detail) >1)
-    inference_detail <- subset(inference_detail, depth_analysis == 3)[1,]
+  # AI-255: this used to keep the "depth 3" row, i.e. the per-area one. The rows
+  # are joined on the taxonomy below, so which detail supplies the run-level
+  # parameters is no longer a question about depth: take the first.
+  if (nrow(inference_detail) > 1)
+    inference_detail <- inference_detail[1, ]
 
   if (nrow(inference_detail) ==0)
   {
@@ -35,8 +66,9 @@ assoc_inter_study_association_overlaps <- function(inference_detail, studies,alp
       # get the inference details for the study
       result_folder_study <- studies[s,"RESULT_FOLDER"]
       ssEnv <- core_init_env( result_folder =  result_folder_study, start_fresh = FALSE,alpha=alpha, ...)
-      temp_res <- assoc_results_get(inference_detail = inference_detail, marker = MARKER, area= AREA,
-        adjust_per_area = adjust_per_area, adjust_globally = adjust_globally, pvalue_column= pvalue_column,
+      temp_res <- assoc_results_get(inference_detail = inference_detail, marker = MARKER,
+        area = AREA, scope = "INSTANCE",
+        pvalue_column= pvalue_column,
         adjustment_method = adjustment_method, significance = NULL)
       if(nrow(temp_res) != 0)
         temp_res$STUDY <- studies[s,"STUDY"]
@@ -58,7 +90,8 @@ assoc_inter_study_association_overlaps <- function(inference_detail, studies,alp
     for (m in unique(aggregated_study_results$MARKER))
     {
       tt <- aggregated_study_results[aggregated_study_results$MARKER == m, ]
-      tt <- tt[tt$DEPTH == 3, ]
+      # AI-255: the per-instance artefacts, said by the taxonomy instead of by a depth number
+      tt <- tt[tt$SCOPE == "INSTANCE", ]
 
       tt$KEY <- paste0(tt$AREA,"_",tt$SUBAREA,"_",tt$MARKER,"_",tt$FIGURE,"_",tt$AREA_OF_TEST)
       SPLIT <- split(tt$KEY, tt$STUDY)
@@ -71,10 +104,10 @@ assoc_inter_study_association_overlaps <- function(inference_detail, studies,alp
 
       if(statistic_parameter!="")
       {
-        tt <- tt[,c("AREA","SUBAREA","MARKER","FIGURE","AREA_OF_TEST","DEPTH",statistic_parameter, pvalue_column)]
-        # get only "AREA","SUBAREA","MARKER","FIGURE","AREA_OF_TEST","DEPTH" common to STUDY
+        tt <- tt[,c("MARKER","FIGURE","SCOPE","AREA","SUBAREA","AGGREGATION","AREA_OF_TEST",statistic_parameter, pvalue_column)]
+        # get only the taxonomy key + AREA_OF_TEST common to STUDY
         tt <- tt %>%
-          dplyr::group_by(.data$AREA, .data$SUBAREA, .data$MARKER, .data$FIGURE, .data$AREA_OF_TEST, .data$DEPTH) %>%
+          dplyr::group_by(.data$AREA, .data$SUBAREA, .data$MARKER, .data$FIGURE, .data$SCOPE, .data$AGGREGATION, .data$AREA_OF_TEST) %>%
           dplyr::summarise(
             alpha = max(get(pvalue_column), na.rm = TRUE),
             statistic_parameter = mean(get(statistic_parameter), na.rm = TRUE)
@@ -84,10 +117,10 @@ assoc_inter_study_association_overlaps <- function(inference_detail, studies,alp
       }
       else
       {
-        tt <- tt[,c("AREA","SUBAREA","MARKER","FIGURE","AREA_OF_TEST","DEPTH",pvalue_column)]
+        tt <- tt[,c("MARKER","FIGURE","SCOPE","AREA","SUBAREA","AGGREGATION","AREA_OF_TEST",pvalue_column)]
         # summarise grouping by "AREA","SUBAREA","MARKER","FIGURE","AREA_OF_TEST" and calculate the max of the pvalues
         tt <- tt %>%
-          dplyr::group_by(.data$AREA, .data$SUBAREA, .data$MARKER, .data$FIGURE, .data$AREA_OF_TEST, .data$DEPTH) %>%
+          dplyr::group_by(.data$AREA, .data$SUBAREA, .data$MARKER, .data$FIGURE, .data$SCOPE, .data$AGGREGATION, .data$AREA_OF_TEST) %>%
           dplyr::summarise(
             alpha = max(get(pvalue_column), na.rm = TRUE)
           ) %>%
@@ -104,7 +137,7 @@ assoc_inter_study_association_overlaps <- function(inference_detail, studies,alp
         # remove statistic_parameter column
         old_results <- old_results[,!colnames(old_results) %in% c(statistic_parameter)]
         if(!pvalue_column %in% colnames(old_results))
-          tt <- merge(old_results, tt, all = TRUE, by = c("AREA","SUBAREA","MARKER","FIGURE","AREA_OF_TEST","DEPTH"))
+          tt <- merge(old_results, tt, all = TRUE, by = c("MARKER","FIGURE","SCOPE","AREA","SUBAREA","AGGREGATION","AREA_OF_TEST"))
         # remove KEY COLUMN
         tt$KEY <- NULL
       }
@@ -124,8 +157,9 @@ assoc_inter_study_association_overlaps <- function(inference_detail, studies,alp
         # get the inference details for the study
         result_folder_study <- studies[s,"RESULT_FOLDER"]
         ssEnv <- core_init_env( result_folder =  result_folder_study, start_fresh = FALSE,alpha=alpha, ...)
-        temp_res <- assoc_results_get(inference_detail = inference_detail, marker = MARKER, area= AREA,
-          adjust_per_area = adjust_per_area, adjust_globally = adjust_globally, pvalue_column= pvalue_column,
+        temp_res <- assoc_results_get(inference_detail = inference_detail, marker = MARKER,
+          area = AREA, scope = "INSTANCE",
+          pvalue_column= pvalue_column,
           adjustment_method = adjustment_method, significance = signif)
         if(nrow(temp_res) != 0)
           temp_res$STUDY <- studies[s,"STUDY"]
@@ -171,7 +205,7 @@ assoc_inter_study_association_overlaps <- function(inference_detail, studies,alp
 
     # AI-106 (2026-06-09): removed the legacy round-trip
     #   gsub("-","_") then gsub("_","-")
-    # which forced ALL underscores into dashes — a posticcio for CSV
+    # which forced ALL underscores into dashes - a posticcio for CSV
     # written with the old sanitisation that incidentally corrupted
     # WGBS coordinate names ("chr1_12345_12346" → "chr1-12345-12346").
     # Post-AI-106 all CSVs preserve raw names from the upstream
@@ -224,7 +258,7 @@ assoc_inter_study_association_overlaps <- function(inference_detail, studies,alp
             next
           # AI-044 (2026-06-09): use shared `util_pretty_label()` helper.
           categories <- util_pretty_label(categories)
-          folder <- io_dir_check_and_create(ssEnv$result_folderChart,c("OVERLAPS",areas_sql_condition))
+          folder <- io_dir_check_and_create(ssEnv$result_folderChart,c("OVERLAPS",core_name_cleaning(inference_detail$areas_sql_condition)))
           filename <-
             paste(
               folder,  "/",

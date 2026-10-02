@@ -6,7 +6,6 @@
 ##   .core_init_env_check_kwargs()    explicit-args guard (pass-through)
 ##   .core_apply_defaults()           apply a defaults spec onto the session
 ##
-## Session test uses tempFolders index 43.
 
 # ---------------------------------------------------------------------------
 # core_remove_empty_folders
@@ -50,7 +49,7 @@ test_that(".core_init_env_check_kwargs passes explicit args through unchanged", 
 # ---------------------------------------------------------------------------
 
 test_that(".core_apply_defaults writes default values into the session", {
-  tf <- tempFolders[43]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 

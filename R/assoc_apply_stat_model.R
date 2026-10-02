@@ -6,11 +6,12 @@
 #' @param covariates vector of covariates
 #' @param key key to identify file to elaborate
 #' @param transformation_y transformation_y to apply to covariates, burden and independent variable
-#' @param dototal do a total per area
 #' @param session_folder where to save log file
 #' @param independent_variable independent variable name
-#' @param depth_analysis depth's analysis
 #' @param samples_sql_condition SQL condition string to filter samples
+#' @param inference_detail one row of the inference specification, carrying the
+#'   per-request fields (scope, aggregation, transformation_x) that the model
+#'   call needs; NULL falls back to the defaults
 #' @param ... extra parameters
 #'
 #' @return A data.frame with one row per tested genomic area, including columns
@@ -21,8 +22,8 @@
 #' @importFrom doFuture %dofuture%
 #'
 #'
-assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = NULL, key, transformation_y, dototal,
-  session_folder, independent_variable, depth_analysis=3,samples_sql_condition,
+assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = NULL, key, transformation_y,
+  session_folder, independent_variable, samples_sql_condition,
   inference_detail = NULL, ...)
 {
   arguments <- list(...)
@@ -47,10 +48,8 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
       covariates           = covariates,
       key                  = key,
       transformation_y     = transformation_y,
-      dototal              = dototal,
       session_folder       = session_folder,
       independent_variable = independent_variable,
-      depth_analysis       = depth_analysis,
       samples_sql_condition = samples_sql_condition,
       inference_detail     = inference_detail,
       ...
@@ -58,7 +57,7 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
   }
 
   # AI-044 (2026-06-08): bulk path for logistic regression. Same
-  # dispatch=guard pattern as limma/voom — guard against missing
+  # dispatch=guard pattern as limma/voom - guard against missing
   # Rfast lives inside assoc_glm_model_bulk(). Returns one row per probe
   # with the legacy schema (per-coef PVALUE/ESTIMATE + top-level
   # PVALUE/PVALUE_ADJ) so downstream CSV machinery doesn't change.
@@ -70,23 +69,22 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
       covariates           = covariates,
       key                  = key,
       transformation_y     = transformation_y,
-      dototal              = dototal,
       session_folder       = session_folder,
       independent_variable = independent_variable,
-      depth_analysis       = depth_analysis,
       samples_sql_condition = samples_sql_condition,
+        inference_detail     = inference_detail,
       ...
     ))
   }
 
-  # Session info is only needed for the per-area (foreach) path —
+  # Session info is only needed for the per-area (foreach) path -
   # the batch path above is intentionally session-independent so it
   # can be exercised in unit tests without a materialised session.
   ssEnv <- core_get_session_info()
 
   g_end <- ncol(tempDataFrame)
   transformation_x_local <- if (!is.null(inference_detail$transformation_x)) as.character(inference_detail$transformation_x) else "none"
-  prepared_data <- io_data_preparation(family_test,transformation_y,tempDataFrame, independent_variable, g_start, g_end, FALSE, covariates, depth_analysis, key, transformation_x = transformation_x_local)
+  prepared_data <- io_data_preparation(family_test,transformation_y,tempDataFrame, independent_variable, g_start, g_end, covariates, key, transformation_x = transformation_x_local)
   # if(ncol(prepared_data$tempDataFrame) != ncol(tempDataFrame))
   #   return(NULL)
 
@@ -110,7 +108,7 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
   if (anyDuplicated(safe_cols)) {
     safe_cols <- make.unique(safe_cols, sep = "_")
   }
-  safe_to_real <- setNames(real_cols, safe_cols)
+  safe_to_real <- stats::setNames(real_cols, safe_cols)
   colnames(tempDataFrame) <- safe_cols
 
   cols <- colnames(tempDataFrame)
@@ -128,7 +126,7 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
     "io_data_preparation","apply_stat_model_sig.formula","assoc_quantreg_permutation_model",
     "assoc_apply_stat_model_sig_formula", "data_distribution_info", "assoc_glm_model", "assoc_test_model", "assoc_test_model_paired", "Breusch_Pagan_pvalue",
     "progress_bar","progression_index", "progression", "progressor_uuid", "owner_session_uuid", "trace","signal_values","ssEnv","g_start",
-    "assoc_execute_model", "assoc_is_family_dicotomic", "core_log_event","mediate","mediation","core_get_session_info", "samples_sql_condition",
+    "assoc_execute_model", "assoc_is_family_dicotomic", "core_log_event","mediate","mediation","core_get_session_info","core_update_session_info", "samples_sql_condition",
     # AI-106 (2026-06-09): safe_to_real mapping must reach each foreach worker
     "safe_to_real")
 
@@ -137,9 +135,16 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
 
   core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " I'll perform:",g_end - g_start," tests." )
   result_temp <- data.frame()
-  # .packages loads SEMseeker in each worker so SEMseeker::: lookups resolve.
-  # Internal helpers are prefixed with SEMseeker::: because they live in the
-  # namespace (not in the caller's frame) and .export does not cover them.
+  # How the internal helpers reach a worker. .packages attaches SEMseeker there,
+  # and an attach exposes the EXPORTED functions only, so it is not what carries
+  # them. .export is: it resolves each name in the frame this call is made from,
+  # and that frame's enclosure is the namespace, so a name living there is found
+  # and the function object travels with the task.
+  #
+  # Measured, because an earlier version of this comment asserted the opposite and
+  # the calls below were qualified with the namespace on that basis - while the
+  # same names were already in the list above. The prefix was doing nothing, and
+  # R CMD check was reporting it.
   result_temp <- foreach::foreach(
     g = g_start:g_end,
     .combine = plyr::rbind.fill,
@@ -157,8 +162,8 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
     # plyr::rbind.fill silently ignores NULL results.
     # AI-041: in-memory only; saveRDS happens at end-of-batch in the caller,
     # not per-gene (was the hot-path culprit causing ~5-7x slowdown).
-    SEMseeker:::core_update_session_info(ssEnv, save_to_disk = FALSE)
-    ssEnv <- SEMseeker:::core_get_session_info()
+    core_update_session_info(ssEnv, save_to_disk = FALSE)
+    ssEnv <- core_get_session_info()
 
     burdenValue <- cols[g]
     if(ssEnv$showprogress)
@@ -168,8 +173,8 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
 
 
       #
-      sig.formula <- SEMseeker:::assoc_apply_stat_model_sig_formula(family_test, burdenValue, independent_variable, covariates)
-      model_result <- SEMseeker:::assoc_execute_model(family_test, tempDataFrame, sig.formula, burdenValue, independent_variable, transformation_y, (g_end - g_start < 10), samples_sql_condition, key)
+      sig.formula <- assoc_apply_stat_model_sig_formula(family_test, burdenValue, independent_variable, covariates)
+      model_result <- assoc_execute_model(family_test, tempDataFrame, sig.formula, burdenValue, independent_variable, transformation_y, (g_end - g_start < 10), samples_sql_condition, key)
 
       #
       local_result <- data.frame("INDIPENDENT_VARIABLE" = independent_variable)
@@ -177,10 +182,21 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
       local_result$FIGURE <-  as.character(key$FIGURE)
       local_result$AREA <-  as.character(key$AREA)
       local_result$SUBAREA <-  as.character(key$SUBAREA)
+      # AI-248: which operator reduced the positions to this number. Absent for
+      # the depths that do not aggregate, present wherever the caller declared
+      # it - and part of the row identity, so two aggregations of the same
+      # scope never collapse into one.
+      if (!is.null(key$AGGREGATION))
+        local_result$AGGREGATION <- as.character(key$AGGREGATION)
+      # AI-255: SCOPE completes the identity of the row. Without it a burden over
+      # the whole sample and a burden per gene are two rows that differ only in
+      # AREA, which reads as two region classes rather than as two extents.
+      if (!is.null(key$SCOPE))
+        local_result$SCOPE <- as.character(key$SCOPE)
       # AI-106 (2026-06-09): reverse-map back to the upstream raw name
       # (HLA-A, chr10:100028204-100028508, ...) so the CSV preserves it
       # for enrichment / resume match. Fallback to burdenValue itself if
-      # the mapping is missing (defensive — should not happen).
+      # the mapping is missing (defensive - should not happen).
       local_result$AREA_OF_TEST <- if (burdenValue %in% names(safe_to_real)) {
         safe_to_real[[burdenValue]]
       } else {
@@ -191,7 +207,7 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
       local_result$COVARIATES <- ifelse(length(covariates)>0,paste0(covariates,collapse=" "),NA)
       # local_result$bartlett.pvalue <- data_distribution_info(family_test, tempDataFrame, burdenValue, independent_variable)
 
-      if (SEMseeker:::assoc_is_family_dicotomic(family_test))
+      if (assoc_is_family_dicotomic(family_test))
       {
         #
         selector <- tempDataFrame[, independent_variable]==independent_variable1stLevel
@@ -201,20 +217,20 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
 
         if(length(stats::na.omit(independent_variableData2ndLevel))==0 | length(stats::na.omit(independent_variableData1stLevel))==0)
         {
-          SEMseeker:::core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " I skip this test because one of the two groups is empty." )
+          core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " I skip this test because one of the two groups is empty." )
           colnames(local_result) <- toupper(colnames(local_result))
           local_result$PVALUE <- NA
         }
       }
 
-      if (!SEMseeker:::assoc_is_family_dicotomic(family_test))
+      if (!assoc_is_family_dicotomic(family_test))
       {
         dependentVariableData <- as.numeric(stats::na.omit(tempDataFrame[!is.na(tempDataFrame[,independent_variable]),burdenValue]))
         independent_variableData <- as.numeric(stats::na.omit(tempDataFrame[  ,independent_variable]))
 
         if(sum(is.na(dependentVariableData)>0) | sum(is.na(independent_variableData)))
         {
-          SEMseeker:::core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), "The submitted data are not factorial or numeric.")
+          core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), "The submitted data are not factorial or numeric.")
           stop()
         }
       }
@@ -229,7 +245,7 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
       local_result
     }
   }, error = function(e) {
-    SEMseeker:::core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
               " Skipping area '", if(exists("burdenValue")) burdenValue else "?",
               "': ", conditionMessage(e))
     NULL
@@ -261,16 +277,16 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
     # result_temp <- unique(result_temp)
     result_temp <- result_temp %>% dplyr::distinct()
 
-    if (!is.null(dim(result_temp)) )
-    {
-      if ("PVALUE" %in% colnames(result_temp))
-      {
-        selector <- grepl("TOTAL",result_temp$AREA_OF_TEST)
-        result_temp[selector,"PVALUE_ADJ"]  <- (stats::p.adjust(result_temp[selector,"PVALUE"]  ,method = "BH"))
-        selector <- !grepl("TOTAL",result_temp$AREA_OF_TEST)
-        result_temp[selector,"PVALUE_ADJ"]  <- (stats::p.adjust(result_temp[selector,"PVALUE"]  ,method = "BH"))
-      }
-    }
+    # AI-257: no adjustment here any more. What this function holds is one
+    # chunk - assoc_run_marker() splits a pivot at ceiling(6e6 / ncol)
+    # rows - so any family it could form is a memory parameter, not a
+    # statistical choice. assoc_analysis_save_results() is the only place where
+    # every row of a family is together, and it computes all three levels there.
+    #
+    # The block removed here also split on `grepl("TOTAL", AREA_OF_TEST)`, and
+    # TOTAL went with AI-255: it labelled rows built by composing aggregates
+    # over a partition that is not disjoint. The predicate had been false on
+    # every row since, so the two branches had quietly become one.
     colnames(result_temp) <- core_name_cleaning(colnames(result_temp))
     return(result_temp)
   }

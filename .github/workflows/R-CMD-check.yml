@@ -47,6 +47,14 @@ jobs:
     runs-on: ${{ matrix.config.os }}
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
 
+    # An explicit deadline, so exceeding it is a TIMEOUT — which GitHub reports
+    # as such and whose logs it still uploads — rather than an abrupt kill.
+    # Windows run 31852499666 failed with no failed step and no log at all
+    # (`BlobNotFound`): nothing survived to say why, and the successful runs of
+    # the days before had taken LONGER, so it was not the default deadline.
+    # 330 minutes leaves headroom over the ~5h a healthy full matrix takes.
+    timeout-minutes: 330
+
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.set-matrix.outputs.matrix) }}
@@ -150,14 +158,52 @@ jobs:
           #                                  test-5-annotation-concordance.R,
           #                                  test-5-area-granges-build.R (genomic
           #                                  feature joins)
+          # limma FIRST, and on its own. The three Illumina annotation packages
+          # load minfi while they install, minfi needs limma, and asking for all
+          # of them in one call does not guarantee limma is built before them:
+          # when limma came later in the same vector the annotation packages
+          # failed with "there is no package called 'limma'", left the runner
+          # with no annotation at all, and the suite fell back to the row-count
+          # technology heuristic and broke. A warm dependency cache hid this for
+          # months; moving the repository to an organisation reset the cache and
+          # exposed it.
+          #
+          # KEGGREST joins limma in that first call, and for the same reason one
+          # layer deeper. It is nobody's direct dependency here: bumphunter
+          # loads it, and so does AnnotationDbi, and both are loaded by the
+          # packages of the vector below while they are being load-tested. Asked
+          # for as part of that vector, KEGGREST was built LAST - after every
+          # package that needs it - so the three Illumina annotation packages
+          # and TxDb.Hsapiens.UCSC.hg19.knownGene all failed with "there is no
+          # package called 'KEGGREST'" and were removed from the library. The
+          # suite then failed at the first call that needs an annotation, which
+          # reads as a defect of the package and is not one.
+          #
+          # options(Ncpus = 1L) above does not prevent this. Serialising the
+          # installs stopped one package from being load-tested before another
+          # was built, but it does not make BiocManager order a vector
+          # topologically: the order asked for is the order used.
+          BiocManager::install(c("limma", "KEGGREST"), ask = FALSE, update = FALSE)
           BiocManager::install(
             c(
               "IlluminaHumanMethylationEPICanno.ilm10b4.hg19",
               "IlluminaHumanMethylation450kanno.ilmn12.hg19",
               "IlluminaHumanMethylation27kanno.ilmn12.hg19",
-              "limma",
               "AnnotationHub",
-              "TxDb.Hsapiens.UCSC.hg19.knownGene"
+              "TxDb.Hsapiens.UCSC.hg19.knownGene",
+              # org.Hs.eg.db  NOT optional for the GRanges backend, despite the
+              #          fallback in .anno_entrez_to_symbol(). TxDb keys genes by
+              #          Entrez id; without the symbol database the label of a
+              #          gene region stays an Entrez id, and that label becomes
+              #          AREA in the results. The Illumina path labels with
+              #          symbols, so the two backends would key the same gene two
+              #          ways and nothing would join. test-5-area-granges-build.R
+              "org.Hs.eg.db",
+              # qvalue   test-0-taxonomy.R — the `q` estimator of
+              #          .assoc_adjust_vector(). Without it the test skips, and
+              #          test-0-suggests-installed.R fails on purpose: a silent
+              #          skip hides a coverage gap instead of reporting one.
+              "qvalue"
             ),
             ask = FALSE, update = FALSE
           )
@@ -177,3 +223,22 @@ jobs:
           upload-snapshots: true
           args: ${{ matrix.config.args }}
           error-on: '"error"'
+
+      # `if: always()` so the evidence survives a failure. check-r-package
+      # already uploads its own artifacts on failure, but only when it gets to
+      # finish; this keeps whatever R CMD check had written to disk up to the
+      # moment it stopped — which is exactly what was missing when the Windows
+      # job died without a log.
+      - name: Upload check directory
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: check-${{ matrix.config.os }}-${{ matrix.config.r }}
+          path: |
+            check/**/*.log
+            check/**/*.out
+            check/**/*.fail
+            check/**/00check.log
+            check/**/tests/**
+          if-no-files-found: ignore
+          retention-days: 14

@@ -53,21 +53,21 @@ enrich_lollipop_plot <- function(data, rules, file_prfx,path, disease,  top=50, 
     # # Create the lollipop plot with vertical dodge and shapes based on Enrichment
     # ggplot(data_to_plot, aes(x = log_fdr, y = Description, size = Enrichment, color = key, shape = factor(Fold_Enrichment_Shape))) +
     #   geom_point(aes(size = Enrichment), fill = NA, position = position_dodgev(height = 0.5), stroke = 1.5) +
-    #   scale_shape_manual(values = c(21, 22, 23, 24,25)) + # Customize shape values as needed
-    #   scale_size_continuous(range = c(3, 10)) + # Adjust the range for point sizes
+    #   ggplot2::scale_shape_manual(values = c(21, 22, 23, 24,25)) + # Customize shape values as needed
+    #   ggplot2::scale_size_continuous(range = c(3, 10)) + # Adjust the range for point sizes
     #   labs(
     #     title = "",
     #     x = '-log10(P_Value)',
     #     y = 'Description'
     #   ) +
-    #   guides(shape = FALSE) + # Hide the shape legend
-    #   theme_minimal() +
-    #   theme(
-    #     axis.title.x = element_text(size = 12),
-    #     axis.title.y = element_text(size = 12),
-    #     axis.text.x = element_text(size = 10),
-    #     axis.text.y = element_text(size = 10),
-    #     plot.title = element_text(size = 14, face = 'bold')
+    #   ggplot2::guides(shape = FALSE) + # Hide the shape legend
+    #   ggplot2::theme_minimal() +
+    #   ggplot2::theme(
+    #     axis.title.x = ggplot2::element_text(size = 12),
+    #     axis.title.y = ggplot2::element_text(size = 12),
+    #     axis.text.x = ggplot2::element_text(size = 10),
+    #     axis.text.y = ggplot2::element_text(size = 10),
+    #     plot.title = ggplot2::element_text(size = 14, face = 'bold')
     #   )
 
     # Define your custom colors
@@ -106,13 +106,18 @@ enrich_lollipop_plot <- function(data, rules, file_prfx,path, disease,  top=50, 
     ggplot2::ggplot(data_to_plot, ggplot2::aes(x = .data$log_fdr, y = .data$Description, size = .data$Enrichment, color = eval(parse(text=performance_category)))) +
       ggplot2::geom_point(ggplot2::aes(shape = eval(parse(text=performance_category))),
         fill = NA,
-        position = position_dodgev(height = 0.5),
+        # Was ggstance::position_dodgev(height = 0.5), from a package that was
+        # never declared as a dependency: the call could only ever fail with
+        # "could not find function". ggplot2 dodges along whichever axis is
+        # discrete, which here is y, so position_dodge2() is the vertical dodge
+        # this plot asked for, without adding an archived dependency.
+        position = ggplot2::position_dodge2(width = 0.5),
         stroke = 1.5) +
-      scale_shape_manual(values = shape_values) + # Customize shape values as needed
-      scale_size_continuous(range = c(3, 10)) + # Adjust the range for point sizes
-      scale_color_manual(values = custom_colors) + # Add custom colors for points
-      geom_vline(xintercept = -log10(0.05), linetype = "dashed", color = ssEnv$color_palette[1], size = 1) + # Add vertical line at FDR = 0.05
-      geom_vline(xintercept = -log10(0.01), linetype = "dashed", color = ssEnv$color_palette[2], size = 1) + # Add vertical line at FDR = 0.05
+      ggplot2::scale_shape_manual(values = shape_values) + # Customize shape values as needed
+      ggplot2::scale_size_continuous(range = c(3, 10)) + # Adjust the range for point sizes
+      ggplot2::scale_color_manual(values = custom_colors) + # Add custom colors for points
+      ggplot2::geom_vline(xintercept = -log10(0.05), linetype = "dashed", color = ssEnv$color_palette[1], size = 1) + # Add vertical line at FDR = 0.05
+      ggplot2::geom_vline(xintercept = -log10(0.01), linetype = "dashed", color = ssEnv$color_palette[2], size = 1) + # Add vertical line at FDR = 0.05
       labs(
         title = "",
         x = '-log10(P_Value)',
@@ -120,14 +125,14 @@ enrich_lollipop_plot <- function(data, rules, file_prfx,path, disease,  top=50, 
         shape = performance_category,  # Set the shape legend title dynamically
         color = performance_category   # Set the color legend title dynamically
       ) +
-      guides(shape = guide_legend(override.aes = list(size = 5))) + # Show the shape legend
-      theme_minimal() +
-      theme(
-        axis.title.x = element_text(size = 12),
-        axis.title.y = element_text(size = 12),
-        axis.text.x = element_text(size = 10),
-        axis.text.y = element_text(size = 10),
-        plot.title = element_text(size = 14, face = 'bold')
+      ggplot2::guides(shape = ggplot2::guide_legend(override.aes = list(size = 5))) + # Show the shape legend
+      ggplot2::theme_minimal() +
+      ggplot2::theme(
+        axis.title.x = ggplot2::element_text(size = 12),
+        axis.title.y = ggplot2::element_text(size = 12),
+        axis.text.x = ggplot2::element_text(size = 10),
+        axis.text.y = ggplot2::element_text(size = 10),
+        plot.title = ggplot2::element_text(size = 14, face = 'bold')
       ) +
       xlim(c( min(data_to_plot$log_fdr) - 1 , max(data_to_plot$log_fdr) + 0.5)) # Extend the x-axis range
 
@@ -136,23 +141,23 @@ enrich_lollipop_plot <- function(data, rules, file_prfx,path, disease,  top=50, 
     #     fill = NA,
     #     position = position_dodgev(height = 0.5),
     #     stroke = 1.5) +
-    #   scale_shape_manual(values = c(21, 22, 23, 24, 25)) + # Customize shape values as needed
-    #   scale_size_continuous(range = c(3, 10)) + # Adjust the range for point sizes
-    #   scale_color_manual(values = custom_colors) + # Add custom colors for points
-    #   geom_vline(xintercept = -log10(0.05), linetype = "dashed", color = ssEnv$color_palette[1], size = 1) + # Add vertical line at FDR = 1
+    #   ggplot2::scale_shape_manual(values = c(21, 22, 23, 24, 25)) + # Customize shape values as needed
+    #   ggplot2::scale_size_continuous(range = c(3, 10)) + # Adjust the range for point sizes
+    #   ggplot2::scale_color_manual(values = custom_colors) + # Add custom colors for points
+    #   ggplot2::geom_vline(xintercept = -log10(0.05), linetype = "dashed", color = ssEnv$color_palette[1], size = 1) + # Add vertical line at FDR = 1
     #   labs(
     #     title = "",
     #     x = '-log10(P_Value)',
     #     y = 'Description'
     #   ) +
-    #   guides(shape = FALSE) + # Hide the shape legend
-    #   theme_minimal() +
-    #   theme(
-    #     axis.title.x = element_text(size = 12),
-    #     axis.title.y = element_text(size = 12),
-    #     axis.text.x = element_text(size = 10),
-    #     axis.text.y = element_text(size = 10),
-    #     plot.title = element_text(size = 14, face = 'bold')
+    #   ggplot2::guides(shape = FALSE) + # Hide the shape legend
+    #   ggplot2::theme_minimal() +
+    #   ggplot2::theme(
+    #     axis.title.x = ggplot2::element_text(size = 12),
+    #     axis.title.y = ggplot2::element_text(size = 12),
+    #     axis.text.x = ggplot2::element_text(size = 10),
+    #     axis.text.y = ggplot2::element_text(size = 10),
+    #     plot.title = ggplot2::element_text(size = 14, face = 'bold')
     #   )
 
     # Create the lollipop plot with vertical dodge and shapes based on Enrichment
@@ -161,42 +166,42 @@ enrich_lollipop_plot <- function(data, rules, file_prfx,path, disease,  top=50, 
     #     fill = NA,
     #     position = position_dodgev(height = 0.5),
     #     stroke = 1.5) +
-    #   scale_shape_manual(values = c(21, 22, 23, 24, 25)) + # Customize shape values as needed
-    #   scale_size_continuous(range = c(3, 10)) + # Adjust the range for point sizes
-    #   geom_vline(xintercept = 0, linetype = "dashed", color = "red", size = 1) + # Add vertical line at FDR = 1
+    #   ggplot2::scale_shape_manual(values = c(21, 22, 23, 24, 25)) + # Customize shape values as needed
+    #   ggplot2::scale_size_continuous(range = c(3, 10)) + # Adjust the range for point sizes
+    #   ggplot2::geom_vline(xintercept = 0, linetype = "dashed", color = "red", size = 1) + # Add vertical line at FDR = 1
     #   labs(
     #     title = "",
     #     x = '-log10(P_Value)',
     #     y = 'Description'
     #   ) +
-    #   guides(shape = FALSE) + # Hide the shape legend
-    #   theme_minimal() +
-    #   theme(
-    #     axis.title.x = element_text(size = 12),
-    #     axis.title.y = element_text(size = 12),
-    #     axis.text.x = element_text(size = 10),
-    #     axis.text.y = element_text(size = 10),
-    #     plot.title = element_text(size = 14, face = 'bold')
+    #   ggplot2::guides(shape = FALSE) + # Hide the shape legend
+    #   ggplot2::theme_minimal() +
+    #   ggplot2::theme(
+    #     axis.title.x = ggplot2::element_text(size = 12),
+    #     axis.title.y = ggplot2::element_text(size = 12),
+    #     axis.text.x = ggplot2::element_text(size = 10),
+    #     axis.text.y = ggplot2::element_text(size = 10),
+    #     plot.title = ggplot2::element_text(size = 14, face = 'bold')
     #   )
 
     # # Create the lollipop plot with vertical dodge and shapes based on Enrichment
     # ggplot(data_to_plot, aes(x = log_fdr, y = Description, size = Enrichment, color = key,)) +
     #   geom_point(aes(size = Enrichment), fill = NA, position = position_dodgev(height = 0.5), stroke = 1.5) +
-    #   scale_shape_manual(values = c(21, 22, 23, 24,25)) + # Customize shape values as needed
-    #   scale_size_continuous(range = c(3, 10)) + # Adjust the range for point sizes
+    #   ggplot2::scale_shape_manual(values = c(21, 22, 23, 24,25)) + # Customize shape values as needed
+    #   ggplot2::scale_size_continuous(range = c(3, 10)) + # Adjust the range for point sizes
     #   labs(
     #     title = "",
     #     x = '-log10(P_Value)',
     #     y = 'Description'
     #   ) +
-    #   guides(shape = FALSE) + # Hide the shape legend
-    #   theme_minimal() +
-    #   theme(
-    #     axis.title.x = element_text(size = 12),
-    #     axis.title.y = element_text(size = 12),
-    #     axis.text.x = element_text(size = 10),
-    #     axis.text.y = element_text(size = 10),
-    #     plot.title = element_text(size = 14, face = 'bold')
+    #   ggplot2::guides(shape = FALSE) + # Hide the shape legend
+    #   ggplot2::theme_minimal() +
+    #   ggplot2::theme(
+    #     axis.title.x = ggplot2::element_text(size = 12),
+    #     axis.title.y = ggplot2::element_text(size = 12),
+    #     axis.text.x = ggplot2::element_text(size = 10),
+    #     axis.text.y = ggplot2::element_text(size = 10),
+    #     plot.title = ggplot2::element_text(size = 14, face = 'bold')
     #   )
 
     fname <- core_name_cleaning(paste(file_prfx,"_lollipop_plot_",c,"_",rules["label"],ifelse(disease=="","", paste("_", disease, sep="")), sep="_"))

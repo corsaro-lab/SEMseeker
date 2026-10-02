@@ -1,7 +1,6 @@
 test_that("analize_batch", {
 
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   ssEnv <- SEMseeker:::core_init_env(tempFolder,
     parallel_strategy = parallel_strategy,
     bonferroni_threshold =  bonferroni_threshold,

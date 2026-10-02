@@ -11,7 +11,6 @@ minimal_inference <- function() {
     covariates           = "Horvath",
     covariates_dummy     = "Tissue_Locus",
     transformation_y     = "none",
-    depth_analysis       = 3,
     filter_p_value       = FALSE,
     samples_sql_condition = "",
     collinearity_check   = TRUE,
@@ -26,7 +25,7 @@ test_that("assoc_validate_inference_schema accepts a minimal valid inference_det
   # all 13 expected columns must be present after validation
   expected <- c("independent_variable", "family_test", "covariates",
                 "covariates_dummy", "covariates_pca", "collinearity_check",
-                "transformation_y", "transformation_x", "depth_analysis",
+                "transformation_y", "transformation_x",
                 "filter_p_value", "samples_sql_condition",
                 "areas_sql_condition", "association_results_sql_condition")
   expect_true(all(expected %in% colnames(res)))

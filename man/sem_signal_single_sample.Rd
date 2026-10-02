@@ -7,7 +7,7 @@
 sem_signal_single_sample(values, sample_detail, probe_features)
 }
 \arguments{
-\item{values}{signal vaòues}
+\item{values}{signal values}
 
 \item{sample_detail}{detais of sample}
 

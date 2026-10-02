@@ -9,7 +9,7 @@
 #' @param study_summary data.frame returned by sem_study_summary_get().
 #' @param family_test character. Already util_split_and_clean'd.
 #' @return list(study_summary, covariates, sample_names, independent_variable,
-#'   depth_analysis, transformation_y, inference_detail, file_result_prefix)
+#'   transformation_y, inference_detail, file_result_prefix)
 #'   OR NULL if the job must be skipped (logged via core_log_event).
 #' @keywords internal
 sem_prepare_study_for_analysis <- function(inference_detail, study_summary, family_test) {
@@ -36,18 +36,11 @@ sem_prepare_study_for_analysis <- function(inference_detail, study_summary, fami
     return(NULL)
   }
 
-  depth_analysis <- inference_detail$depth_analysis
-  if (is.null(depth_analysis) || length(depth_analysis) == 0) {
-    depth_analysis <- 1
-    core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
-      " Missed DEPTH analysis inference forced to 1.")
-  }
-
   # transform independent variable as factor for dichotomous families
   if (family_test == "binomial" || family_test == "wilcoxon" || family_test == "t.test")
     study_summary[, independent_variable] <- as.factor(study_summary[, independent_variable])
 
-  file_result_prefix <- paste(depth_analysis, as.character(independent_variable), sep = "_")
+  file_result_prefix <- as.character(independent_variable)
 
   if (!(independent_variable %in% colnames(study_summary))) {
     core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
@@ -80,7 +73,6 @@ sem_prepare_study_for_analysis <- function(inference_detail, study_summary, fami
     covariates           = covariates,
     sample_names         = sample_names,
     independent_variable = independent_variable,
-    depth_analysis       = depth_analysis,
     transformation_y     = transformation_y,
     inference_detail     = inference_detail,
     file_result_prefix   = file_result_prefix

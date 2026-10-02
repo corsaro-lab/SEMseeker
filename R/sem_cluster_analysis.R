@@ -1,5 +1,5 @@
 sem_cluster_analysis <- function(cluster_variables,ellipsis=TRUE, sql_sample_selection="", result_folder, maxResources = 90,
-  parallel_strategy  = "multicore",start_fresh = FALSE, ...)
+  parallel_strategy  = "multisession",start_fresh = FALSE, ...)
 {
   # AI-061+ (2026-06-09): propagate start_fresh to core_init_env (was previously
   # hardcoded to FALSE). Same name → same semantics: TRUE wipes the whole
@@ -7,7 +7,7 @@ sem_cluster_analysis <- function(cluster_variables,ellipsis=TRUE, sql_sample_sel
   # FALSE preserves everything. The redundant unlink of result_folderInference
   # below is kept as a no-op when start_fresh=TRUE (core_init_env already wiped)
   # and as the SOLE reset when start_fresh=FALSE-but-caller-wants-inference-only
-  # — but that latter case never happens with this signature.
+  # - but that latter case never happens with this signature.
   ssEnv <- core_init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = start_fresh, ...)
 
   core_log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will perform the cluster analysys for project \n in ", ssEnv$result_folderData)

@@ -28,7 +28,7 @@ sem_coverage_analysis <- function(observed_probes, keys = NULL)
   }
   # AI-074: local accumulators. The previous exists()-based logic resolved
   # through globalenv(), so an object of the same name left in an interactive
-  # session changed the result — same defect class fixed in
+  # session changed the result - same defect class fixed in
   # sem_study_summary_total() under AI-083. Now that coverage runs on EVERY SEM
   # analysis this function must be deterministic.
   cov_result <- NULL

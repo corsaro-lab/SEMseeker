@@ -9,8 +9,12 @@
 #' @param result_folder character. Path to the SEMseeker result folder.
 #' @param maxResources numeric. Maximum percentage of CPU cores to use (default 90).
 #' @param parallel_strategy character. Parallelisation backend passed to
-#'   \code{future}; e.g. \code{"multicore"}, \code{"multisession"},
-#'   \code{"sequential"} (default \code{"multicore"}).
+#'   \code{future}; one of \code{"multisession"}, \code{"sequential"},
+#'   \code{"cluster"} (default \code{"multisession"}).
+#'   Asking for \code{"multicore"} is accepted and converted to
+#'   \code{"multisession"}: it means fork(), which is unsafe with this
+#'   package's native thread pool on every platform that offers it, and
+#'   absent on Windows. The conversion is logged.
 #' @param start_fresh logical. If \code{TRUE}, delete previous results before
 #'   running (default \code{FALSE}).
 #' @param ... Additional named arguments passed to \code{core_init_env()}.
@@ -19,15 +23,15 @@
 #' @examples
 #' result_dir <- tempdir()
 #' \dontrun{
-#' assoc_intra_study_association_replication(
+#' meta_association_replication(
 #'   inference_details_origin = inference_study1,
 #'   inference_details        = inference_study2,
 #'   result_folder            = "~/semseeker_comparison/"
 #' )
 #' }
 #' @export
-assoc_intra_study_association_replication <- function(inference_details_origin, inference_details,result_folder,
-  maxResources = 90, parallel_strategy  = "multicore",start_fresh = FALSE, ...)
+meta_association_replication <- function(inference_details_origin, inference_details,result_folder,
+  maxResources = 90, parallel_strategy  = "multisession",start_fresh = FALSE, ...)
 {
 
   ssEnv <- core_init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE, ...)
@@ -43,8 +47,9 @@ assoc_intra_study_association_replication <- function(inference_details_origin, 
     if(file.exists(inference_filename))
       next
 
-    inference_source <- assoc_results_get(inference_details_origin, marker, adjust_per_area = FALSE, adjust_globally = FALSE,
-      pvalue_column="PVALUE_ADJ_ALL_FDR",adjustment_method = "BH", area ="GENE",
+    inference_source <- assoc_results_get(inference_details_origin, marker,
+      pvalue_column="PVALUE_ADJ_ALL_FDR", adjustment_method = "BH",
+      area = "GENE", scope = "INSTANCE",
       omit_na = TRUE, significance = TRUE)
 
     # C-06: stop if the origin results carry a GENOME_BUILD that differs from the
@@ -63,7 +68,7 @@ assoc_intra_study_association_replication <- function(inference_details_origin, 
         )
     } else if (nrow(inference_source) > 0L) {
       core_log_event("WARNING: [cross_study_association] Origin inference results",
-                " have no GENOME_BUILD column — legacy run without provenance.",
+                " have no GENOME_BUILD column - legacy run without provenance.",
                 " Proceeding but cross-build safety cannot be guaranteed.")
     }
 

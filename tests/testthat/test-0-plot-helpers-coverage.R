@@ -55,3 +55,35 @@ test_that(".plot_comparison_pvalue_label returns NA for an unsupported family", 
   df <- data.frame(VALUE = c(1, 2, 3, 4), GRP = c("a", "a", "b", "b"))
   expect_true(is.na(SEMseeker:::.plot_comparison_pvalue_label(df, "GRP", "VALUE", "nope")))
 })
+
+# ---------------------------------------------------------------------------
+# .assoc_volcano_marker_from_name
+#
+# The volcano chart finds which markers to draw by reading the inference file
+# names, and it read the part before "_DEPTH_" to do it. The names carried that
+# token while the granularity of an artefact was an integer; SCOPE, AREA and
+# SUBAREA say it now, so the token is gone, strsplit() returned the whole name, and
+# the marker became the file name. The lookup that follows then matched nothing, so
+# the function drew nothing and reported that it had found no match - a failure
+# that looks like an empty result.
+# ---------------------------------------------------------------------------
+
+test_that(".assoc_volcano_marker_from_name reads the marker off the leading token", {
+  f <- SEMseeker:::.assoc_volcano_marker_from_name
+
+  # The shape io_inference_file_name() writes: marker, independent variable,
+  # transformation, family.
+  expect_equal(f("MUTATIONS_AGE_GAUSSIAN.csv"), "MUTATIONS")
+  expect_equal(f("DELTAS_TCDD_MOTHER_SCALE_WILCOXON.csv"), "DELTAS")
+
+  # A full path is answered by its basename, not by the first directory.
+  expect_equal(f(file.path("study", "Inference", "LESIONS_AGE_GAUSSIAN.csv")),
+               "LESIONS")
+
+  # And the shape that used to be parsed: the marker is still the leading token,
+  # so a name left over from the old scheme reads correctly rather than specially.
+  expect_equal(f("MUTATIONS_DEPTH_3_AGE_GAUSSIAN.csv"), "MUTATIONS")
+
+  # No other token: the marker, without the extension stuck to it.
+  expect_equal(f("MUTATIONS.csv"), "MUTATIONS")
+})

@@ -15,8 +15,7 @@
 }
 
 test_that("LESIONS_BP=500 finds 2 separate clusters at 500bp resolution", {
-  tf <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(
     result_folder        = tf,
     start_fresh          = TRUE,
@@ -51,8 +50,7 @@ test_that("LESIONS_BP=500 finds 2 separate clusters at 500bp resolution", {
 })
 
 test_that("LESIONS_BP=0 reduces every probe to singleton window (no spatial leverage)", {
-  tf <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(
     result_folder        = tf,
     start_fresh          = TRUE,
@@ -77,8 +75,7 @@ test_that("LESIONS_BP=0 reduces every probe to singleton window (no spatial leve
 })
 
 test_that("LESIONS_BP=100000 over-dilutes a sparse two-cluster signal — no lesions", {
-  tf <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(
     result_folder        = tf,
     start_fresh          = TRUE,
@@ -110,8 +107,7 @@ test_that("LESIONS_BP=100000 over-dilutes a sparse two-cluster signal — no les
 })
 
 test_that("sem_lesions_get errors on negative LESIONS_BP", {
-  tf <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tf <- sem_test_folder()
   SEMseeker:::core_init_env(
     result_folder = tf,
     start_fresh   = TRUE,

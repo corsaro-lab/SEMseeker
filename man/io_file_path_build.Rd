@@ -33,7 +33,7 @@ written to disk as `SAMPLE_SHEET_RESULT.csv`. On case-INsensitive file
 systems (macOS APFS/HFS, Windows NTFS) `file.exists()` finds either
 spelling; on case-SENSITIVE ones (Linux ext4) only the uppercase form
 resolves. Tests that hard-code an expected path must therefore use the
-uppercase form, or — preferably — discover the file via [list.files()]
+uppercase form, or - preferably - discover the file via [list.files()]
 or by re-calling `io_file_path_build()` with the same arguments.
 }
 \keyword{internal}

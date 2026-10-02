@@ -3,7 +3,7 @@
 # io_inference_file_name().
 #
 # Kept deliberately thin (no p-adjust, no SQL filtering, no annotation
-# enrichment) — those belong in upstream analyzers, not in the save
+# enrichment) - those belong in upstream analyzers, not in the save
 # step. Call sites that currently do
 #   utils::write.csv2(results_inference,
 #                     io_inference_file_name(inference_detail, marker, folder),

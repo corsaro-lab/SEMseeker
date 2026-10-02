@@ -4,6 +4,11 @@
 #   ./ci-local.sh                 → full R CMD check, output to stdout
 #   ./ci-local.sh check           → same as above
 #   ./ci-local.sh coverage        → run covr::package_coverage() (mirrors test-coverage CI)
+#   ./ci-local.sh suite           → install the package, then run the suite against the
+#                                  INSTALLED build with explicit totals - the same
+#                                  measurement macOS and the Windows VM take, so the
+#                                  three are comparable (see dev/run-suite.R)
+#   ./ci-local.sh suite <filter>  → same, one test file
 #   ./ci-local.sh logs            → R CMD check + saves .Rcheck dir to ./ci-check-output/
 #   ./ci-local.sh shell           → interactive container for debugging
 #   ./ci-local.sh build           → (re)build image only, keep cache
@@ -223,6 +228,29 @@ REOF
     Rscript "$RSCRIPT_TMP" || EXIT_CODE=$?
     rm -f "$RSCRIPT_TMP"
     exit $EXIT_CODE
+    ;;
+
+  suite)
+    # AI-255. The same measurement the other two systems take, so the three are
+    # comparable: the package is INSTALLED and the suite runs against it, with
+    # explicit totals from the returned data frame.
+    #
+    # This is deliberately not `native` (load_all) and not `check` (R CMD check).
+    # Under load_all a helper file's closure is package:SEMseeker, whose
+    # environment chain reaches neither the global environment nor setup.R's, so
+    # helpers reading a fixture as a free variable die there and pass in CI - the
+    # harness silently skips whole tests rather than failing them (AI-254).
+    # Three benches that differ from each other is how a defect stays hidden.
+    #
+    #   ./ci-local.sh suite                       whole suite
+    #   ./ci-local.sh suite 7-association_analysis one file, to iterate
+    echo "==> Building $IMAGE (if needed) ..."
+    _build -q
+    echo ""
+    echo "==> Installing the package and running the suite against it ..."
+    docker run --rm -w /pkg "$IMAGE" bash -lc \
+      "Rscript -e 'devtools::install(\".\", quick = TRUE, upgrade = FALSE, build = FALSE)' \
+       && Rscript dev/run-suite.R ${2:-}"
     ;;
 
   check|*)

@@ -7,12 +7,12 @@
 sem_mutations_get(values, figure, thresholds, sampleName)
 }
 \arguments{
-\item{values}{values of methylation — data.frame with columns CHR, START, END
+\item{values}{values of methylation - data.frame with columns CHR, START, END
 and a fourth numeric VALUE column.}
 
 \item{figure}{figure to get Mutations of HYPO or HYPER methylation}
 
-\item{thresholds}{threshold to use for comparison — data.frame with columns
+\item{thresholds}{threshold to use for comparison - data.frame with columns
 CHR, START, END, signal_inferior_thresholds, signal_superior_thresholds.}
 
 \item{sampleName}{name of the sample}

@@ -1,8 +1,7 @@
 test_that("test_init_env", {
 
   # run this test as first other wise the reuse of session is not testable
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
 
   # test minimum number of parameters
   ssEnv <- SEMseeker:::core_init_env(tempFolder)

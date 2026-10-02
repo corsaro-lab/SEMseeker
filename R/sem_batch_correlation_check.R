@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# batch_correlation_check() — FROZEN FEATURE (commented body)
+# batch_correlation_check() - FROZEN FEATURE (commented body)
 # -----------------------------------------------------------------------------
 # Intended purpose: take a batch of datasets, run an integrated PCA / FAMD
 # pipeline (per MARKER × FIGURE), check Spearman correlation between principal

@@ -1,14 +1,14 @@
-# area_granges_build.R — Semantic area GRanges for WGBS / long-read data
+# area_granges_build.R - Semantic area GRanges for WGBS / long-read data
 #
 # Reconstructs the same genomic boundaries that Illumina uses for its area
-# definitions (TSS200, TSS1500, gene body, CpG islands, shores, shelves …)
+# definitions (TSS200, TSS1500, gene body, CpG islands, shores, shelves ...)
 # using TxDb annotation packages and AnnotationHub, so that WGBS / long-read
 # analyses use exactly the same region semantics as Illumina array analyses.
 #
 # Reference genome is taken from ssEnv$genome_build (set in core_init_env()) or
 # passed explicitly; default "hg19" matches the Illumina annotation packages.
 #
-# NOTE — PROBE_WHOLE vs POSITION_WHOLE (technology semantics)
+# NOTE - PROBE_WHOLE vs POSITION_WHOLE (technology semantics)
 # -----------------------------------------------------------
 # For Illumina data, "PROBE_WHOLE" means individual array probes identified
 # by manufacturer IDs (e.g. cg00000029).  Statistical tests run at the
@@ -24,14 +24,14 @@
 # which are handled inline in anno_probe_features_get() without annotation.
 #
 # Supported area/subarea values:
-#   GENE:    TSS200, TSS1500, 1STEXON, 5UTR, 3UTR, BODY, EXONBND, WHOLE
+#   GENE:    TSS200, TSS1500, 1STEXON, 5UTR, 3UTR, BODY, EXONBND, PROMOTER, WHOLE
 #   ISLAND:  WHOLE, ISLAND, N_SHORE, S_SHORE, N_SHELF, S_SHELF, OPENSEA
 #   CHR:     WHOLE, CYTOBAND
 #   DMR:     WHOLE, DMR
 #   PROBE:   WHOLE  (coordinate-only, handled by anno_probe_features_get())
 #
-# All returned GRanges carry mcols()$label — the subarea identifier used
-# downstream to group CpGs (gene symbol, island coordinate, cytoband name …).
+# All returned GRanges carry mcols()$label - the subarea identifier used
+# downstream to group CpGs (gene symbol, island coordinate, cytoband name ...).
 
 # ---------------------------------------------------------------------------
 # Package-level in-memory cache (survives the R session, cleared on restart)
@@ -59,26 +59,116 @@
   get(pkg, envir = asNamespace(pkg))
 }
 
-# Map Entrez IDs → gene symbols using org.Hs.eg.db (optional).
-# Falls back to Entrez ID strings if the package is not available.
+# Share of unmappable keys above which the vector is treated as the wrong kind
+# of identifier rather than as a few missing annotations.
+#
+# Measured on hg19: gene Entrez ids of the TxDb fail to map for 0.02 per cent
+# of the set, 5 out of 28,622, which are ids that genuinely carry no symbol.
+# The same call with transcript ids fails for 94 per cent. Anything between the
+# two separates the cases; 20 per cent sits a thousandfold above the legitimate
+# rate and far below the broken one.
+.SYMBOL_UNMAPPED_MAX <- 0.20
+
+# Map Entrez gene IDs to gene symbols.
+#
+# This used to fall back to the id, twice: to the id string when the symbol
+# database was absent, and to the id of every key that did not map. Both were
+# silent, and together they hid a caller that was passing transcript ids. The
+# label it produced was a real gene symbol of an unrelated gene, because
+# transcript ids and Entrez ids are both small integers and most of them
+# collide. Nothing downstream could tell that label from a correct one.
+#
+# So the failures are loud now. The residual fallback stays for the handful of
+# Entrez ids that carry no symbol: at 0.02 per cent it is the thing it was
+# meant for.
 .anno_entrez_to_symbol <- function(entrez_ids) {
-  if (requireNamespace("org.Hs.eg.db", quietly = TRUE) &&
-      requireNamespace("AnnotationDbi", quietly = TRUE)) {
-    syms <- suppressMessages(
+  if (!requireNamespace("org.Hs.eg.db", quietly = TRUE) ||
+      !requireNamespace("AnnotationDbi", quietly = TRUE))
+    stop("a gene region has to be labelled with a gene symbol, and that needs ",
+         "org.Hs.eg.db and AnnotationDbi. Without them the label would stay the ",
+         "Entrez id the transcript database keys on, while the array path ",
+         "labels with symbols, so the two would name the same gene two ways and ",
+         "no result of one could be joined to the other. ",
+         "BiocManager::install(c(\"org.Hs.eg.db\", \"AnnotationDbi\")).",
+         call. = FALSE)
+
+  entrez_ids <- as.character(entrez_ids)
+  # AnnotationDbi does not return NAs when NONE of the keys are valid: it raises
+  # .testForValidKeys("None of the keys entered are valid keys for 'ENTREZID'").
+  # That is the same diagnosis as the threshold below, arrived at by a different
+  # route, so it is caught here and reported in the same words. Leaving it to
+  # propagate would be loud enough but would name AnnotationDbi's internals
+  # instead of the mistake, which is that the caller passed the wrong kind of
+  # identifier. The partial case - a vector where a few keys happen to be valid,
+  # which is exactly what transcript ids look like - does not raise at all and is
+  # what the threshold is for.
+  syms <- tryCatch(
+    suppressMessages(
       AnnotationDbi::mapIds(
         org.Hs.eg.db::org.Hs.eg.db,
-        keys      = as.character(entrez_ids),
+        keys      = entrez_ids,
         column    = "SYMBOL",
         keytype   = "ENTREZID",
         multiVals = "first"
       )
-    )
-    # Replace NAs with the Entrez ID itself
-    syms[is.na(syms)] <- as.character(entrez_ids[is.na(syms)])
-    unname(syms)
-  } else {
-    as.character(entrez_ids)
-  }
+    ),
+    error = function(e) {
+      if (grepl("valid keys", conditionMessage(e), fixed = TRUE))
+        return(stats::setNames(rep(NA_character_, length(entrez_ids)), entrez_ids))
+      stop(e)
+    })
+
+  unmapped <- mean(is.na(syms))
+  if (length(syms) > 0 && unmapped > .SYMBOL_UNMAPPED_MAX)
+    stop(sprintf(
+      paste0("%.1f%% of the identifiers passed for symbol lookup are not Entrez ",
+             "gene ids of this database (%d of %d). That is not a gap in the ",
+             "annotation, it is the wrong kind of key: either the caller passed ",
+             "identifiers of something else, such as transcript ids, or the ",
+             "genome build is not the one org.Hs.eg.db describes. Labelling ",
+             "anyway is the worse outcome, because most wrong keys collide with ",
+             "a valid Entrez id and come back as the symbol of an unrelated ",
+             "gene. First few: %s."),
+      100 * unmapped, sum(is.na(syms)), length(syms),
+      paste(utils::head(entrez_ids[is.na(syms)], 5), collapse = ", ")),
+      call. = FALSE)
+
+  syms[is.na(syms)] <- entrez_ids[is.na(syms)]
+  unname(syms)
+}
+
+#' Rename a per-transcript GRanges by the Entrez id of its parent gene
+#'
+#' Everything TxDb groups \code{by = "tx"} comes back named by transcript id:
+#' \code{exonsBy(by = "tx")}, \code{fiveUTRsByTranscript()},
+#' \code{threeUTRsByTranscript()}. The label block downstream reads
+#' \code{names()} and maps it with \code{.anno_entrez_to_symbol()}, which
+#' expects an Entrez gene id.
+#'
+#' Handing it a transcript id does not fail. Both are small integers, so most
+#' transcript ids collide with a valid Entrez id and the mapper returns the
+#' symbol of an unrelated gene: transcript 43 comes back as whatever gene
+#' Entrez 43 is. The label is then a real, well-formed, wrong gene symbol, and
+#' nothing downstream can tell it from a right one.
+#'
+#' Ranges whose transcript has no parent gene are dropped: a range that cannot
+#' name its gene has nothing to contribute to a per-gene question.
+#'
+#' @param txdb a TxDb object.
+#' @param gr a GRanges named by transcript id.
+#' @return \code{gr}, named by Entrez gene id, without the unmappable ranges.
+#' @keywords internal
+#' @noRd
+.anno_name_by_parent_gene <- function(txdb, gr) {
+  by_gene <- GenomicFeatures::transcriptsBy(txdb, by = "gene")
+  tx_ids  <- as.character(GenomicRanges::mcols(unlist(by_gene))$tx_id)
+  gene_of <- stats::setNames(
+    rep(names(by_gene), S4Vectors::elementNROWS(by_gene)), tx_ids)
+
+  genes <- unname(gene_of[as.character(names(gr))])
+  gr    <- gr[!is.na(genes)]
+  names(gr) <- genes[!is.na(genes)]
+  gr
 }
 
 # ---------------------------------------------------------------------------
@@ -120,14 +210,14 @@
 }
 
 # ---------------------------------------------------------------------------
-# Individual area builders — each returns a GRanges with mcols()$label
+# Individual area builders - each returns a GRanges with mcols()$label
 # ---------------------------------------------------------------------------
 
 .anno_build_gene_area <- function(subarea, txdb) {
   # TSS = single-base GRanges at each gene's transcription start (strand-aware)
   all_genes <- GenomicFeatures::genes(txdb, single.strand.genes.only = FALSE)
   # genes() can return a GRangesList for multi-strand genes; keep only GRanges
-  if (is(all_genes, "GRangesList"))
+  if (methods::is(all_genes, "GRangesList"))
     all_genes <- unlist(all_genes)
 
   # After unlist(), gene_ids live in names(all_genes); direct GRanges from
@@ -163,20 +253,21 @@
       out
     },
     `1STEXON` = {
-      exons_by <- GenomicFeatures::exonsBy(txdb, by = "gene")
-      # Take first exon per gene (rank 1 = closest to TSS)
-      first_exon <- IRanges::endoapply(exons_by, function(e) {
-        e[order(GenomicRanges::mcols(e)$exon_rank)[1], ]
-      })
-      unlist(first_exon)
+      # exon_rank is a property of a transcript, not of a gene: exonsBy(by =
+      # "gene") does not carry it, so ranking exons there cannot work. Group by
+      # transcript, take rank 1 (the first exon in transcription order, which on
+      # the minus strand is the rightmost), then name by the parent gene.
+      ex <- unlist(GenomicFeatures::exonsBy(txdb, by = "tx"))
+      ex <- ex[GenomicRanges::mcols(ex)$exon_rank == 1L]
+      .anno_name_by_parent_gene(txdb, ex)
     },
     `5UTR` = {
-      utrs <- GenomicFeatures::fiveUTRsByTranscript(txdb)
-      unlist(utrs)
+      .anno_name_by_parent_gene(
+        txdb, unlist(GenomicFeatures::fiveUTRsByTranscript(txdb)))
     },
     `3UTR` = {
-      utrs <- GenomicFeatures::threeUTRsByTranscript(txdb)
-      unlist(utrs)
+      .anno_name_by_parent_gene(
+        txdb, unlist(GenomicFeatures::threeUTRsByTranscript(txdb)))
     },
     BODY = {
       all_genes
@@ -188,6 +279,32 @@
       bnds     <- c(starts, ends)
       bnds + 50L  # expand symmetrically by 50 bp on each side
     },
+    PROMOTER = {
+      # The union of the three windows at the transcription start, as one class.
+      # Built by asking this function for each of them and putting the results
+      # together: the three label by different routes - two from the per-gene
+      # symbols below, the first exon through its parent transcript - and asking
+      # is what gets each one labelled the way it labels itself.
+      #
+      # Deliberately NOT reduce(): that is what WHOLE does, and it is why WHOLE
+      # ends up carrying coordinates instead of gene symbols. Here the per-gene
+      # identity is the point, so overlapping ranges of one gene are left
+      # standing. They cost nothing: anno_probe_features_get() de-duplicates
+      # (position, label) rows, so a position lying in two windows of the same
+      # gene is counted once, and one lying in windows of two genes is counted
+      # for each, which is the difference the class has to keep.
+      #
+      # mcols are cut down to the label and the names dropped before combining,
+      # because the three arrive with different metadata columns - the first exon
+      # brings its rank and id - and c() on GRanges requires them to agree.
+      parts <- lapply(c("TSS200", "TSS1500", "1STEXON"), function(window) {
+        g <- .anno_build_gene_area(window, txdb)
+        GenomicRanges::mcols(g) <- GenomicRanges::mcols(g)[, "label", drop = FALSE]
+        names(g) <- NULL
+        g
+      })
+      return(do.call(c, parts))
+    },
     WHOLE = {
       # Full gene span = BODY + TSS1500 upstream
       tss1500 <- GenomicRanges::setdiff(
@@ -197,14 +314,15 @@
       GenomicRanges::reduce(c(all_genes, tss1500))
     },
     stop("Unknown GENE subarea: '", subarea, "'. ",
-         "Supported: TSS200, TSS1500, 1STEXON, 5UTR, 3UTR, BODY, EXONBND, WHOLE")
+         "Supported: TSS200, TSS1500, 1STEXON, 5UTR, 3UTR, BODY, EXONBND, ",
+         "PROMOTER, WHOLE")
   )
 
   # For subareas that retain the per-gene structure, attach gene symbols
   if (subarea %in% c("TSS200", "TSS1500", "BODY")) {
     GenomicRanges::mcols(gr)$label <- symbols
   } else if (subarea == "WHOLE") {
-    # After reduce(), per-gene identity is lost — use region coordinates as label
+    # After reduce(), per-gene identity is lost - use region coordinates as label
     GenomicRanges::mcols(gr)$label <-
       paste0(GenomicRanges::seqnames(gr), ":",
              GenomicRanges::start(gr), "-",
@@ -285,7 +403,7 @@
     if (is.null(cb_obj) || !is.data.frame(cb_obj))
       stop("cytoband_hg19 data object not found in SEMseeker package.")
     # cytoband_hg19$CHR is stored as factor with an empty level (""); convert
-    # to character and drop rows with missing/empty seqnames — GenomicRanges
+    # to character and drop rows with missing/empty seqnames - GenomicRanges
     # refuses GRanges construction if any seqlevel is NA or "".
     cb_chr <- as.character(cb_obj$CHR)
     valid  <- !is.na(cb_chr) & nzchar(cb_chr)
@@ -365,7 +483,7 @@
 #' Build a GRanges object for a given genomic area/subarea
 #'
 #' Constructs the same region boundaries used by Illumina array annotation
-#' (TSS200, TSS1500, gene body, CpG islands, shores, shelves …) from TxDb
+#' (TSS200, TSS1500, gene body, CpG islands, shores, shelves ...) from TxDb
 #' packages and AnnotationHub, so that WGBS and long-read analyses share
 #' identical region semantics with Illumina array analyses.
 #'
@@ -390,7 +508,7 @@
 #'   \item \strong{Illumina}: one row per array probe (manufacturer ID,
 #'     e.g. \code{cg00000029}).  Probe identity is meaningful and cross-study
 #'     comparable for the same array platform.
-#'   \item \strong{WGBS / LONGREAD}: treated as \code{POSITION_WHOLE} — one
+#'   \item \strong{WGBS / LONGREAD}: treated as \code{POSITION_WHOLE} - one
 #'     row per genomic position encoded as \code{"CHR\_START"} (e.g.
 #'     \code{"1\_10000"}).  Cross-study comparisons require the same
 #'     \code{genome_build}.
@@ -401,7 +519,11 @@
 #' \describe{
 #'   \item{GENE areas}{\code{TxDb.Hsapiens.UCSC.hg19.knownGene} (or hg38/mm10),
 #'     \code{GenomicFeatures}, \code{GenomicRanges}, \code{IRanges}.
-#'     \code{org.Hs.eg.db} is optional (falls back to Entrez IDs as labels).}
+#'     \code{org.Hs.eg.db} is required in practice: without it the label of
+#'     a gene region stays the Entrez id that TxDb keys on, while the
+#'     Illumina path labels with gene symbols, so the two backends name the
+#'     same gene two different ways. The code falls back rather than
+#'     failing, but the result is not comparable across backends.}
 #'   \item{ISLAND areas}{\code{AnnotationHub} (downloads track on first use,
 #'     then caches locally).}
 #'   \item{CHR / DMR areas}{no extra packages needed.}

@@ -1,7 +1,7 @@
 {
   "upload_type": "software",
   "title": "SEMseeker: Stochastic Epigenetic Mutations SEM Seeker",
-  "description": "<p>SEMseeker is an R package for the detection, quantification and association analysis of Stochastic Epigenetic Mutations (SEMs) from DNA methylation data of any source &mdash; Illumina methylation arrays (EPIC 850k, 450k, 27k), whole-genome / reduced-representation bisulfite sequencing (WGBS/RRBS), and long-read sequencing (Oxford Nanopore, PacBio) consumed either as bedmethyl files or as any BAM with per-site methylation calls. It computes binary SEM calls and continuous deviation metrics (DeltaR, DeltaRP, DeltaRQ), aggregates mutations into genomic lesions, and provides downstream association analysis and pathway enrichment via multiple backends (WebGestalt, STRINGdb, pathfindR, CTD).</p><p>Documentation and landing page: <a href=\"https://drake69.github.io/SEMseeker/\">https://drake69.github.io/SEMseeker/</a></p>",
+  "description": "<p>SEMseeker is an R package for the detection, quantification and association analysis of Stochastic Epigenetic Mutations (SEMs) from DNA methylation data of any source &mdash; Illumina methylation arrays (EPIC 850k, 450k, 27k), whole-genome / reduced-representation bisulfite sequencing (WGBS/RRBS), and long-read sequencing (Oxford Nanopore, PacBio) consumed either as bedmethyl files or as any BAM with per-site methylation calls. It computes binary SEM calls and continuous deviation metrics (DeltaR, DeltaRP, DeltaRQ), aggregates mutations into genomic lesions, and provides downstream association analysis and pathway enrichment via multiple backends (WebGestalt, STRINGdb, pathfindR, CTD).</p><p>Documentation and landing page: <a href=\"https://corsaro-lab.github.io/SEMseeker/\">https://corsaro-lab.github.io/SEMseeker/</a></p>",
   "creators": [
     {
       "name": "Corsaro, Luigi",
@@ -27,12 +27,12 @@
   ],
   "related_identifiers": [
     {
-      "identifier": "https://drake69.github.io/SEMseeker/",
+      "identifier": "https://corsaro-lab.github.io/SEMseeker/",
       "relation": "isDocumentedBy",
       "resource_type": "software"
     },
     {
-      "identifier": "https://github.com/drake69/SEMseeker",
+      "identifier": "https://github.com/corsaro-lab/SEMseeker",
       "relation": "isSupplementTo",
       "resource_type": "software"
     }

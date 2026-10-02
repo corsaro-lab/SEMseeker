@@ -19,12 +19,11 @@
 #' @return list(results = data.frame, processed_items = integer).
 #'   Side effect: writes the CSV via assoc_analysis_save_results().
 #' @keywords internal
-sem_run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
+assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
                                 filter_p_value, ssEnv, selected_areas,
                                 results, start_time, processed_items, ...) {
 
-  localKeys_1 <- ssEnv$keys_areas_subareas_markers_figures
-  keys <- localKeys_1[localKeys_1$MARKER == marker, ]
+  keys <- .assoc_marker_keys(prep, marker, ssEnv, family_test)
   nkeys <- nrow(keys)
   if (nkeys == 0)
     return(list(results = results, processed_items = processed_items))
@@ -33,7 +32,7 @@ sem_run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
   # previous design re-read the file inside every iteration AND rbind.fill'd its
   # entire content into the running `results` accumulator, so on a run that
   # iterates over (HYPO, HYPER) for the same marker the file got the
-  # already-saved rows added twice — visible as N x 2 duplication in the
+  # already-saved rows added twice - visible as N x 2 duplication in the
   # output CSV (e.g. DELTARQ_HYPO with 35292 rows instead of 17646).
   # Reading once + using the pre-loaded snapshot for the area_to_remove filter
   # keeps both behaviours correct without growing `results` across iterations.
@@ -44,15 +43,15 @@ sem_run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
     # boolean come 'true'/'false' minuscoli, read.csv2 poi li carica come
     # character e rompe i subset logici downstream).
     # AI-061+ (2026-06-09): three polars 1.x quirks rolled into one read_csv:
-    #   1. null_values="NA"          — utils::write.csv2 emits "NA" literal
+    #   1. null_values="NA"          - utils::write.csv2 emits "NA" literal
     #      for missing, polars treats only "" as null on numeric columns,
     #      so without this it fails on "NA" in an f64-locked column.
-    #   2. infer_schema_length large — early rows can be all zeros for
+    #   2. infer_schema_length large - early rows can be all zeros for
     #      INTERCEPT_PVALUE / similar, polars infers i64, then later finds a
     #      scientific-notation float (e.g. "2,52861832797769e-304") and
     #      fails to coerce to integer. Scanning more rows up-front lets it
     #      infer Float64 correctly.
-    #   3. decimal_comma=TRUE        — write.csv2 uses "," as decimal sep.
+    #   3. decimal_comma=TRUE        - write.csv2 uses "," as decimal sep.
     # Both quirks were exposed on ewas v32 / v33 mid-association.
     old_results_global <- unique(as.data.frame(
       polars::pl$read_csv(fileNameResults, separator = ";",
@@ -72,10 +71,10 @@ sem_run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
     key <- keys[k, ]
     # AI-098 (2026-06-09): symmetric tech-aware skip. Each technology has
     # exactly one canonical AREA representation; the other is no-op:
-    #   - Illumina (K27/K450/K850): PROBE is canonical — literature reports
+    #   - Illumina (K27/K450/K850): PROBE is canonical - literature reports
     #     probe IDs (cg00000029). POSITION would produce a duplicate
     #     coord-keyed CSV with the same numerical results → skip.
-    #   - WGBS / LONGREAD: POSITION is canonical — long-reads have no
+    #   - WGBS / LONGREAD: POSITION is canonical - long-reads have no
     #     "probe" concept; coordinates are the natural row identifier.
     #     PROBE pivot doesn't exist for these techs → skip.
     # This replaces the unconditional `if (AREA == "POSITION") next` which
@@ -84,15 +83,35 @@ sem_run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
     if (key$AREA == "POSITION" && !tech_is_longread) next
     if (key$AREA == "PROBE"    &&  tech_is_longread) next
 
-    pivot_filename <- io_pivot_file_name_parquet(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
+    # AI-255: the requested aggregation reaches the read. Until now it was
+    # validated at the door and then dropped here, so a request for MEDIAN on
+    # GENE_TSS1500 was answered with the mean - silently, because the file
+    # existed and its name said nothing about which operator had produced it.
+    # An aggregation the artefact cannot admit is a request that can never be
+    # satisfied, so it stops the run; a missing SOURCE is an environmental
+    # condition, so it is logged and skipped as before.
+    scope <- io_scope_validate(key$SCOPE)
+    aggregation <- .assoc_aggregation_get(prep, key, scope)
+    key$AGGREGATION <- aggregation
 
-    # AI-027: read via unified dispatcher. Returns NULL when neither the
-    # cached parquet nor per-sample bed/bedgraph files are available,
-    # which is the case sem_run_depth_n_marker needs to skip with a warning.
-    pivot_lazy <- io_read_pivot(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
+    pivot_filename <- io_pivot_file_name_parquet(key$MARKER, key$FIGURE,
+                                                 key$AREA, key$SUBAREA,
+                                                 aggregation = aggregation,
+                                                 scope = scope)
+
+    # AI-027 + AI-255: read via unified dispatcher, which builds the artefact
+    # from the position pivot when it is not on disk. Returns NULL only when the
+    # source itself is unavailable. A collapsed artefact is one row tall, so the
+    # transpose below yields one feature column - the same shape the fitting
+    # code already handles for a pivot of many rows. That is why one road is
+    # enough, and why depth had nothing left to select.
+    pivot_lazy <- io_read_pivot(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA,
+                                aggregation = aggregation, scope = scope)
     if (is.null(pivot_lazy)) {
       core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
-        " File not found:", pivot_filename, ".")
+        " Source unavailable for ", key$MARKER, "_", key$FIGURE, " on ",
+        key$AREA, "_", key$SUBAREA, " aggregated by ", aggregation,
+        "; expected ", pivot_filename, ".")
       assoc_analysis_log(cbind(prep$inference_detail, keys[k, ]),
         start_time, Sys.time(), processed_items)
       next
@@ -110,11 +129,7 @@ sem_run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
     if (is_batch_family) {
       area_to_remove <- character(0)
       if (nrow(old_results_global) > 0) {
-        area_to_remove <- old_results_global[
-          old_results_global$MARKER  == key$MARKER &
-          old_results_global$FIGURE  == key$FIGURE &
-          old_results_global$SUBAREA == key$SUBAREA &
-          old_results_global$AREA    == key$AREA, "AREA_OF_TEST"]
+        area_to_remove <- .assoc_resume_done(old_results_global, key)
       }
       core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
                 " Batch family '", family_test,
@@ -166,7 +181,7 @@ sem_run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
 
     # AI-043: use the pre-loaded snapshot (old_results_global) for the
     # area_to_remove filter, NOT a fresh re-read of the file. Don't rbind.fill
-    # old_results into the running 'results' accumulator either — that was the
+    # old_results into the running 'results' accumulator either - that was the
     # source of cross-iteration row doubling. The file's content was already
     # folded into 'results' once, before the for-k loop opened.
     #
@@ -178,10 +193,7 @@ sem_run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
     # re-fitted on every resume run. Apply the same gsub to tempDataFrame
     # so the membership test matches the on-disk convention.
     if (nrow(old_results_global) > 0) {
-      area_to_remove <- old_results_global[old_results_global$MARKER == key$MARKER &
-                                            old_results_global$FIGURE == key$FIGURE &
-                                            old_results_global$SUBAREA == key$SUBAREA &
-                                            old_results_global$AREA == key$AREA, "AREA_OF_TEST"]
+      area_to_remove <- .assoc_resume_done(old_results_global, key)
       tempDataFrame <- tempDataFrame[!(tempDataFrame$AREA %in% area_to_remove), ]
     }
 
@@ -217,7 +229,7 @@ sem_run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
     # AI-040 Fase 3: limma_<N> and voom_<N> need the WHOLE pivot at once
     # for eBayes shrinkage to be statistically meaningful. Per-chunk
     # limma estimates the prior variance from a chunk-specific subset,
-    # so p-values become dependent on chunk boundaries — leaky for the
+    # so p-values become dependent on chunk boundaries - leaky for the
     # empirical-Bayes interpretation. Force batch families to a single
     # whole-pivot pass instead of the default chunked loop.
     chunk_size <- if (grepl("^(limma|voom)_", family_test)) {
@@ -265,10 +277,8 @@ sem_run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
           covariates      = prep$covariates,
           key             = key,
           transformation_y = prep$transformation_y,
-          dototal         = (length(selected_areas_temp) == 0),
           session_folder  = ssEnv$session_folder,
           prep$independent_variable,
-          prep$depth_analysis,
           prep$inference_detail$samples_sql_condition,
           inference_detail = prep$inference_detail,
           ...)
@@ -277,7 +287,7 @@ sem_run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
         # AI-061+ (2026-06-09): mirror the AI-077 save-guard from the
         # batch-family branch above. Only rewrite the (potentially
         # hundreds-of-MB) CSV when this chunk actually appended new
-        # rows — full resume case (nothing new) should be a no-op.
+        # rows - full resume case (nothing new) should be a no-op.
         new_rows_appended_chunk <- !is.null(result_temp_local_batch) &&
                                    nrow(result_temp_local_batch) > 0L
         if (new_rows_appended_chunk) {
@@ -301,4 +311,195 @@ sem_run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
   assoc_analysis_save_results(results, fileNameResults, family_test, filter_p_value)
 
   list(results = results, processed_items = processed_items)
+}
+
+#' The aggregation this key is tested on (internal)
+#'
+#' AI-255. `inference_details$aggregation` names the reduction the request wants.
+#' It was already required and already validated at the door
+#' ([assoc_validate_aggregation()]); what was missing is that it never reached
+#' the read, so the artefact consumed was whichever one the producer happened to
+#' have written.
+#'
+#' A request the artefact cannot admit stops the run instead of being quietly
+#' downgraded: an inference CSV that looks complete but tested something else is
+#' the failure mode this whole migration exists to remove.
+#'
+#' @keywords internal
+#' @noRd
+.assoc_aggregation_get <- function(prep, key, scope = "INSTANCE") {
+
+  requested <- prep$inference_detail$aggregation
+  if (is.null(requested) || length(requested) == 0 || all(is.na(requested)) ||
+      !any(nzchar(as.character(requested))))
+    stop("inference_details$aggregation is required: name which aggregation of ",
+         "the feature to test. Legal names: ",
+         paste(util_aggregation_vocabulary(), collapse = ", "), ".",
+         call. = FALSE)
+
+  requested <- core_name_cleaning(as.character(requested)[1])
+
+  # One inference_details row spans every key of the marker, and a request is
+  # made once for all of them. Where the block is a single position, SUM, MEAN
+  # and MEDIAN of that block are the same number as the block itself - so the
+  # request is not refused, it is honoured, and the artefact is called by the
+  # name that says what happened: VALUE. Naming it SUM would invite the reader
+  # to believe a reduction took place.
+  if (identical(scope, "INSTANCE") && io_area_is_single_position(key$AREA) &&
+      !identical(requested, "VALUE")) {
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " aggregation '", requested, "' on ", key$AREA,
+              " is the identity - one position per block - recorded as VALUE.")
+    return("VALUE")
+  }
+
+  admissible <- util_aggregations_allowed(key$MARKER, key$FIGURE,
+                                          discrete = isTRUE(key$DISCRETE),
+                                          default  = FALSE,
+                                          scope    = scope,
+                                          area     = key$AREA)
+  if (!(requested %in% admissible))
+    stop("aggregation '", requested, "' is not admissible for ", key$MARKER,
+         "/", key$FIGURE, " at scope ", scope, " on ", key$AREA, "_", key$SUBAREA,
+         ". Admissible: ", paste(admissible, collapse = ", "), ".",
+         call. = FALSE)
+
+  requested
+}
+
+#' Every artefact this marker is tested on (internal)
+#'
+#' AI-255 unified the two consumers into one. `sem_run_depth1_marker()` read
+#' columns out of the joined per-sample table, `assoc_run_marker()` read a pivot,
+#' and `depth_analysis` chose between them; the two existed because the two
+#' artefacts had different *shapes*: a table with samples down the rows, a pivot
+#' with areas down the rows. They have the same shape now: a key column and one
+#' column per sample. A `SCOPE = SAMPLE` artefact is one row tall, so transposing
+#' it yields exactly one feature column, which is what the fitting code already
+#' does with a pivot of many rows. A model handed a row does not know, and has no
+#' reason to ask, whether the key of that row is a gene symbol or `PROBE_WHOLE`.
+#'
+#' AI-308 gave the *choice* back a home. Unifying the code paths removed the
+#' second consumer, but it also removed the last thing that selected between the
+#' two aggregations, and nothing inherited that job: this function built both
+#' tables and stacked them, so every request produced the per-sample burden **and**
+#' the per-instance rows, summed into one result file. That was a leftover, not a
+#' design: the aggregation branches themselves have always been separate, and
+#' [io_pivot_build()] is where they part company.
+#'
+#' So the request now names its branch, and this returns one of the two:
+#' \itemize{
+#'   \item `SCOPE = INSTANCE`: the region classes of the run crossed with the
+#'     figures of the marker, one row per instance of each class;
+#'   \item `SCOPE = SAMPLE`: the same region classes, each collapsed to one
+#'     number per sample.
+#' }
+#' Both range over `ssEnv$keys_areas_subareas`, the registry built from
+#' `areas=`/`subareas=`: the region axis is declared once, at the run, and is the
+#' same axis whichever branch reads it.
+#'
+#' @section The single-position class at SCOPE = SAMPLE:
+#' `PROBE_WHOLE` and `POSITION_WHOLE` are one class under two names, and
+#' collapsed they are the same number: the whole sample, no mask. The caller
+#' skips whichever of the two the technology does not speak (AI-098), and
+#' `util_keys_create()` always forces `POSITION` into the registry, so an
+#' Illumina run that did not declare `PROBE` would have its whole-sample burden
+#' built on `POSITION_WHOLE` and then skipped, losing a row without an error.
+#' The collapsed branch therefore rewrites the single-position class to the
+#' technology's own ([io_single_position_area()]) and deduplicates.
+#'
+#' @param prep list from sem_prepare_study_for_analysis().
+#' @param marker the marker being tested.
+#' @param ssEnv session environment.
+#' @param family_test unused here since AI-308: `SCOPE = SAMPLE` with a
+#'   `limma_`/`voom_` family is refused at the door by
+#'   [assoc_validate_scope()], where the request can still be rejected instead
+#'   of quietly yielding an empty file. Kept in the signature because the caller
+#'   passes it and the argument documents that the constraint exists.
+#' @return data.frame of keys with SCOPE, AREA, SUBAREA, MARKER, FIGURE, DISCRETE.
+#' @keywords internal
+#' @noRd
+.assoc_marker_keys <- function(prep, marker, ssEnv, family_test) {
+
+  scope <- io_scope_validate(prep$inference_detail$scope)
+
+  common <- c("MARKER", "FIGURE", "SCOPE", "AREA", "SUBAREA", "DISCRETE")
+  take <- function(df) {
+    if (is.null(df) || nrow(df) == 0) return(data.frame())
+    missing <- setdiff(common, colnames(df))
+    for (m in missing) df[[m]] <- if (identical(m, "DISCRETE")) TRUE else NA_character_
+    unique(df[, common, drop = FALSE])
+  }
+
+  if (identical(scope, "INSTANCE")) {
+    keys <- ssEnv$keys_areas_subareas_markers_figures
+    keys <- keys[keys$MARKER == marker, , drop = FALSE]
+    if (nrow(keys) > 0) keys$SCOPE <- "INSTANCE"
+    return(take(keys))
+  }
+
+  # SCOPE = SAMPLE: the region classes of the run, each collapsed to one number
+  # per sample. The classes come from the registry, not from the request: they
+  # are declared once, with areas=/subareas=, and built at runtime.
+  regions <- ssEnv$keys_areas_subareas
+  mf <- ssEnv$keys_markers_figures
+  mf <- mf[mf$MARKER == marker, , drop = FALSE]
+  if (is.null(regions) || nrow(regions) == 0 || nrow(mf) == 0)
+    return(data.frame())
+
+  canonical <- io_single_position_area()
+  areas <- as.character(regions$AREA)
+  subareas <- as.character(regions$SUBAREA)
+  single <- io_area_is_single_position(areas)
+  areas[single] <- canonical
+  regions <- unique(data.frame(AREA = areas, SUBAREA = subareas,
+                               stringsAsFactors = FALSE))
+
+  rows <- lapply(seq_len(nrow(regions)), function(i)
+    data.frame(MARKER   = as.character(mf$MARKER),
+               FIGURE   = as.character(mf$FIGURE),
+               SCOPE    = "SAMPLE",
+               AREA     = regions$AREA[i],
+               SUBAREA  = regions$SUBAREA[i],
+               DISCRETE = if ("DISCRETE" %in% colnames(mf)) mf$DISCRETE else TRUE,
+               stringsAsFactors = FALSE))
+
+  take(do.call(rbind, rows))
+}
+
+#' Instances already tested for THIS key (internal)
+#'
+#' AI-255. The resume filter decides what not to compute again, so it is an
+#' identity check - and it was missing two coordinates.
+#'
+#' It matched on `MARKER`, `FIGURE`, `AREA` and `SUBAREA` only. Since AI-248 the
+#' same area appears once per aggregation, and since AI-255 once per scope, so a
+#' run that had already tested `MEAN` on `GENE_WHOLE` left rows that a later run
+#' asking for `MEDIAN` read as "these genes are done" - and skipped every one of
+#' them, writing an empty `MEDIAN` result that looks like a completed job.
+#'
+#' NEWS 0.99.5 claimed the aggregation was already part of the resume match. It
+#' was part of the deduplication and of the overlaps; here it never was.
+#'
+#' Columns absent from an older CSV are simply not matched on, so a result folder
+#' written before this release resumes as it did - one aggregation, one scope.
+#'
+#' @param old the results already on disk.
+#' @param key the key being computed.
+#' @return the `AREA_OF_TEST` values already present for this exact key.
+#' @keywords internal
+#' @noRd
+.assoc_resume_done <- function(old, key) {
+
+  if (is.null(old) || nrow(old) == 0 || !("AREA_OF_TEST" %in% colnames(old)))
+    return(character(0))
+
+  coords <- c("MARKER", "FIGURE", "SCOPE", "AREA", "SUBAREA", "AGGREGATION")
+  coords <- coords[coords %in% colnames(old) & coords %in% names(key)]
+
+  keep <- rep(TRUE, nrow(old))
+  for (cl in coords)
+    keep <- keep & (as.character(old[[cl]]) == as.character(key[[cl]]))
+
+  as.character(old[which(keep), "AREA_OF_TEST"])
 }

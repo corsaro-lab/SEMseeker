@@ -1,260 +1,101 @@
-#' Per-sample statistics sibling of the sample sheet (internal)
+#' Materialise the per-sample statistics of the run
 #'
-#' AI-223, slice 1 — scope `SAMPLE`. Produces `SAMPLE_STATS_RESULT.csv` next to
-#' `SAMPLE_SHEET_RESULT.csv` in the data folder, one row per sample, wide:
+#' AI-223, rewritten by AI-255. This used to produce `SAMPLE_STATS_RESULT.csv`,
+#' a second kind of artefact with its own shape - samples down the rows,
+#' features across the columns - and its own producer, mask and aggregation
+#' code. That shape is what hid the fact that a burden over the whole sample and
+#' a burden per gene are the same marker reduced over different extents.
 #'
-#' \itemize{
-#'   \item burden per marker — `SAMPLE_<MARKER>_<FIGURE>`, aggregated over the
-#'     `AREA == "POSITION"` keys (i.e. every probe, no genomic filter). The
-#'     operator is intrinsic to the marker: discrete markers are summed,
-#'     continuous ones averaged;
-#'   \item signal descriptors — `SAMPLE_MEDIAN`, `SAMPLE_MEAN`,
-#'     `SAMPLE_VARIANCE`, `SAMPLE_IQR`, plus `SAMPLE_MODE_LOW` /
-#'     `SAMPLE_MODE_HIGH` on the beta scale only;
-#'   \item `SAMPLE_N_PROBES`.
-#' }
+#' They are now `SCOPE = SAMPLE` artefacts: ordinary pivots, **one row tall**,
+#' written by the single derivation path ([io_pivot_build()]). The readable
+#' per-sample table is composed at read time by [sem_study_summary_get()], which
+#' transposes them and joins them onto the sample sheet.
 #'
-#' Keeping these out of the sample sheet is deliberate: the sheet stays the
-#' description of the study, this file carries what the run computed, and the
-#' two join on `Sample_ID`. Region scopes (`<AREA>[_<SUBAREA>]_*`) are the next
-#' slice; the column naming already accommodates them through
-#' [io_scope_name()].
+#' This pass is therefore a **warm-up, not a requirement**: it leaves the
+#' statistics of the default region class on disk at the end of a SEM run, so a
+#' user who only wants the descriptive table does not pay for it later. Anything
+#' it does not materialise is built on first read - which is what removed the
+#' old *"produce it and rerun the analysis"*.
 #'
-#' @return Invisibly the path of the file written, or `NULL` when there was
-#'   nothing to write.
+#' @return invisibly, the character vector of written artefact paths.
 #' @keywords internal
 #' @noRd
-#' @importFrom doRNG %dorng%
 sem_sample_stats_build <- function() {
 
   ssEnv <- core_get_session_info()
+  keys  <- ssEnv$keys_markers_figures
 
-  burden      <- .sem_sample_burden_get()
-  descriptors <- .sem_sample_descriptors_get()
-
-  if (is.null(burden) && is.null(descriptors)) {
+  if (is.null(keys) || nrow(keys) == 0) {
     core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
-              " No per-sample statistics could be computed; ",
-              "SAMPLE_STATS_RESULT not written.")
-    return(invisible(NULL))
+              " No marker/figure keys; per-sample statistics not materialised.")
+    return(invisible(character(0)))
   }
-
-  stats <- if (is.null(burden)) descriptors else
-           if (is.null(descriptors)) burden else
-           merge(descriptors, burden, by = "Sample_ID", all = TRUE)
-
-  # Sample sheet identifiers are the reference: report what the pivots know
-  # about samples the sheet does not mention, and vice versa (AI-083).
-  sheet <- sem_study_summary_get(with_sample_stats = FALSE)
-  if (!is.null(sheet) && "Sample_ID" %in% colnames(sheet)) {
-    ids_sheet <- unique(as.character(sheet$Sample_ID))
-    ids_stats <- unique(as.character(stats$Sample_ID))
-    if (length(intersect(ids_sheet, ids_stats)) == 0) {
-      core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"),
-                " Per-sample statistics match no sample of the sample sheet: [",
-                paste(utils::head(ids_sheet, 4), collapse = ", "), "] vs [",
-                paste(utils::head(ids_stats, 4), collapse = ", "), "].")
-      stop("sem_sample_stats_build(): no Sample_ID in common between the sample ",
-           "sheet and the computed pivots. Sample sheet ids: ",
-           paste(utils::head(ids_sheet, 4), collapse = ", "),
-           " | pivot columns: ", paste(utils::head(ids_stats, 4), collapse = ", "), ".")
-    }
-    missing_ids <- setdiff(ids_sheet, ids_stats)
-    if (length(missing_ids) > 0)
-      core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
-                " ", length(missing_ids), " sample(s) have no computed statistics: ",
-                paste(utils::head(missing_ids, 10), collapse = ", "),
-                if (length(missing_ids) > 10) ", ..." else "")
-  }
-
-  stats <- stats[order(stats$Sample_ID), , drop = FALSE]
-  file_path <- io_file_path_build(ssEnv$result_folderData, "sample_stats_result", "csv")
-  utils::write.csv2(stats, file_path, row.names = FALSE)
-  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
-            " Per-sample statistics written: ", nrow(stats), " samples x ",
-            ncol(stats) - 1, " columns.")
-
-  invisible(file_path)
-}
-
-#' Burden per marker at sample level
-#'
-#' Moved here from sem_study_summary_total() (AI-223): the columns it used to
-#' append to the sample sheet were aggregated over the `POSITION` keys, i.e.
-#' they were already the `SAMPLE` scope of this artefact.
-#'
-#' @keywords internal
-#' @noRd
-.sem_sample_burden_get <- function() {
-
-  ssEnv <- core_get_session_info()
-  keys <- ssEnv$keys_areas_subareas_markers_figures
-  keys <- subset(keys, keys$AREA == "POSITION")
-  if (nrow(keys) == 0)
-    return(NULL)
-
-  result <- NULL
-  for (k in seq_len(nrow(keys))) {
-    key     <- keys[k, ]
-    marker  <- key$MARKER
-    figure  <- key$FIGURE
-
-    pivot <- io_read_pivot(marker, figure, key$AREA, key$SUBAREA)
-    if (is.null(pivot))
-      next
-
-    pivot <- pivot$drop(c("CHR", "START", "END"))
-    # The operator is intrinsic to the marker: counts are summed, continuous
-    # deviations averaged. DISCRETE is the flag that already encodes it
-    # (util_keys_create.R).
-    pivot <- if (isTRUE(key$DISCRETE)) pivot$sum() else pivot$mean()
-    pivot <- pivot$with_columns(polars::pl$col("*"))
-
-    pivot <- as.data.frame(t(as.data.frame(pivot$collect())))
-    colname <- io_burden_colname("SAMPLE", marker, figure)
-    colnames(pivot) <- colname
-    pivot$Sample_ID <- rownames(pivot)
-
-    if (is.null(result)) {
-      result <- pivot
-    } else {
-      result <- result[, !(colnames(result) == colname), drop = FALSE]
-      result <- merge(result, pivot, by = "Sample_ID", all = TRUE)
-    }
-  }
-
-  if (is.null(result))
-    return(NULL)
-
-  result[is.na(result)] <- 0
-  rownames(result) <- NULL
-  result
-}
-
-#' Signal descriptors at sample level
-#'
-#' One pass per sample over the SIGNAL pivot, parallelised with the same
-#' foreach/%dorng% idiom used elsewhere in the package. Each worker collects a
-#' single sample column (one column ~ n_probes doubles, so memory stays bounded
-#' by the number of workers, not by the size of the matrix) and reduces it to
-#' one row of statistics.
-#'
-#' @keywords internal
-#' @noRd
-.sem_sample_descriptors_get <- function() {
-
-  ssEnv <- core_get_session_info()
-
-  pivot_path <- io_pivot_file_name_parquet("SIGNAL", "MEAN", "PROBE", "WHOLE")
-  if (!file.exists(pivot_path)) {
-    core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
-              " SIGNAL pivot not found, signal descriptors skipped: ", pivot_path)
-    return(NULL)
-  }
-
-  lazy <- polars::pl$scan_parquet(pivot_path)
-  # The probe identifier column is named AREA in the PROBE pivot
-  # (io_signal_save()); every other column is a sample.
-  samples <- setdiff(names(lazy$collect_schema()), c("AREA", "PROBE", "CHR", "START", "END"))
-  if (length(samples) == 0) {
-    core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
-              " SIGNAL pivot carries no sample column; descriptors skipped.")
-    return(NULL)
-  }
-
-  beta  <- isTRUE(ssEnv$beta)
-  stats_wanted <- io_signal_stats(beta)
-  colnames_out <- vapply(stats_wanted, function(s) io_stat_colname("SAMPLE", s),
-                         character(1))
 
   core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
-            " Computing signal descriptors for ", length(samples),
-            " samples (scale: ", if (beta) "beta" else "M-value", ").")
+            " Per-sample statistics: materialising the SAMPLE-scope artefacts ",
+            "of the whole sample.")
 
-  s <- NULL   # quiet R CMD check note
-  descriptors <- foreach::foreach(
-    s         = seq_along(samples),
-    .combine  = rbind,
-    .packages = c("SEMseeker", "polars", "stats"),
-    .export   = c("samples", "pivot_path", "beta", "stats_wanted", "colnames_out")
-  ) %dorng% tryCatch({
-    sample_id <- samples[s]
-    values <- as.data.frame(
-      polars::pl$scan_parquet(pivot_path)$select(sample_id)$collect()
-    )[[1]]
-    values <- as.numeric(values)
-    values <- values[is.finite(values)]
+  written <- character(0)
+  for (i in seq_len(nrow(keys))) {
+    marker <- as.character(keys$MARKER[i])
+    figure <- as.character(keys$FIGURE[i])
+    aggs   <- util_aggregations_allowed(marker, figure,
+                                        discrete = isTRUE(keys$DISCRETE[i]),
+                                        default  = TRUE,
+                                        scope    = "SAMPLE",
+                                        area     = "PROBE")
+    out <- tryCatch(
+      io_pivot_build(marker, figure, scope = "SAMPLE", area = "PROBE",
+                     subarea = "WHOLE", aggregations = aggs),
+      error = function(e) {
+        core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+                  " Per-sample statistics for ", marker, "_", figure,
+                  " could not be built: ", conditionMessage(e))
+        character(0)
+      })
+    written <- c(written, out)
+  }
 
-    row <- SEMseeker:::.sem_signal_descriptors(values, beta = beta)
-    out <- data.frame(Sample_ID = sample_id, stringsAsFactors = FALSE)
-    for (i in seq_along(stats_wanted)) {
-      # NULL would DROP the column instead of filling it, and rows of unequal
-      # width break the rbind combine.
-      value <- row[[stats_wanted[i]]]
-      out[[colnames_out[i]]] <- if (is.null(value)) NA_real_ else value
-    }
-    out
-  }, error = function(e) {
-    NULL
-  })
+  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+            " Per-sample statistics: ", length(written), " artefact(s) written.")
 
-  if (is.null(descriptors) || nrow(descriptors) == 0)
-    return(NULL)
-
-  rownames(descriptors) <- NULL
-  descriptors
+  invisible(written)
 }
 
-#' Reduce one sample's signal vector to its descriptors
+#' Usable positions per sample, a property of the imputation (internal)
 #'
-#' Split at 0.5 for the two beta modes: methylation beta values are bimodal
-#' with peaks near 0 (unmethylated) and near 1 (methylated), so the highest
-#' density peak on each side of 0.5 is the natural estimate of each mode. On
-#' M-values the distribution is unimodal and the split is meaningless, which is
-#' why [io_signal_stats()] does not request the mode columns there.
+#' AI-255. `N_PROBES` is **not** an aggregation of a marker and not a property
+#' of a scope: it is how many positions of that sample survived the treatment of
+#' missing values. It therefore belongs on the sample sheet, with the other
+#' descriptive properties of the sample, and not in the taxonomy - which is why
+#' [util_aggregate_values()] no longer answers to the name.
 #'
-#' @param values numeric vector, already filtered to finite values.
-#' @param beta logical. TRUE when the signal is on the [0,1] beta scale.
-#' @return named list of statistics.
+#' Nothing is lost for the density: the `MEAN` of a binary marker *is* the
+#' density, denominator included.
+#'
+#' @return a data.frame with `Sample_ID` and `N_PROBES`, or `NULL`.
 #' @keywords internal
 #' @noRd
-.sem_signal_descriptors <- function(values, beta = TRUE) {
+.sem_sample_n_probes <- function() {
 
-  out <- list(
-    MEDIAN     = NA_real_,
-    MEAN       = NA_real_,
-    VARIANCE   = NA_real_,
-    IQR        = NA_real_,
-    N_PROBES   = length(values)
-  )
+  pivot <- tryCatch(
+    io_read_pivot("SIGNAL", io_signal_figure(), "POSITION", "WHOLE",
+                  aggregation = "VALUE", scope = "INSTANCE", build = FALSE),
+    error = function(e) NULL)
+  if (is.null(pivot))
+    return(NULL)
 
-  if (length(values) == 0)
-    return(out)
+  cols <- setdiff(names(pivot), c("CHR", "START", "END", "PROBE", "AREA"))
+  if (length(cols) == 0)
+    return(NULL)
 
-  out$MEDIAN   <- stats::median(values)
-  out$MEAN     <- mean(values)
-  out$VARIANCE <- stats::var(values)
-  out$IQR      <- stats::IQR(values)
+  # polars' R bindings take expressions through `...`, not as a list: the list
+  # has to be splatted with do.call(). Same idiom as sem_deltaX_get().
+  counts <- as.data.frame(
+    do.call(pivot$select, lapply(cols, function(cl)
+      polars::pl$col(cl)$is_not_null()$sum()$alias(cl)))$collect())
 
-  if (!isTRUE(beta))
-    return(out)
-
-  out$MODE_LOW  <- NA_real_
-  out$MODE_HIGH <- NA_real_
-  # density() needs at least two distinct points to estimate anything.
-  if (length(unique(values)) < 2L)
-    return(out)
-
-  dens <- tryCatch(stats::density(values, from = 0, to = 1),
-                   error = function(e) NULL)
-  if (is.null(dens))
-    return(out)
-
-  low <- dens$x < 0.5
-  if (any(low))
-    out$MODE_LOW <- dens$x[low][which.max(dens$y[low])]
-  if (any(!low))
-    out$MODE_HIGH <- dens$x[!low][which.max(dens$y[!low])]
-
-  out
+  data.frame(Sample_ID = cols,
+             N_PROBES  = as.numeric(counts[1, cols]),
+             stringsAsFactors = FALSE)
 }

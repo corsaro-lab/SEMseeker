@@ -110,7 +110,7 @@
 #'   \code{IlluminaHumanMethylationEPICanno.ilm10b4.hg19} Bioconductor
 #'   annotation package with \code{set.seed(20210713)} (date of the v.0.1.9
 #'   Zenodo software-archive release, DOI
-#'   \href{https://doi.org/10.5281/zenodo.5095417}{10.5281/zenodo.5095417}).
+#'   \href{https://doi.org/10.5281/zenodo.5095416}{10.5281/zenodo.5095416}).
 #'   Re-generate with \code{Rscript data-raw/build_test_master_features.R}.
 "test_master_features"
 
@@ -122,16 +122,16 @@
 #' present in \code{\link{test_master_features}}.  Contains 10 samples from
 #' a Beckwith-Wiedemann Syndrome (BWS) / Multi-Locus Imprinting Disturbance
 #' (MLID) family study: 6 unrelated controls and 4 family members (L1 = BWS
-#' proband, L2–L4 = siblings/parent with NLRP5 compound heterozygous variants).
+#' proband, L2-L4 = siblings/parent with NLRP5 compound heterozygous variants).
 #'
 #' This fixture replaces all \code{rbeta()}-based synthetic signal generation
-#' in the test suite and vignette (AI-123).  Because the data contain real BWS
+#' in the test suite and vignette.  Because the data contain real BWS
 #' epimutations at imprinting DMRs (KCNQ1OT1, H19/IGF2, MEG3, ...), running
 #' the full SEMseeker pipeline on this matrix detects biologically expected
 #' hypo-epimutation events in the Case samples without any artificial injection.
 #'
 #' @format A numeric matrix with 18,089 rows (EPIC probe IDs) and 10 columns
-#'   (samples: CTRL01–CTRL06, L1–L4). Values are beta coefficients in
+#'   (samples: CTRL01-CTRL06, L1-L4). Values are beta coefficients in
 #'   \eqn{[0, 1]}; a small number of probes may have \code{NA} (QC-filtered
 #'   positions in the original GEO submission).
 #'
@@ -146,9 +146,9 @@
 #' Sample sheet for \code{\link{test_signal_gse133774}} in the canonical
 #' SEMseeker three-class design (Reference / Control / Case).
 #'
-#' Control samples (CTRL01–CTRL06) appear twice: once as \code{Reference}
+#' Control samples (CTRL01-CTRL06) appear twice: once as \code{Reference}
 #' (population baseline for IQR threshold estimation) and once as
-#' \code{Control} (comparison group).  Family samples (L1–L4) are \code{Case};
+#' \code{Control} (comparison group).  Family samples (L1-L4) are \code{Case};
 #' L1 is the BWS proband.  This is the \emph{Reference-reuse pattern}
 #' documented in the getting-started vignette.
 #'

@@ -21,7 +21,7 @@ Two responsibilities:
 \details{
 1. **Fill missing optional columns** with NA, so downstream code can
    always reference them without `is.null()` checks.
-2. **Reject unknown columns** with a clear diagnostic — including a
+2. **Reject unknown columns** with a clear diagnostic - including a
    fuzzy-match suggestion when the unknown name is close to an
    expected one (typical case: typo in setup like `phenolyser` vs
    `phenolyzer`, or `areas_sql_condtion` vs `areas_sql_condition`).

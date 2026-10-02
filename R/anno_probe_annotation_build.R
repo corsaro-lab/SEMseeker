@@ -4,9 +4,9 @@
 #' by reading coordinates and feature annotations directly from the S4 data
 #' slots of the installed Illumina annotation package.  The annotation packages
 #' are accessed directly via their S4 data slots.
-#' The result is cached inside the session environment
-#' (\code{ssEnv$probe_annotation}) so the package is parsed only once per
-#' R session.
+#' The result is cached on disk, keyed by technology and genome build, and
+#' memoised in the package environment for the rest of the process, so the
+#' annotation package is parsed once per machine rather than once per session.
 #'
 #' Column mapping from Bioconductor to SEMseeker:
 #' \tabular{ll}{
@@ -38,7 +38,7 @@
 #' @param group_str Character vector: \code{UCSC_RefGene_Group} (";"-joined).
 #' @param name_str Character vector: \code{UCSC_RefGene_Name} (";"-joined).
 #' @return Named list of GENE_BODY, GENE_TSS200, GENE_TSS1500, GENE_1STEXON,
-#'   GENE_5UTR, GENE_3UTR, GENE_EXONBND, GENE_WHOLE.
+#'   GENE_5UTR, GENE_3UTR, GENE_EXONBND, GENE_WHOLE, GENE_PROMOTER.
 #' @keywords internal
 #' @noRd
 .anno_gene_columns <- function(group_str, name_str) {
@@ -50,10 +50,13 @@
   gene_groups <- strsplit(as.character(group_str), ";", fixed = TRUE)
   gene_names  <- strsplit(as.character(name_str),  ";", fixed = TRUE)
 
-  extract <- function(region) {
+  # `regions` takes one window or several: with several, the gene is named once
+  # however many of them it is annotated to, which is what makes a multi-window
+  # class a union rather than a sum.
+  extract <- function(regions) {
     vapply(seq_along(gene_groups), function(i) {
       g <- gene_groups[[i]]; n <- gene_names[[i]]
-      hits <- unique(n[g == region & n != ""])
+      hits <- unique(n[g %in% regions & n != ""])
       if (length(hits) == 0L) NA_character_ else paste(hits, collapse = ";")
     }, character(1))
   }
@@ -63,6 +66,17 @@
     hits <- unique(genes[genes != "" & !is.na(genes)])
     if (length(hits) == 0L) NA_character_ else paste(hits, collapse = ";")
   }, character(1))
+
+  # The three RefGene groups that sit at the transcription start, as one class.
+  # A union like GENE_WHOLE and not a partition: a probe annotated TSS200 for one
+  # transcript and TSS1500 for another is in the promoter of both genes and names
+  # each of them once, so nothing is counted twice when the class is masked.
+  #
+  # The regulatory column of the same manifest was considered and set aside: it
+  # agrees with this definition for about a third of the probes, is empty for
+  # three quarters of them, and is not a rule about position relative to the TSS,
+  # so it cannot be reproduced without the manifest in hand.
+  out$GENE_PROMOTER <- extract(c("TSS200", "TSS1500", "1stExon"))
   out
 }
 
@@ -96,6 +110,135 @@
   list(CHR_CYTOBAND = cytoband_vec)
 }
 
+# ---------------------------------------------------------------------------
+# Where the probe annotation is cached, and why it is not in ssEnv
+#
+# ssEnv is the record of a session's CHOICES: it exists so that moving from
+# semseeker() to association_analysis() does not require the caller to remember
+# the parameters of the first stage. The probe annotation is not a choice. It
+# is a derivative of an immutable external resource, identified by technology
+# and genome build, and it is 226 MB.
+#
+# Keeping it in ssEnv made every option set during core_init_env() serialise it
+# again: core_set_env_variable() calls core_update_session_info() per option and
+# that writes the whole session TWICE. Measured: core_init_env() cost 287 s once
+# the annotation was built, against 0.8 s before, while a Wilcoxon over the
+# entire fixture costs 1.1 s. Across the 53 test files that call it, that single
+# misplacement was most of the CI's runtime.
+#
+# Two tiers, because the costs are an order of magnitude apart (measured on the
+# EPIC manifest, 866,543 rows):
+#   rebuild from the annotation package  57.5 s
+#   read the cached file                  2.2 s
+#   read the in-process memo              0.00 s
+# A per-process memo alone would make every parallel worker pay the 57.5 s, so
+# the disk tier is what makes workers cheap; the memo is what makes repeated
+# calls inside one process free.
+#
+# Location follows .anno_get_cpg_islands(), which already caches this way. The
+# two are meant to be consolidated onto BiocFileCache later, which would also
+# bring staleness control; this key deliberately does not attempt it. It tells
+# two annotations apart, it does not notice when the upstream package changes.
+# ---------------------------------------------------------------------------
+
+.anno_probe_cache_key <- function(tech) {
+  ssEnv <- core_get_session_info()
+  build <- if (is.null(ssEnv$genome_build) || !nzchar(ssEnv$genome_build))
+    "hg19" else as.character(ssEnv$genome_build)
+  paste0(tech, "_", build)
+}
+
+# The columns this builder produces, named once so the cache can tell a table
+# written by an older build from one it can still use. A class added to the
+# vocabulary adds a column here, and a cache that predates it has to be rebuilt:
+# the request would otherwise ask for a column the table does not carry and the
+# run would stop on an undefined column, far from the change that caused it.
+.anno_probe_schema <- function(tech) {
+  c("PROBE", "CHR", "START", "END", tech,
+    "GENE_BODY", "GENE_TSS200", "GENE_TSS1500", "GENE_1STEXON",
+    "GENE_5UTR", "GENE_3UTR", "GENE_EXONBND", "GENE_WHOLE", "GENE_PROMOTER",
+    "ISLAND_WHOLE", "ISLAND_ISLAND",
+    "ISLAND_N_SHORE", "ISLAND_S_SHORE",
+    "ISLAND_N_SHELF", "ISLAND_S_SHELF", "ISLAND_OPENSEA",
+    "CHR_CYTOBAND", "DMR_WHOLE", "DMR_DMR")
+}
+
+.anno_probe_cache_file <- function(key) {
+  # "v2" is the shape of what is stored, and it is in the NAME because the name is
+  # the only part an older build reads before opening the file.
+  #
+  # The schema recorded inside covers one direction: a build that finds a file
+  # written for other columns rebuilds it. The other direction cannot be covered
+  # from inside, because the build that gets it wrong is the one that already
+  # shipped: an earlier version does readRDS() and uses the result as a table, so a
+  # file holding a list stops it on an undefined column, far from any cause it can
+  # see. It cannot be taught this format. It can be kept from looking at it, and a
+  # name it never asks for does exactly that.
+  #
+  # The suffix moves when the stored SHAPE moves, not when the columns do - those
+  # the schema inside already settles. A file from the previous shape is left where
+  # it is rather than removed: an older version that is still installed goes on
+  # using it, which is the whole point of parting the names.
+  file.path(tools::R_user_dir("SEMseeker", "cache"),
+            paste0("probe_annotation_v2_", key, ".rds"))
+}
+
+.anno_probe_cache_get <- function(key, schema) {
+  memo <- .pkgglobalenv$probe_annotation_memo
+  if (!is.null(memo) && identical(memo$key, key) &&
+      identical(memo$schema, schema)) return(memo$data)
+
+  f <- .anno_probe_cache_file(key)
+  if (!file.exists(f)) return(NULL)
+
+  payload <- tryCatch(readRDS(f), error = function(e) {
+    # A truncated or unreadable cache must not take the run down with it: the
+    # annotation can always be rebuilt, it just costs a minute.
+    core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " cached probe annotation at ", f, " could not be read (",
+              conditionMessage(e), "); rebuilding.")
+    NULL
+  })
+  if (is.null(payload)) return(NULL)
+
+  # A cache written by a build with a different set of columns is the same
+  # situation as an unreadable one: it can be rebuilt. It is NOT the same as an
+  # error, and it must not be one, because every upgrade that adds a region class
+  # leaves exactly this behind on every machine that already ran the package. A
+  # file with no schema in it was written before the schema was recorded.
+  if (!is.list(payload) || is.null(payload$schema) ||
+      !identical(payload$schema, schema)) {
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " cached probe annotation at ", f, " was written for a different ",
+              "set of columns; rebuilding.")
+    return(NULL)
+  }
+  data <- payload$data
+
+  assign("probe_annotation_memo", list(key = key, schema = schema, data = data),
+         envir = .pkgglobalenv)
+  data
+}
+
+.anno_probe_cache_put <- function(key, data, schema) {
+  assign("probe_annotation_memo", list(key = key, schema = schema, data = data),
+         envir = .pkgglobalenv)
+  f <- .anno_probe_cache_file(key)
+  dir.create(dirname(f), recursive = TRUE, showWarnings = FALSE)
+  tryCatch({
+    # Write to a sibling and rename, so a run interrupted mid-write leaves the
+    # previous cache intact rather than a half file that every later process
+    # would try to read.
+    tmp <- paste0(f, ".", Sys.getpid(), ".tmp")
+    saveRDS(list(schema = schema, data = data), tmp)
+    file.rename(tmp, f)
+  }, error = function(e)
+    core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " could not cache the probe annotation to ", f, " (",
+              conditionMessage(e), "); it will be rebuilt next time."))
+  invisible(data)
+}
+
 #' Build the Illumina probe annotation table
 #'
 #' Internal helper. Assembles the per-probe annotation (genomic position,
@@ -103,19 +246,22 @@
 #' platform, joining the bundled \code{\link{cytoband_hg19}} and
 #' \code{\link{dmr_annotation}} reference data.
 #'
+#' The result is cached on disk under \code{tools::R_user_dir("SEMseeker",
+#' "cache")}, keyed by technology and genome build, and memoised in the package
+#' environment for the rest of the process. It is deliberately NOT stored in
+#' \code{ssEnv} - see the note above this function.
+#'
 #' @param tech Illumina platform identifier (e.g. "EPIC", "450k", "27k").
 #' @param force Logical; rebuild even when a cached annotation is available.
 #' @return A data frame of per-probe annotation columns.
 #' @keywords internal
 anno_probe_annotation_build <- function(tech, force = FALSE) {
 
-  ssEnv <- core_get_session_info()
- 
-  # Return cached version unless forced
-  if (!force &&
-      !is.null(ssEnv$probe_annotation) &&
-      identical(ssEnv$probe_annotation_tech, tech)) {
-    return(ssEnv$probe_annotation)
+  key <- .anno_probe_cache_key(tech)
+
+  if (!force) {
+    cached <- .anno_probe_cache_get(key, .anno_probe_schema(tech))
+    if (!is.null(cached)) return(cached)
   }
 
   pkg <- .ANNO_PKGS[[tech]]
@@ -144,7 +290,7 @@ anno_probe_annotation_build <- function(tech, force = FALSE) {
   # ---- Semantic area columns (one row per probe) ----
   # GENE / ISLAND / CHR are 1:1 mappings: each pure helper returns a NAMED LIST
   # of columns for ALL probes. They are independent column-groups, NOT a
-  # mutually-exclusive dispatch — every probe gets its gene context AND its
+  # mutually-exclusive dispatch - every probe gets its gene context AND its
   # island context AND its cytoband. The helpers are pure (no annotation-package
   # access), so each area's recoding is unit-tested without an Illumina package.
   col_groups <- c(
@@ -155,32 +301,23 @@ anno_probe_annotation_build <- function(tech, force = FALSE) {
   )
   for (nm in names(col_groups)) anno_df[[nm]] <- col_groups[[nm]]
 
-  # ---- DMR columns (1:many membership — NOT a 1:1 column) ----
+  # ---- DMR columns (1:many membership - NOT a 1:1 column) ----
   # A probe can belong to several DMRs, so this is a row-EXPANDING join, not a
   # per-probe column like GENE/ISLAND/CHR. The duplication is intentional and
   # required: anno_probe_features_get() selects [tech, PROBE, CHR, START, END,
-  # area_subarea] and dplyr::distinct()s — for DMR_* this preserves every
+  # area_subarea] and dplyr::distinct()s - for DMR_* this preserves every
   # membership, while for the other areas the duplicate rows collapse back.
   dmr <- SEMseeker::dmr_annotation
   anno_df <- merge(anno_df, dmr, by = "PROBE", all.x = TRUE)
 
   # ---- Select final columns ----
-  keep <- c(
-    "PROBE", "CHR", "START", "END", tech,
-    "GENE_BODY", "GENE_TSS200", "GENE_TSS1500", "GENE_1STEXON",
-    "GENE_5UTR", "GENE_3UTR", "GENE_EXONBND", "GENE_WHOLE",
-    "ISLAND_WHOLE", "ISLAND_ISLAND",
-    "ISLAND_N_SHORE", "ISLAND_S_SHORE",
-    "ISLAND_N_SHELF", "ISLAND_S_SHELF", "ISLAND_OPENSEA",
-    "CHR_CYTOBAND", "DMR_WHOLE", "DMR_DMR"
-  )
+  keep <- .anno_probe_schema(tech)
   anno_df <- anno_df[, intersect(keep, colnames(anno_df)), drop = FALSE]
 
   # ---- Cache and return ----
-  ssEnv$probe_annotation      <- anno_df
-  ssEnv$probe_annotation_tech <- tech
-  core_update_session_info(ssEnv)
+  .anno_probe_cache_put(key, anno_df, keep)
 
-  core_log_event("INFO: probe annotation built — ", nrow(anno_df), " probes, tech = ", tech)
+  core_log_event("INFO: probe annotation built - ", nrow(anno_df),
+            " probes, tech = ", tech, ", cached as ", key)
   return(anno_df)
 }

@@ -68,9 +68,11 @@
     return(code)
   }
   orig <- SEMseeker:::io_data_preparation
+  # AI-255: io_data_preparation() lost dototal and depth_analysis with the TOTAL
+  # synthesis they governed.
   passthrough <- function(family_test, transformation_y, tempDataFrame,
-                          independent_variable, g_start, g_end, FALSE_,
-                          covariates, depth_analysis, key,
+                          independent_variable, g_start, g_end,
+                          covariates, key,
                           transformation_x = "none") {
     list(tempDataFrame = tempDataFrame,
          independent_variableLevels = c(NA, NA))
@@ -101,7 +103,6 @@ test_that("assoc_apply_stat_model_batch returns one row per informative area wit
       transformation_y = "", dototal = FALSE,
       session_folder = tempdir(),
       independent_variable = "IV",
-      depth_analysis = 3,
       samples_sql_condition = "")
   )
 
@@ -131,7 +132,6 @@ test_that("limma_2 in batch mode produces different p-values than the degenerate
       transformation_y = "", dototal = FALSE,
       session_folder = tempdir(),
       independent_variable = "IV",
-      depth_analysis = 3,
       samples_sql_condition = "")
   )
 
@@ -184,7 +184,6 @@ test_that("voom_2 in batch mode runs on NB counts and gives calibrated p-values 
       transformation_y = "", dototal = FALSE,
       session_folder = tempdir(),
       independent_variable = "IV",
-      depth_analysis = 3,
       samples_sql_condition = "")
   )
 
@@ -220,7 +219,6 @@ test_that("assoc_apply_stat_model intercepts limma_<N> / voom_<N> and routes to 
         transformation_y = "", dototal = FALSE,
         session_folder = tempdir(),
         independent_variable = "IV",
-        depth_analysis = 3,
         samples_sql_condition = "")
     ),
     error = function(e) {

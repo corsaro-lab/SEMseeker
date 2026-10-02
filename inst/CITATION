@@ -10,6 +10,6 @@ bibentry(
   ),
   year    = format(Sys.Date(), "%Y"),
   note    = paste("R package version", utils::packageVersion("SEMseeker")),
-  url     = "https://github.com/drake69/SEMseeker",
-  doi     = "10.5281/zenodo.5095417"
+  url     = "https://github.com/corsaro-lab/SEMseeker",
+  doi     = "10.5281/zenodo.5095416"
 )

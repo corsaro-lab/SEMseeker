@@ -11,7 +11,7 @@
 #'   Phenolyzer binary directory via \code{phenolyzer_folder_bin}.
 #'
 #' @param inference_details data.frame. Inference parameter table (must contain
-#'   a \code{depth_analysis} column; rows with \code{depth_analysis == 3} are
+#'   the per-gene artefacts (SCOPE = INSTANCE, AREA = GENE) are
 #'   processed).
 #' @param adjust_per_area_s logical vector. Whether to adjust p-values per area
 #'   for each \code{pvalue_columns} entry.
@@ -44,7 +44,11 @@
 #' @param maxResources numeric. Maximum percentage of CPU cores to use
 #'   (default 90).
 #' @param parallel_strategy character. Parallelisation backend (default
-#'   \code{"multicore"}).
+#'   \code{"multisession"}).
+#'   Asking for \code{"multicore"} is accepted and converted to
+#'   \code{"multisession"}: it means fork(), which is unsafe with this
+#'   package's native thread pool on every platform that offers it, and
+#'   absent on Windows. The conversion is logged.
 #' @param ... Additional named arguments passed to \code{core_init_env()}.
 #' @return Invisibly \code{NULL}. Pathway enrichment results are written to the
 #'   pathway sub-folder of \code{result_folder}.
@@ -66,7 +70,7 @@
 enrichment_analysis <- function(inference_details, adjust_per_area_s, adjust_globally_s, pvalue_columns, adjustment_methods,alphas,
   study, significance,statistic_parameter, path_dbs, phenolyzer_folder_bin,disease,
   phenolyzer=FALSE, WebGestalt=FALSE, pathfindr=FALSE,STRINGdb=FALSE,Phenolyzer_STRINGdb=FALSE,Phenolyzer_WebGestalt=FALSE,ctdR=FALSE,
-  result_folder, maxResources = 90, parallel_strategy  = "multicore", ...)
+  result_folder, maxResources = 90, parallel_strategy  = "multisession", ...)
 {
   start_fresh <- FALSE
   ssEnv <- core_init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy,
@@ -97,7 +101,15 @@ enrichment_analysis <- function(inference_details, adjust_per_area_s, adjust_glo
   }
 
 
-  inference_details <- subset(inference_details, depth_analysis ==3)
+  # AI-311: the invariant is declared in one place and refused here, at the
+  # door, instead of being applied as a subset() five call sites downstream. A
+  # folder with no per-instance gene row used to yield no enrichment at all,
+  # silently, which reads as "nothing was significant" when it means "the input
+  # was never computed". Since the two aggregation branches stopped being
+  # additive (AI-308) that folder is easy to produce by accident: a run at
+  # scope = "SAMPLE" is complete, legitimate, and feeds no pathway analysis.
+  enrich_input_assert(inference_details)
+
   for (alpha in alphas)
   {
     for (id in seq_len(nrow(inference_details)))

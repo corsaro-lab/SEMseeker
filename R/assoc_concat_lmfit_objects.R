@@ -11,7 +11,7 @@
 # This helper makes the concatenation safe by:
 #   1. Concatenating per-row fields (coefficients, sigma, Amean,
 #      stdev.unscaled, df.residual, weights if present) along the row
-#      axis — same column / list semantics as a monolithic lmFit.
+#      axis - same column / list semantics as a monolithic lmFit.
 #   2. Carrying forward design-side fields (cov.coefficients, design,
 #      pivot, qr, rank, method, call) from the first chunk, asserting
 #      they are equal across chunks. Same design matrix produces the
@@ -48,7 +48,7 @@ assoc_concat_lmfit_objects <- function(fit_list) {
   }
 
   # ---- design-side fields: assert equal, take from first chunk -----
-  # These are functions of the design matrix only — must match across
+  # These are functions of the design matrix only - must match across
   # chunks. Comparing $design is sufficient because the rest derive
   # from it.
   for (i in seq.int(2L, length(fit_list))) {
@@ -57,7 +57,7 @@ assoc_concat_lmfit_objects <- function(fit_list) {
                             check.attributes = FALSE,
                             tolerance        = 1e-10))) {
       stop("assoc_concat_lmfit_objects: chunk ", i,
-           " was fitted with a different design matrix — refusing to ",
+           " was fitted with a different design matrix - refusing to ",
            "concatenate (would corrupt cov.coefficients and stdev.unscaled).",
            call. = FALSE)
     }

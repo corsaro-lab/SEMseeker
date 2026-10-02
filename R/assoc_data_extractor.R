@@ -37,7 +37,19 @@ assoc_data_extractor <- function(inference_details,destination_folder="", result
 
         # remove any column with name containg SAMPLES_SQL_CONDITION
         results_inference <- results_inference[,!grepl("SAMPLES_SQL_CONDITION", colnames(results_inference))]
-        utils::write.csv2(results_inference, fileNameResults, row.names = FALSE)
+
+        # AI-257: this function used to write the filtered frame back over
+        # `fileNameResults` - the very file it had just read. Extracting was
+        # therefore destructive: the three filters above (the figures of the
+        # marker, the areas_sql_condition of the request, the dropped
+        # SAMPLES_SQL_CONDITION columns) were applied to the canonical inference
+        # result and the rows that did not pass were gone from disk. Two
+        # consequences, both silent: a narrow `areas_sql_condition` permanently
+        # reduced the result of the run, and the next iteration of this same loop
+        # read a file that a previous iteration had already truncated.
+        #
+        # A consumer reads. `destination_folder` below is where an extraction is
+        # allowed to write, and it writes a copy under a name of its own.
 
         if(inference_detail$samples_sql_condition!="")
           results_inference$SAMPLES_SQL_CONDITION <- inference_detail$samples_sql_condition

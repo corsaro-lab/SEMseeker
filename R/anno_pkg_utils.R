@@ -4,7 +4,7 @@
 # lazy data objects ("Locations", "Islands.UCSC", "Other") that must be loaded
 # individually with data().  The top-level S4 wrapper object (which has the
 # same name as the package) only contains lazy-loading descriptors in its @data
-# slot — accessing slot(obj, "data")$Locations directly returns a list of the
+# slot - accessing slot(obj, "data")$Locations directly returns a list of the
 # form list(what="Locations", envir="package:...") rather than the actual table.
 #
 # Correct access pattern (no minfi required):
@@ -63,10 +63,10 @@
 #' @keywords internal
 .anno_pkg_to_df <- function(pkg) {
 
-  # Core genomic positions — always present
+  # Core genomic positions - always present
   locs <- .anno_pkg_load_table(pkg, "Locations")
 
-  # CpG island context — present in all three arrays
+  # CpG island context - present in all three arrays
   islands <- tryCatch(
     .anno_pkg_load_table(pkg, "Islands.UCSC"),
     error = function(e) {
@@ -85,7 +85,7 @@
     error = function(e) data.frame(row.names = rownames(locs))
   )
 
-  # Combine — all tables share the same rownames (probe IDs)
+  # Combine - all tables share the same rownames (probe IDs)
   cbind(locs, islands, other)
 }
 

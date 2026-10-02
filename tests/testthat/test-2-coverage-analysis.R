@@ -1,7 +1,6 @@
 test_that("coverage-analysis", {
 
-  tempFolder <- tempFolders[1]
-  tempFolders <<- tempFolders[-1]
+  tempFolder <- sem_test_folder()
   # sem_coverage_analysis strips POSITION and PROBE from the keys, so core_init_env must
   # receive at least one other area (GENE, ISLAND, …) or it returns early with 0 rows.
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy, areas = c("GENE"))

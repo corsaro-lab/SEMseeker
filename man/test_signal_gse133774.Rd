@@ -6,7 +6,7 @@
 \title{test_signal_gse133774}
 \format{
 A numeric matrix with 18,089 rows (EPIC probe IDs) and 10 columns
-  (samples: CTRL01–CTRL06, L1–L4). Values are beta coefficients in
+  (samples: CTRL01-CTRL06, L1-L4). Values are beta coefficients in
   \eqn{[0, 1]}; a small number of probes may have \code{NA} (QC-filtered
   positions in the original GEO submission).
 }
@@ -24,11 +24,11 @@ Real EPIC methylation beta-value matrix from GEO series GSE133774
 present in \code{\link{test_master_features}}.  Contains 10 samples from
 a Beckwith-Wiedemann Syndrome (BWS) / Multi-Locus Imprinting Disturbance
 (MLID) family study: 6 unrelated controls and 4 family members (L1 = BWS
-proband, L2–L4 = siblings/parent with NLRP5 compound heterozygous variants).
+proband, L2-L4 = siblings/parent with NLRP5 compound heterozygous variants).
 }
 \details{
 This fixture replaces all \code{rbeta()}-based synthetic signal generation
-in the test suite and vignette (AI-123).  Because the data contain real BWS
+in the test suite and vignette.  Because the data contain real BWS
 epimutations at imprinting DMRs (KCNQ1OT1, H19/IGF2, MEG3, ...), running
 the full SEMseeker pipeline on this matrix detects biologically expected
 hypo-epimutation events in the Case samples without any artificial injection.

@@ -24,7 +24,7 @@ Built from \code{\link{dmr_annotation}} and the
   \code{IlluminaHumanMethylationEPICanno.ilm10b4.hg19} Bioconductor
   annotation package with \code{set.seed(20210713)} (date of the v.0.1.9
   Zenodo software-archive release, DOI
-  \href{https://doi.org/10.5281/zenodo.5095417}{10.5281/zenodo.5095417}).
+  \href{https://doi.org/10.5281/zenodo.5095416}{10.5281/zenodo.5095416}).
   Re-generate with \code{Rscript data-raw/build_test_master_features.R}.
 }
 \usage{
