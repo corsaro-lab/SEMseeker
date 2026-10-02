@@ -1,63 +1,13 @@
 # Tests for additional pure / deterministic helper functions
 #
 # Covered:
-#  - assoc_pow()                        base^exponent utility (10E_model.R)
 #  - util_join_values_to_thresholds()  Polars positional inner join (join_values_to_thresholds.R)
 #  - sem_metrics_ranking()            ranking helper using metrics_properties (metrics_ranking.R)
 #  - assoc_model_performance()          train+test path and overfitting detection (model_performance.R)
 #  - assoc_compute_quantreg_permutation() quantile regression single-permutation draw
 
 # ---------------------------------------------------------------------------
-# 1. assoc_pow
-# ---------------------------------------------------------------------------
-
-test_that("assoc_pow: basic integer arithmetic", {
-  expect_equal(SEMseeker:::assoc_pow(2, 3),  8)
-  expect_equal(SEMseeker:::assoc_pow(10, 0), 1)
-  expect_equal(SEMseeker:::assoc_pow(5, 1),  5)
-  expect_equal(SEMseeker:::assoc_pow(3, 2),  9)
-})
-
-test_that("assoc_pow: fractional exponent (square root)", {
-  expect_equal(SEMseeker:::assoc_pow(4, 0.5), 2)
-  expect_equal(SEMseeker:::assoc_pow(9, 0.5), 3)
-  expect_equal(SEMseeker:::assoc_pow(8, 1/3), 2, tolerance = 1e-10)
-})
-
-test_that("assoc_pow: base 10 matches 10^x", {
-  expect_equal(SEMseeker:::assoc_pow(10,  2),   100)
-  expect_equal(SEMseeker:::assoc_pow(10,  3),  1000)
-  expect_equal(SEMseeker:::assoc_pow(10, -1),   0.1, tolerance = 1e-15)
-  expect_equal(SEMseeker:::assoc_pow(10, -2),  0.01, tolerance = 1e-15)
-})
-
-test_that("assoc_pow: zero base", {
-  expect_equal(SEMseeker:::assoc_pow(0, 5), 0)
-  expect_equal(SEMseeker:::assoc_pow(0, 0), 1)  # 0^0 = 1 by R convention
-})
-
-test_that("assoc_pow: negative base with integer exponent", {
-  expect_equal(SEMseeker:::assoc_pow(-2, 2),  4)
-  expect_equal(SEMseeker:::assoc_pow(-2, 3), -8)
-  expect_equal(SEMseeker:::assoc_pow(-3, 2),  9)
-})
-
-test_that("assoc_pow: vectorised over base", {
-  result <- SEMseeker:::assoc_pow(c(1, 2, 3, 4), 2)
-  expect_equal(result, c(1, 4, 9, 16))
-})
-
-test_that("assoc_pow: vectorised over exponent", {
-  result <- SEMseeker:::assoc_pow(2, c(0, 1, 2, 3))
-  expect_equal(result, c(1, 2, 4, 8))
-})
-
-test_that("assoc_pow: result type is numeric", {
-  expect_true(is.numeric(SEMseeker:::assoc_pow(3, 3)))
-})
-
-# ---------------------------------------------------------------------------
-# 2. util_join_values_to_thresholds
+# 1. util_join_values_to_thresholds
 # ---------------------------------------------------------------------------
 
 # Helpers ----------------------------------------------------------------
@@ -200,7 +150,7 @@ test_that("util_join_values_to_thresholds: multiple chromosomes handled correctl
 })
 
 # ---------------------------------------------------------------------------
-# 3. sem_metrics_ranking
+# 2. sem_metrics_ranking
 # ---------------------------------------------------------------------------
 
 test_that("sem_metrics_ranking: returns data.frame with SCORE and METRIC columns", {
@@ -289,7 +239,7 @@ test_that("sem_metrics_ranking: Inf values are replaced before ranking (no infin
 })
 
 # ---------------------------------------------------------------------------
-# 4. assoc_model_performance — train+test path and overfitting detection
+# 3. assoc_model_performance: train+test path and overfitting detection
 # (extends the basic tests in test-0-pure-functions.R)
 # ---------------------------------------------------------------------------
 
@@ -352,7 +302,7 @@ test_that("assoc_model_performance: mse_test reflects actual squared residuals o
 })
 
 # ---------------------------------------------------------------------------
-# 5. assoc_compute_quantreg_permutation
+# 4. assoc_compute_quantreg_permutation
 # ---------------------------------------------------------------------------
 
 test_that("assoc_compute_quantreg_permutation: returns a numeric scalar", {

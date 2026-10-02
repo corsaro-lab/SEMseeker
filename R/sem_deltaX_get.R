@@ -1,8 +1,9 @@
 # ---------------------------------------------------------------------------
 # sem_deltaX_get() - polars-native, wide-dataframe derived markers
 #
-# AI-030 (2026-06-01). Replaces the legacy R-loop sem_deltaX_get_legacy() - see
-# that file for the previous implementation kept for reference.
+# Written 2026-06-01 to replace an R-loop implementation, which was kept alongside it
+# for reference and A/B testing and removed on 2026-10-02 once nothing had called it
+# for four months. It is in the git history if the comparison is ever wanted again.
 #
 # Builds the derived pivot tables (DELTAQ, DELTARQ, DELTAP, DELTARP) from the
 # corresponding source pivots (DELTAS or DELTAR) entirely in polars.
@@ -12,8 +13,8 @@
 #   - zero == missing (excluded from stats, returned NA in the output)
 #   - right=TRUE intervals (a, b] - matches polars cut default and R cut
 #     default
-#   - skip per-sample bedgraph dumps for derived markers (legacy sem_save_figure
-#     used to write 4013 single bedgraphs per derived marker × figure - the
+#   - skip per-sample bedgraph dumps for derived markers (the removed R-loop
+#     implementation wrote 4013 single bedgraphs per derived marker x figure - the
 #     ~9 min wall-clock bottleneck on ewas_data_hub)
 #
 # Implementation notes:
