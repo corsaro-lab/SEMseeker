@@ -1,3 +1,27 @@
+# The marker an inference file name begins with.
+#
+# io_inference_file_name() composes the name as the marker, then the independent
+# variable, the transformation and the family, so the marker is the leading token.
+#
+# This was read as the part before "_DEPTH_" until the taxonomy stopped saying the
+# granularity of an artefact with an integer. The names have not carried that token
+# since, so strsplit() found no separator and handed back the whole name: the marker
+# became the file name, and the lookup that follows matched nothing, which is a
+# function that draws nothing and says it found no match.
+#
+# It sits ABOVE the documentation block below, not between that block and the
+# function it documents, which is where it was: roxygen attaches a block to the
+# next object it finds and plain comments do not interrupt that, so the @export
+# and the whole manual page were being attached to this helper. The committed
+# NAMESPACE still said otherwise, so nothing broke until the next person
+# regenerated the documentation, at which point the package would have lost a
+# public export and gained a dot-prefixed one.
+.assoc_volcano_marker_from_name <- function(file_name) {
+  # The extension comes off first, so a name with no other token still answers the
+  # marker rather than the marker with ".csv" stuck to it.
+  sub("_.*$", "", tools::file_path_sans_ext(basename(as.character(file_name))))
+}
+
 #' Volcano plot of association results for one inference_detail row.
 #'
 #' Reads the inference CSV that corresponds to the given `inference_detail`
@@ -49,22 +73,6 @@
 #' # Stub: see vignette('imprinting-disorders', package = 'SEMseeker') for a
 #' # runnable Beckwith-Wiedemann workflow on the GSE133774 subset.
 #' invisible(NULL)
-# The marker an inference file name begins with.
-#
-# io_inference_file_name() composes the name as the marker, then the independent
-# variable, the transformation and the family, so the marker is the leading token.
-#
-# This was read as the part before "_DEPTH_" until the taxonomy stopped saying the
-# granularity of an artefact with an integer. The names have not carried that token
-# since, so strsplit() found no separator and handed back the whole name: the marker
-# became the file name, and the lookup that follows matched nothing, which is a
-# function that draws nothing and says it found no match.
-.assoc_volcano_marker_from_name <- function(file_name) {
-  # The extension comes off first, so a name with no other token still answers the
-  # marker rather than the marker with ".csv" stuck to it.
-  sub("_.*$", "", tools::file_path_sans_ext(basename(as.character(file_name))))
-}
-
 assoc_volcano_plot_inference <- function(inference_detail,
                                     result_folder,
                                     markers       = NULL,

@@ -1,3 +1,79 @@
+# semseeker 0.99.6 (development)
+
+## Breaking changes
+
+- **The polynomial family adjusts for its covariates, which it did not.** The
+  model was built as
+
+  ```
+  y ~ I(x^1) + ... + I(x^d) + I(x^1):cov + ... + I(x^d):cov
+  ```
+
+  with no `cov` term of its own. That is not less adjustment, it is none. The
+  covariate appears at the first power either way, so neither form is more
+  linear in it than the other; what was missing was the term able to shift the
+  level. Writing the two out, with one covariate:
+
+  ```
+  was   y = b0 + b1 x + b2 x^2 + c1 (x cov) + c2 (x^2 cov)
+  is    y = b0 + b1 x + b2 x^2 + a cov
+  ```
+
+  the old derivative with respect to the covariate was `c1 x + c2 x^2`, which is
+  zero at `x = 0` and grows with x: the covariate was constrained to have no
+  effect at the bottom of the scale, and nobody chose that. And with no other
+  place to enter, it entered the slopes, so the polynomial coefficients were the
+  curve at `cov = 0` - age zero, reference sex - an extrapolation outside the
+  data reported as an adjusted estimate.
+
+  **Every polynomial result computed with covariates changes**, and not by a
+  little. On simulated data whose true linear coefficient is positive, the old
+  model returned it with the opposite sign while the corrected one lands next to
+  the unadjusted fit, which is where an adjustment for a covariate independent of
+  the predictor belongs. Results produced with earlier versions are not
+  comparable with these. The same applies to `covariates_dummy`, whose columns
+  reach the same formula.
+
+  Fitting a curve whose shape varies by covariate is a different question, and it
+  is no longer reachable: the interaction form was removed rather than kept
+  behind a flag, because nothing was asking for it deliberately.
+
+- **A polynomial coefficient and its p-value are named for the same term.** The
+  p-value went through three name substitutions and the estimate through none, so
+  one term's numbers ended up in
+  `..._STAGE_DEGREE_1_PVALUE` and
+  `..._INDEPENDENT_VARIABLE_DEGREE_RAW_EQ_TRUE_1_ESTIMATE`: the estimate carried
+  the literal string `INDEPENDENT_VARIABLE` rather than the name of the variable,
+  so two runs on two different predictors wrote the same column name, and a
+  term's estimate could not be found from the name of its p-value. The first of
+  those substitutions never fired at all - its pattern began with an underscore
+  and the text it was meant to remove began the name.
+
+  Both are now `I_<VARIABLE>_<degree>_PVALUE` and `I_<VARIABLE>_<degree>_ESTIMATE`.
+  **Scripts reading the old column names will not find them.**
+
+  This follows from the model, not from a renaming: the covariate-free case used
+  to build its own `stats::poly(..., raw = TRUE)` specification instead of the
+  shared formula, and the old names were the deparsed call. One formula now
+  serves both cases. A raw polynomial is the monomials, so the design matrix is
+  the same one and **the numbers of a covariate-free result do not move** - the
+  coefficients, their standard errors and their p-values are identical, which the
+  tests assert as identity rather than as closeness.
+
+## New features
+
+- **A polynomial coefficient reports its standard error**, as
+  `I_<VARIABLE>_<degree>_STD_ERROR`. The value was always in the fit and was
+  never written, which left a cross-study pooling of these coefficients with
+  nothing to weight them by.
+
+## Bug fixes
+
+- **An empty covariate name stopped the run with a parse error.**
+  `assoc_sig_formula_vars()` can return an empty string, and it reached the
+  formula as a bare `I(x^1):`, which does not parse. Empty names are dropped, so
+  the request becomes the one it describes: a model without covariates.
+
 # semseeker 0.99.5
 
 ## Breaking changes

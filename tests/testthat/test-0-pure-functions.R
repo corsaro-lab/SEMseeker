@@ -437,11 +437,48 @@ test_that("assoc_polynomial_formula_build: degree-3 without covariates has 3 ter
   expect_true(grepl("I(x^3)", fstr, fixed = TRUE))
 })
 
-test_that("assoc_polynomial_formula_build: with covariates includes interaction terms", {
+# The test that used to stand here asserted the defect. It read
+#   expect_true(grepl("I(x^1):age", ...))
+# and it passed, because it asked the code to confirm what the code did. An
+# expected value taken from the implementation agrees with the implementation
+# even when the implementation is wrong, which is why nothing flagged a model
+# that adjusted for nothing. These assert the model instead.
+
+test_that("assoc_polynomial_formula_build: covariates are main effects, not interactions", {
   f    <- SEMseeker:::assoc_polynomial_formula_build("y", "x", 2, c("age", "sex"))
   fstr <- paste(deparse(f), collapse = " ")  # deparse may split long formulas
-  expect_true(grepl("I(x^1):age", fstr, fixed = TRUE))
-  expect_true(grepl("I(x^2):sex", fstr, fixed = TRUE))
+
+  expect_equal(fstr, "y ~ I(x^1) + I(x^2) + age + sex")
+
+  # Said as the property rather than as the string, so a reformatting of the
+  # formula cannot make this pass while the model changes: no term multiplies a
+  # covariate by a power of the predictor.
+  expect_false(grepl(":", fstr, fixed = TRUE))
+  expect_true(all(c("age", "sex") %in% labels(stats::terms(f))))
+})
+
+test_that("assoc_polynomial_formula_build: the covariate can shift the level at x = 0", {
+  # The property the missing main effect took away, stated where it can be
+  # checked: with a covariate term the fit at x = 0 depends on the covariate,
+  # and under the interaction-only model it could not.
+  f <- SEMseeker:::assoc_polynomial_formula_build("y", "x", 2, "cov")
+  mm <- stats::model.matrix(f, data.frame(y = 0, x = 0, cov = c(0, 1)))
+
+  expect_true("cov" %in% colnames(mm))
+  # at x = 0 the two rows differ only through the covariate column
+  expect_equal(unname(mm[, "cov"]), c(0, 1))
+  expect_equal(unname(mm[, "I(x^1)"]), c(0, 0))
+})
+
+test_that("assoc_polynomial_formula_build: an empty covariate name is dropped, not pasted", {
+  # assoc_sig_formula_vars() can return "". It used to reach the formula as a
+  # bare "I(x^1):" and stop the run on a parse error, so this is a path that
+  # failed rather than a cosmetic case.
+  f <- SEMseeker:::assoc_polynomial_formula_build("y", "x", 2, "")
+  expect_equal(paste(deparse(f), collapse = " "), "y ~ I(x^1) + I(x^2)")
+
+  f2 <- SEMseeker:::assoc_polynomial_formula_build("y", "x", 2, c("age", ""))
+  expect_equal(paste(deparse(f2), collapse = " "), "y ~ I(x^1) + I(x^2) + age")
 })
 
 test_that("assoc_polynomial_formula_build: returns a formula object", {

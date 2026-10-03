@@ -96,9 +96,17 @@ assoc_model_limma <- function(family_test, tempDataFrame, sig.formula,
                    error = function(e) NULL)
   if (is.null(fit)) return(res)
 
-  # Coefficient-wise p-values and estimates - same column-naming scheme
-  # as assoc_model_polynomial so downstream consumers (CSV layer
-  # + plotters) see the same shape.
+  # Coefficient-wise p-values and estimates. This was written to produce "the
+  # same column-naming scheme as assoc_model_polynomial", and it never did:
+  # measured 2026-10-03, this path gives STATS_POLY_..._<IV>_EQ_1_PVALUE and that
+  # one gave STATS_POLY_..._<IV>_DEGREE_1_PVALUE. The two have never matched, so
+  # the claim was a comment and not a contract.
+  #
+  # The polynomial path has since moved to I_<IV>_<k>, which is what the formula
+  # it builds cleans to on its own. Aligning this path to it means changing the
+  # names limma writes, which is a decision about this family's results and not
+  # a side effect of fixing another one, so it is tracked rather than done here.
+  # Until then the names of the two families differ, as they always have.
   coef_names <- colnames(fit$coefficients)
   for (i in seq_along(coef_names)) {
     row_name <- coef_names[i]
