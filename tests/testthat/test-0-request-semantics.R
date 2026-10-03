@@ -41,7 +41,10 @@ test_that("every column the documentation names is a column the package accepts"
   # The other direction is a documentation gap, not a lie: these columns work,
   # they are simply not described in the argument block. Pinned so it can only
   # shrink: a new accepted column that nobody documents will fail here.
-  known_gap <- c("covariates", "covariates_dummy", "covariates_pca",
+  # "covariates" left this list when it was documented alongside
+  # covariates_transformation: documenting the transformation of a field that is
+  # itself undescribed would have been incoherent. The list only shrinks.
+  known_gap <- c("covariates_dummy", "covariates_pca",
                  "collinearity_check", "transformation_x", "filter_p_value",
                  "samples_sql_condition", "areas_sql_condition",
                  "association_results_sql_condition")

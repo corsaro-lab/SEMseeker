@@ -123,29 +123,12 @@ io_data_preparation <- function(family_test,transformation_y,tempDataFrame, inde
   df_values_orig <- burden_values
   try(
     {
-      burden_values <- switch(
-        as.character(transformation_y),
-        "scale"  = scale(burden_values),
-        "log"    = log(burden_values),
-        "log2"   = log2(burden_values),
-        "log10"  = log10(burden_values),
-        "exp"    = exp(burden_values),
-        "factor" = as.data.frame(lapply(burden_values, as.factor)),   # AI-044 binomial Y as factor (0/1)
-        "none"   = burden_values,
-        burden_values
-      )
+      # The vocabulary lives in io_transform_apply(). It was written out here and
+      # again for the independent variable below, with quantile_<n> handled after
+      # this block rather than inside it, so the two copies had already drifted.
+      burden_values <- io_transform_apply(burden_values, transformation_y)
     }
   )
-  if(grepl("quantile", transformation_y))
-  {
-    qq <- as.numeric(unlist(strsplit(transformation_y,"\\_"))[2])
-    burden_values <- as.data.frame(apply(burden_values,2,function(x){
-      if(length(unique(x))>=qq)
-        as.numeric(dplyr::ntile(x, n=qq))
-      else
-        rep(0,length(x))
-    }))
-  }
   burden_values <- as.data.frame(burden_values)
 
   if(setequal(burden_values,df_values_orig) & transformation_y !="none")
@@ -199,17 +182,8 @@ io_data_preparation <- function(family_test,transformation_y,tempDataFrame, inde
           # (era `transformation_y` per legacy reuse) -> separazione semantica
           # Y vs X. Aggiunto case "factor" per encode l'IV come categorical
           # (utile per glm binomial: OR per livello vs reference).
-          independent_variableValues <- switch(
-            as.character(transformation_x),
-            "scale"  = scale(independent_variableValues),
-            "log"    = log(independent_variableValues),
-            "log2"   = log2(independent_variableValues),
-            "log10"  = log10(independent_variableValues),
-            "exp"    = exp(independent_variableValues),
-            "factor" = as.data.frame(lapply(independent_variableValues, as.factor)),
-            "none"   = independent_variableValues,
-            independent_variableValues
-          )
+          independent_variableValues <- io_transform_apply(independent_variableValues,
+                                                           transformation_x)
         }
       )
     )

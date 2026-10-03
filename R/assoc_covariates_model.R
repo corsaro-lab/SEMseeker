@@ -5,32 +5,75 @@ assoc_covariates_model <- function(inference_detail, study_summary)
   covariates_dummy <- util_split_and_clean(inference_detail$covariates_dummy)
   covariates_pca <- util_boolean_check(inference_detail$covariates_pca)
   covariates <- util_split_and_clean(inference_detail$covariates)
+  # Positional: paired with covariates one to one, so duplicates are kept.
+  covariates_transformation <- util_split_and_clean(
+    inference_detail$covariates_transformation, unique_values = FALSE)
   independent_variable <- as.character(inference_detail$independent_variable)
   transformation_x <- as.character(inference_detail$transformation_x)
 
-  # remove all "_SCALED" and "_DUMMY" from study_summary
-  study_summary <- study_summary[, !grepl("_SCALED|_DUMMY", colnames(study_summary))]
+  # Columns this function made on a previous run, removed so that running twice
+  # on the same study_summary is the same as running once. The two original
+  # patterns are left unanchored, as they were; the suffixes added later are
+  # anchored at the end, because a covariate name can carry one of those words
+  # inside it and only the tail is a suffix this function wrote.
+  study_summary <- study_summary[, !grepl(
+    "_SCALED|_DUMMY|_LOG$|_LOG2$|_LOG10$|_EXP$|_POW[0-9.]+$|_QUANTILE[0-9]+$|_FACTOR$",
+    colnames(study_summary))]
 
   prev_columns <- colnames(study_summary)
 
+  # transformation_x applies to the independent variable and to nothing else.
+  # It used to scale every covariate as well, which is a transformation asked
+  # for one variable and applied to several: asking for log10 of x would have
+  # meant log10 of age and of body mass index too, which is not a request anyone
+  # would write on purpose. A covariate now carries its own transformation, in
+  # covariates_transformation, one per covariate.
   if(transformation_x=="scale")
   {
-    scaled_cov <- c()
-    for(cc in seq_along(covariates))
-    {
-      cname <- covariates[cc]
-      if(is.numeric(study_summary[,cname]))
-      {
-        study_summary[,paste0(cname,"_SCALED")] <- scale(study_summary[,cname], center = TRUE, scale = TRUE)
-        scaled_cov <- c(scaled_cov, cname)
-      }
-      # replace convariate name
-      covariates[cc] <- paste0(cname,"_SCALED")
-    }
-    core_log_event("JOURNAL: Scaling and centering applied on covariate: ", scaled_cov)
     study_summary[,paste0(independent_variable,"_SCALED")] <- scale(study_summary[,independent_variable], center = TRUE, scale = TRUE)
     core_log_event("JOURNAL: Scaling and centering applied on independent variable: ", independent_variable)
     inference_detail$independent_variable <- paste0(inference_detail$independent_variable,"_SCALED")
+  }
+
+  # One transformation per covariate, positionally paired with covariates.
+  if (length(covariates_transformation) > 0L && any(nzchar(covariates_transformation)))
+  {
+    # R recycles a short vector without saying so, which would apply one
+    # covariate's transformation to another's values and name the result for the
+    # column it came from. The two lengths have to agree, and the refusal names
+    # both so the request can be corrected without guessing which is short.
+    if (length(covariates_transformation) != length(covariates))
+      stop("covariates_transformation has ", length(covariates_transformation),
+           " entries and covariates has ", length(covariates), ".\n",
+           "  covariates:                ", paste(covariates, collapse = ", "), "\n",
+           "  covariates_transformation: ", paste(covariates_transformation, collapse = ", "), "\n",
+           "  One per covariate, in the same order, \"none\" for a covariate that ",
+           "is used as it is.", call. = FALSE)
+
+    for (cc in seq_along(covariates))
+    {
+      suffix <- io_transform_suffix(covariates_transformation[cc])
+      if (is.na(suffix)) next
+
+      cname <- covariates[cc]
+      if (!cname %in% colnames(study_summary))
+      {
+        core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+                  " covariates_transformation names ", covariates_transformation[cc],
+                  " for ", cname, ", which the study summary does not carry: skipped.")
+        next
+      }
+
+      new_name <- paste0(cname, "_", suffix)
+      study_summary[, new_name] <- io_transform_apply(study_summary[, cname],
+                                                      covariates_transformation[cc])
+      # The name moves with the values. The model is fitted on the new column, so
+      # its coefficient is reported as <COVARIATE>_<TRANSFORMATION>_ESTIMATE and
+      # says which quantity it belongs to.
+      covariates[cc] <- new_name
+      core_log_event("JOURNAL: ", covariates_transformation[cc],
+                " applied on covariate ", cname, " as ", new_name)
+    }
   }
 
   # dummify covariates dummy
