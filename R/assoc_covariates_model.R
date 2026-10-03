@@ -1,3 +1,56 @@
+#' Prepare the covariates of one request
+#'
+#' Turns the covariate fields of an \code{inference_detail} into columns that
+#' exist in \code{study_summary} and a vector of names the formula can use. Four
+#' things happen here, in this order, and each one can rename a covariate.
+#'
+#' @section Every transformation renames its column, and that is the point:
+#' A transformed covariate is written as a NEW column, \code{<NAME>_<SUFFIX>},
+#' and the name in the returned \code{covariates} vector is replaced with it. The
+#' model is therefore fitted on the new column and its coefficient is reported
+#' under the name of the quantity it belongs to.
+#'
+#' This is not bookkeeping. A covariate transformed in place would be fitted
+#' under its original name, so \code{AGE_ESTIMATE} would be the coefficient of
+#' \code{exp(AGE)} - the same defect that had a polynomial estimate carrying the
+#' literal string \code{INDEPENDENT_VARIABLE} instead of the variable's name.
+#' \code{scale} already worked this way, with \code{_SCALED}; the rest follow it.
+#'
+#' @section The four steps:
+#' \describe{
+#'   \item{columns from a previous run}{Removed first, so running twice on the
+#'     same \code{study_summary} is the same as running once. The two original
+#'     patterns are unanchored as they were; the suffixes added later are anchored
+#'     at the end, because a covariate name can contain one of those words and
+#'     only the tail is a suffix this function wrote.}
+#'   \item{\code{transformation_x == "scale"}}{Scales the INDEPENDENT variable
+#'     and renames it. Through 0.99.5 it also scaled every covariate, which is a
+#'     transformation asked for one variable and applied to several: a request for
+#'     \code{scale} on the predictor scaled age and body mass index with it. It
+#'     no longer reaches the covariates.}
+#'   \item{\code{covariates_transformation}}{One transformation per covariate,
+#'     paired with \code{covariates} by POSITION. The lengths have to agree and a
+#'     mismatch is refused naming both, because R recycles a short vector without
+#'     saying so and would apply one covariate's transformation to another's
+#'     values. The vocabulary is \code{io_transform_apply()}'s and the suffix is
+#'     \code{io_transform_suffix()}'s. A covariate the study summary does not
+#'     carry is skipped with a warning rather than stopping the run, because a
+#'     samples filter can legitimately remove the column.}
+#'   \item{\code{covariates_dummy}, then \code{covariates_pca}}{Categorical
+#'     encoding and then, optionally, principal components. \code{"factor"} is
+#'     deliberately NOT a covariate transformation: a categorical covariate goes
+#'     through \code{covariates_dummy}, which encodes it, where relabelling it as
+#'     a factor does not.}
+#' }
+#'
+#' @param inference_detail One row of the request specification.
+#' @param study_summary The per-sample table the covariates live in.
+#' @return A list with \code{covariates}, the possibly renamed names,
+#'   \code{study_summary} carrying the new columns, and the possibly renamed
+#'   \code{inference_detail}.
+#'
+#' @keywords internal
+#' @noRd
 assoc_covariates_model <- function(inference_detail, study_summary)
 {
   ssEnv <- core_get_session_info()

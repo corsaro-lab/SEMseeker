@@ -14,6 +14,60 @@
 #'   test statistic, effect size, power, and model identifier; the exact fields
 #'   depend on the chosen \code{family_test}.
 #'
+#' @section What the rank comparison reports, and the one number behind three names:
+#' For \code{"wilcoxon"} three columns describe the same comparison and it is
+#' worth knowing which is which, because two of them were once the same number.
+#'
+#' Vargha-Delaney A is the probability that a value drawn from the first group
+#' exceeds one drawn from the second. It is therefore the area under the curve,
+#' and it is also the Mann-Whitney statistic divided by the product of the group
+#' sizes: \code{A}, \code{AUC} and \code{W/(n1 n2)} are one quantity under
+#' three names, which was measured and not assumed.
+#'
+#' \describe{
+#'   \item{\code{C_STATISTIC_AUC}}{That quantity, under the name the metric
+#'     registry already carried for it, with \code{_CI_LOWER} and
+#'     \code{_CI_UPPER} from \code{assoc_auc_confidence_interval()}.}
+#'   \item{\code{RANK_BISERIAL_CORRELATION}}{\code{2A - 1}. Until 0.99.5 this
+#'     column held \code{W/(n1 n2)}, that is A itself, so it reported the AUC
+#'     under the name of a different statistic. The two are not a rescaling a
+#'     reader can undo: on a worked example A was 0.2667 while \code{2A - 1} was
+#'     -0.4667, the opposite sign.}
+#'   \item{\code{effect_size_estimate}, \code{effect_size_magnitude}}{A again,
+#'     and the qualitative label \code{effsize} attaches to it. The estimate
+#'     duplicates \code{C_STATISTIC_AUC} on purpose, because consumers read it.}
+#' }
+#'
+#' The \strong{sign} of \code{RANK_BISERIAL_CORRELATION} depends on which group
+#' is first, that is on the order of the levels of the independent variable.
+#' Since \code{inference_details$independent_variable_order} exists that order
+#' is the request's to declare, so the sign is decided by the question rather
+#' than by the alphabetical accident of the labels.
+#'
+#' @section The power is post-hoc and standardised:
+#' \code{pwr::pwr.t2n.test()} takes Cohen's \code{d}, and both branches used to
+#' hand it something else. The conversion now happens in
+#' \code{assoc_power_from_d()}, in one place, and the two failures it ends are
+#' worth stating because the column looks like evidence:
+#'
+#' \itemize{
+#'   \item \code{"wilcoxon"} passed A, bounded in \code{[0, 1]}. At
+#'     \code{A = 0.5}, the exact null, that reads as a medium effect and the
+#'     reported power was 0.532 where the truth is the significance level. Most
+#'     positions carry no effect, so the column sat above a half across the
+#'     genome. It is now \code{d = sqrt(2) * qnorm(A)}.
+#'   \item \code{"t.test"} passed the raw difference of the means, which carries
+#'     the units of the data. The same comparison read on the beta and the
+#'     M-value scale has \code{d = -1.50} either way and true power 1.000; the
+#'     reported power was 0.053 and 0.171. A large effect read as no power, and
+#'     the number moved with the scale, which is what standardising exists to
+#'     prevent. It is now \code{effsize::cohen.d()}.
+#' }
+#'
+#' Post-hoc power computed from the observed effect is a description of the
+#' comparison that was run, not an argument that it was adequately sized. That
+#' question is prospective and \code{assoc_statistical_power()} answers it.
+#'
 assoc_test_model <- function (family_test, tempDataFrame, sig.formula,burdenValue,independent_variable , transformation_y, plot , samples_sql_condition=samples_sql_condition, key)
 {
 
@@ -215,17 +269,43 @@ assoc_test_model <- function (family_test, tempDataFrame, sig.formula,burdenValu
     # Calculate the Jensen-Shannon distance
     res$jsd <- suppressMessages(suppressWarnings(philentropy::JSD(rbind(probability_distribution1_adjusted, probability_distribution2_adjusted))))
 
-    # Calculate effect size
+    # Three names for one number, and two of the three were wrong about it.
+    #
+    # Vargha-Delaney A IS the area under the curve: the probability that a value
+    # drawn from the first group exceeds one drawn from the second. W/(n1*n2) is
+    # the same quantity again - measured, identical to VD.A - so
+    # RANK_BISERIAL_CORRELATION held the AUC under the name of a different
+    # statistic. The rank-biserial correlation is 2A - 1: on a worked example
+    # A = 0.2667 while 2A - 1 = -0.4667, a different number with the opposite
+    # sign, so a reader of that column read an association the statistic it is
+    # named after calls negative.
+    #
+    # Its sign depends on which group is SPLIT[[1]], that is on the order of the
+    # levels, which is why it is worth saying now: since independent_variable_order
+    # exists the order is the request's to declare, so the sign of the effect is
+    # decided by the question rather than by the alphabet.
+    n1 <- length(SPLIT[[1]])
+    n2 <- length(SPLIT[[2]])
+
     es_res <- effsize::VD.A(SPLIT[[1]], SPLIT[[2]])
+    auc <- as.numeric(es_res$estimate)
     res$effect_size_estimate <- es_res$estimate
     res$effect_size_magnitude <- es_res$magnitude
-    # res$cohen_d <- effsize::cohen.d(SPLIT[[1]], SPLIT[[2]], pooled=TRUE, paired=FALSE, na.rm=TRUE)
 
-    # Calculate rank-biserial correlation as effect size
-    res$RANK_BISERIAL_CORRELATION <- result_w$statistic / (length(SPLIT[[1]]) * length(SPLIT[[2]]))
-    # Calculate power
-    power_result <- pwr::pwr.t2n.test(d = res$effect_size_estimate, n1 = length(SPLIT[[1]]), n2=length(SPLIT[[2]]), sig.level = as.numeric(ssEnv$alpha), power = NULL)
-    res$power <- power_result$power
+    # The AUC under the name the metric registry already carried for it, which
+    # until now had no producer, with the interval it was reported without.
+    auc_ci <- assoc_auc_confidence_interval(auc, n1, n2, as.numeric(ssEnv$alpha))
+    res$C_STATISTIC_AUC          <- auc
+    res$C_STATISTIC_AUC_CI_LOWER <- auc_ci$lower
+    res$C_STATISTIC_AUC_CI_UPPER <- auc_ci$upper
+
+    res$RANK_BISERIAL_CORRELATION <- 2 * auc - 1
+
+    # pwr wants Cohen's d and was handed A, which is bounded in [0, 1]: at
+    # A = 0.5, the exact null, that reads as a medium effect and the reported
+    # power was 0.53 where the truth is the significance level.
+    res$power <- assoc_power_from_d(sqrt(2) * stats::qnorm(auc), n1, n2,
+                                    as.numeric(ssEnv$alpha))
   }
 
 
@@ -240,8 +320,19 @@ assoc_test_model <- function (family_test, tempDataFrame, sig.formula,burdenValu
     dep_var <- strsplit(gsub("\ ","",as.character(sig.formula)),"~")
     SPLIT <- split(tempDataFrame[,dep_var[[2]]], tempDataFrame[,dep_var[[3]]])
     res$statistic_parameter <- mean(SPLIT[[1]]) - mean(SPLIT[[2]])
-    power_result <- pwr::pwr.t2n.test(d = res$statistic_parameter, n1 = length(SPLIT[[1]]), n2=length(SPLIT[[2]]), sig.level = as.numeric(ssEnv$alpha), power = NULL)
-    res$power <- power_result$power
+
+    # The raw difference of the means carries the units of the data, and pwr
+    # wants it standardised. Measured on the same comparison read on two scales,
+    # Cohen's d = -1.50 either way and the true power 1.000: the reported power
+    # was 0.053 on the beta scale and 0.171 on the M-value scale. A large effect
+    # read as no power, and the number moved with the scale, which is the one
+    # thing standardising exists to prevent.
+    cohen_d <- tryCatch(
+      as.numeric(effsize::cohen.d(SPLIT[[1]], SPLIT[[2]],
+                                  pooled = TRUE, paired = FALSE, na.rm = TRUE)$estimate),
+      error = function(e) NA_real_)
+    res$power <- assoc_power_from_d(cohen_d, length(SPLIT[[1]]), length(SPLIT[[2]]),
+                                    as.numeric(ssEnv$alpha))
   }
 
   if( family_test=="pearson" | family_test=="kendall" | family_test=="spearman")

@@ -43,3 +43,61 @@ A list (as a data.frame row) with test results including the p-value,
 \description{
 Statistical test model dispatcher
 }
+\section{What the rank comparison reports, and the one number behind three names}{
+
+For \code{"wilcoxon"} three columns describe the same comparison and it is
+worth knowing which is which, because two of them were once the same number.
+
+Vargha-Delaney A is the probability that a value drawn from the first group
+exceeds one drawn from the second. It is therefore the area under the curve,
+and it is also the Mann-Whitney statistic divided by the product of the group
+sizes: \code{A}, \code{AUC} and \code{W/(n1 n2)} are one quantity under
+three names, which was measured and not assumed.
+
+\describe{
+  \item{\code{C_STATISTIC_AUC}}{That quantity, under the name the metric
+    registry already carried for it, with \code{_CI_LOWER} and
+    \code{_CI_UPPER} from \code{assoc_auc_confidence_interval()}.}
+  \item{\code{RANK_BISERIAL_CORRELATION}}{\code{2A - 1}. Until 0.99.5 this
+    column held \code{W/(n1 n2)}, that is A itself, so it reported the AUC
+    under the name of a different statistic. The two are not a rescaling a
+    reader can undo: on a worked example A was 0.2667 while \code{2A - 1} was
+    -0.4667, the opposite sign.}
+  \item{\code{effect_size_estimate}, \code{effect_size_magnitude}}{A again,
+    and the qualitative label \code{effsize} attaches to it. The estimate
+    duplicates \code{C_STATISTIC_AUC} on purpose, because consumers read it.}
+}
+
+The \strong{sign} of \code{RANK_BISERIAL_CORRELATION} depends on which group
+is first, that is on the order of the levels of the independent variable.
+Since \code{inference_details$independent_variable_order} exists that order
+is the request's to declare, so the sign is decided by the question rather
+than by the alphabetical accident of the labels.
+}
+
+\section{The power is post-hoc and standardised}{
+
+\code{pwr::pwr.t2n.test()} takes Cohen's \code{d}, and both branches used to
+hand it something else. The conversion now happens in
+\code{assoc_power_from_d()}, in one place, and the two failures it ends are
+worth stating because the column looks like evidence:
+
+\itemize{
+  \item \code{"wilcoxon"} passed A, bounded in \code{[0, 1]}. At
+    \code{A = 0.5}, the exact null, that reads as a medium effect and the
+    reported power was 0.532 where the truth is the significance level. Most
+    positions carry no effect, so the column sat above a half across the
+    genome. It is now \code{d = sqrt(2) * qnorm(A)}.
+  \item \code{"t.test"} passed the raw difference of the means, which carries
+    the units of the data. The same comparison read on the beta and the
+    M-value scale has \code{d = -1.50} either way and true power 1.000; the
+    reported power was 0.053 and 0.171. A large effect read as no power, and
+    the number moved with the scale, which is what standardising exists to
+    prevent. It is now \code{effsize::cohen.d()}.
+}
+
+Post-hoc power computed from the observed effect is a description of the
+comparison that was run, not an argument that it was adequately sized. That
+question is prospective and \code{assoc_statistical_power()} answers it.
+}
+
