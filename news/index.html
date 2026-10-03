@@ -39,7 +39,344 @@
       <small>Source: <a href="https://github.com/corsaro-lab/SEMseeker/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
-  </main></div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.99.5" id="semseeker-0995">semseeker 0.99.5<a class="anchor" aria-label="anchor" href="#semseeker-0995"></a></h2>
+<div class="section level3">
+<h3 id="breaking-changes-0-99-5">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-99-5"></a></h3>
+<ul><li>
+<p><strong><code><a href="../reference/association_analysis.html">association_analysis()</a></code> runs one aggregation per request, and it has to be named.</strong> <code>SCOPE</code> has two values: <code>SAMPLE</code> reduces the positions of a region class to one number per sample, <code>INSTANCE</code> reduces them to one number per instance of that class: one row per gene, per island, per probe. Until now every request produced <strong>both</strong> and wrote them into the same file, so each result was the union of two different questions, with no way to have asked for only one.</p>
+<p><code>inference_details</code> therefore gains a required <code>scope</code> column, <code>"SAMPLE"</code> or <code>"INSTANCE"</code>. It has no default: any default would answer half of what a previous script asked and say nothing about the other half.</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">inference_details</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  independent_variable <span class="op">=</span> <span class="st">"Phenotest"</span>,</span>
+<span>  family_test          <span class="op">=</span> <span class="st">"spearman"</span>,</span>
+<span>  aggregation          <span class="op">=</span> <span class="st">"SUM"</span>,</span>
+<span>  scope                <span class="op">=</span> <span class="st">"SAMPLE"</span>      <span class="co"># or "INSTANCE"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><strong>Migration.</strong> A request that wants both branches writes two rows, one per scope; both still land in the same result file, told apart by the <code>SCOPE</code> column. <code>limma_</code>/<code>voom_</code> families are refused at <code>scope = "SAMPLE"</code>: they estimate a prior variance across instances, and a collapsed artefact holds one row, whereas before the collapsed keys were skipped and the run continued on the per-instance ones.</p>
+</li>
+<li><p><strong><code>inference_details$scopes</code> is removed.</strong> It named the region classes a second time. They are the <code>(AREA, SUBAREA)</code> pairs of the run, declared with the <code>areas</code> and <code>subareas</code> arguments of <code><a href="../reference/association_analysis.html">association_analysis()</a></code> and built at runtime; both scopes range over the same pairs. A request still carrying <code>scopes</code> stops with a message naming the column and what replaced it.</p></li>
+<li>
+<p><strong>A p-value adjustment now names the family it was controlled over, and there are three.</strong> <code>PVALUE_ADJ</code> said nothing about its family, and at <code>SCOPE = SAMPLE</code> that family holds a single row — so the column equalled the raw p-value by arithmetic while its name promised a correction. It is replaced by three columns, nested, each named after its own family:</p>
+<pre><code>PVALUE_ADJ_KEY_&lt;m&gt;    the identity key: MARKER, FIGURE, SCOPE, AREA,
+                      SUBAREA, AGGREGATION — members are the instances
+PVALUE_ADJ_SCOPE_&lt;m&gt;  every row of the same SCOPE — members are its region
+                      classes, figures and aggregations
+PVALUE_ADJ_ALL_&lt;m&gt;    the whole file — members are everything tested on this
+                      marker under this model (unchanged)</code></pre>
+<p>The middle level is the one that was missing: a collapsed artefact had only a correction over one row, or one shared with the tens of thousands of per-instance rows in the same file, and neither answers how many things were tested on that sample.</p>
+<p><code>&lt;m&gt;</code> is the method the run declared. All three now honour <code>multiple_test_adj</code>; the narrow level had <code>BH</code> written into it, so a run asking for another estimator got a column computed as BH and named for it. Where an estimator cannot work on a family — <code>qvalue</code> needs enough p-values to estimate pi0 — the answer is <code>NA</code> and a line in the log, rather than a silently substituted estimator that would make the column name wrong.</p>
+<p><strong>Migration.</strong> Read <code>PVALUE_ADJ_KEY_&lt;m&gt;</code> wherever you read <code>PVALUE_ADJ</code>. Files written by an earlier release keep their <code>PVALUE_ADJ</code> column until the folder is recomputed, and it is dropped when they are. The three answer three different questions and are <strong>not</strong> a severity ladder: Benjamini-Hochberg is adaptive, so a wider family is usually but not necessarily more conservative.</p>
+</li>
+<li>
+<p><strong>The extent a number is valid over is a coordinate of its own, <code>SCOPE</code>.</strong> A burden over the whole sample and a burden per gene are the same marker reduced over different extents. They used to live in artefacts of different <em>shape</em> — a sibling CSV with samples down the rows, and a pivot with areas down the rows — and that difference in shape is what hid the difference in meaning. Both are now pivots, and the name says which is which:</p>
+<pre><code>&lt;MARKER&gt;_&lt;FIGURE&gt;_&lt;SCOPE&gt;_&lt;AREA&gt;_&lt;SUBAREA&gt;_&lt;AGGREGATION&gt;_&lt;GENOME_BUILD&gt;
+
+MUTATIONS_HYPER_SAMPLE_PROBE_WHOLE_SUM_HG19     burden of the whole sample
+MUTATIONS_HYPER_SAMPLE_GENE_WHOLE_SUM_HG19      same, over gene probes only
+DELTAS_HYPO_INSTANCE_GENE_TSS200_MEDIAN_HG19    median per gene, TSS200 window
+SIGNAL_BETA_INSTANCE_PROBE_WHOLE_VALUE_HG19     the beta value per probe</code></pre>
+<p><code>SCOPE = SAMPLE</code> collapses the region class to one number per sample — such an artefact is one row tall — while <code>SCOPE = INSTANCE</code> keeps one row per gene, island or probe.</p>
+</li>
+<li><p><strong>The aggregation requested at <code>SCOPE = INSTANCE</code> is now the one you get.</strong> It was validated and then dropped on the way to the read, so asking for the median of a region returned its mean: the file existed, its name said nothing about which operator had produced it, and nothing complained. Result folders from earlier versions do not match the new names and recompute once.</p></li>
+<li><p><strong><code>VALUE</code> names the identity.</strong> A <code>PROBE</code> or <code>POSITION</code> row already holds a single position, so there is nothing to reduce; <code>VALUE</code> says so, where before the aggregation segment was simply absent. Its absence is again an error everywhere else.</p></li>
+<li><p><strong><code>SAMPLE_STATS_RESULT.csv</code> is gone.</strong> Its content is the <code>SCOPE = SAMPLE</code> artefacts, and the readable per-sample table is composed on read by <code>sem_study_summary_get(regions = ...)</code>, which joins them onto the sample sheet. <code>sem_study_summary_get()</code> with no arguments behaves as before.</p></li>
+<li>
+<p><strong><code>semseeker(sample_stats_scopes = ...)</code> was removed.</strong> Which region classes you want is no longer a decision to be made before the run: the artefacts are built when they are asked for. The error that used to say <em>“produce it with <code>semseeker(sample_stats_scopes = ...)</code> and rerun the analysis”</em> is gone: changing your mind now costs one scan of the position pivot instead of a whole SEM run. Ask for a region class at analysis time, with the <code>areas</code> and <code>subareas</code> arguments of <code><a href="../reference/association_analysis.html">association_analysis()</a></code> at <code>scope = "SAMPLE"</code>, or with <code>sem_study_summary_get(regions = ...)</code> to read the table.</p>
+<p>The cost moved rather than vanished: the call that asks for a region class has to know it, so testing the burden over <code>GENE</code>/<code>TSS1500</code> means naming that pair in <code>areas</code> and <code>subareas</code>, and a run that does not register the pair refuses the request instead of silently testing nothing. Where a class is named by its joined form, as in <code>sem_study_summary_get(regions = "GENE_TSS1500")</code>, it is the registry that resolves it into its two coordinates: splitting the string cannot be done safely, because <code>N_SHORE</code> carries an underscore of its own.</p>
+</li>
+<li><p><strong><code>MODE_LOW</code> / <code>MODE_HIGH</code> are spelled <code>MODELOW</code> / <code>MODEHIGH</code></strong>, and they are admissible only at <code>SCOPE = SAMPLE</code>. Per instance a gene holds about nineteen probes and a TSS200 window two to five: a two-peak density estimate on those is shaped by the bandwidth rather than by the data, and the old code returned that number instead of refusing. A minimum-numerosity guard now returns <code>NA</code> rather than a plausible-looking value.</p></li>
+<li><p><strong><code>depth_analysis</code> is gone, and so is the <code>DEPTH</code> column.</strong> Not derived, not deprecated: removed. Once every artefact has the same shape — a key column and one column per sample — a model handed a row does not know, and has no reason to ask, whether the key of that row is a gene symbol or <code>PROBE_WHOLE</code>. It fits. The two consumers merged into one (<code><a href="../reference/assoc_run_marker.html">assoc_run_marker()</a></code>, which replaces <code>sem_run_depth1_marker()</code> and <code>sem_run_depth_n_marker()</code>), and the granularity is said by <code>SCOPE</code>, <code>AREA</code> and <code>SUBAREA</code> — which say more, because those pairs are only <em>partially</em> ordered and an integer scale projected a lattice onto a line.</p></li>
+<li><p><strong>The <code>TOTAL</code> column is gone.</strong> It was <code>sum</code> of the per-area aggregates, and <code>depth_analysis == 2</code> meant “test only that” — but the partition into areas is not disjoint, so a probe the annotation maps onto three genes entered that total three times. It was the composition of aggregates this release forbids, in the one place nobody looked for it. What it meant to compute — the whole region class, one number per sample — is now an artefact of its own: <code>SCOPE = SAMPLE</code> on that <code>(AREA, SUBAREA)</code>, derived from the masked position pivot where every position counts once.</p></li>
+<li><p><strong><code>AREA_OF_TEST</code> names the aggregate for collapsed artefacts.</strong> At <code>SCOPE = SAMPLE</code> a row is the whole region class reduced to one number, and which class that is is already said by <code>AREA</code> and <code>SUBAREA</code>; what the row needs to say is <em>which aggregate</em>. So it carries <code>MEAN</code>, <code>MEDIAN</code>, <code>SUM</code>, … Previously it repeated the region class, leaving the mean and the median of the same class with the same <code>AREA_OF_TEST</code>.</p></li>
+<li><p><strong>The taxonomy key leads the result file</strong>, in the order <code>MARKER</code>, <code>FIGURE</code>, <code>SCOPE</code>, <code>AREA</code>, <code>SUBAREA</code>, <code>AGGREGATION</code>, <code>AREA_OF_TEST</code>, and a missing value in any of them stops the write. The key is the identity of a row: two rows with a hole in the same place cannot be told apart. The old code filled such holes instead — <code>SUBAREA</code> became the literal <code>"TOTAL"</code>, a value outside its own vocabulary — which is how a defect hides inside a key.</p></li>
+<li><p><strong><code>N_PROBES</code> moved to <code>SAMPLE_SHEET_RESULT.csv</code>.</strong> It is a property of the imputation — how many positions of that sample survived the treatment of missing values — not an aggregation of a marker, so it sits with the descriptive properties of the sample. Nothing is lost for the density: the <code>MEAN</code> of a binary marker <em>is</em> the density, denominator included.</p></li>
+<li>
+<p><strong>Every computed quantity is now named by four coordinates.</strong> A number produced by SEMseeker is the reduction of a set of genomic positions, and until now the operator that reduced them was implicit — one per marker, so the marker and its direction identified the value. A scope can carry several reductions, so the operator became an axis of its own and the names changed accordingly:</p>
+<pre><code>&lt;SCOPE&gt;_&lt;MARKER&gt;_&lt;FIGURE&gt;_&lt;AGGREGATION&gt;</code></pre>
+<table class="table"><colgroup><col width="50%"><col width="50%"></colgroup><thead><tr><th>before</th>
+<th>after</th>
+</tr></thead><tbody><tr><td><code>SAMPLE_MUTATIONS_HYPER</code></td>
+<td><code>SAMPLE_MUTATIONS_HYPER_SUM</code></td>
+</tr><tr><td><code>SAMPLE_DELTAS_HYPO</code></td>
+<td><code>SAMPLE_DELTAS_HYPO_MEAN</code></td>
+</tr><tr><td><code>SAMPLE_MEDIAN</code></td>
+<td><code>SAMPLE_SIGNAL_BETA_MEDIAN</code></td>
+</tr><tr><td><code>SAMPLE_MODE_LOW</code></td>
+<td><code>SAMPLE_SIGNAL_BETA_MODELOW</code></td>
+</tr><tr><td><code>SAMPLE_N_PROBES</code></td>
+<td>moved to <code>SAMPLE_SHEET_RESULT.csv</code> as <code>N_PROBES</code> — see the entry above</td>
+</tr></tbody></table></li>
+<li><p><strong>The figure of <code>SIGNAL</code> is the scale of the values, <code>BETA</code> or <code>MVALUE</code>.</strong> It used to be <code>MEAN</code>, a placeholder that made the key unique while describing a way of aggregating — which now has an axis of its own. Pivot files carry it, so a beta run and an M-value run no longer write the same file name and overwrite each other in one folder. WGBS, ONT and PacBio stay <code>BETA</code>: a methylation fraction from reads is the same bounded scale as an array beta value, and the package compares the two on purpose.</p></li>
+<li><p><strong>Pivot file names carry the aggregation</strong>, e.g. <code>MUTATIONS_HYPER_CHR_CYTOBAND_SUM_HG19.parquet</code>. Result folders produced by earlier versions do not match the new names and recompute once. This buys a guarantee that did not exist: the name used to say nothing about which operator had produced the file, so an existing pivot was reused on trust.</p></li>
+<li><p><strong><code>inference_details$aggregation</code> is required.</strong> A request that does not name the reduction does not identify what it wants tested. A malformed request (no aggregation, or a name outside the taxonomy) stops the run; a request that no marker of the run admits — the median of a 0/1 marker, say — drops that row with a warning naming it and lets the other rows proceed.</p></li>
+<li><p><strong>Results carry an <code>AGGREGATION</code> column</strong>, part of the row identity along with marker, figure, area and subarea, in the deduplication, in the resume match and in the cross-study overlaps.</p></li>
+<li>
+<p><strong>The second-order analyses are grouped under a <code>meta_</code> prefix and renamed.</strong> Six functions read the results of previous runs rather than the signal, which no other function in the package does, and they were scattered across the association and enrichment prefixes as if they belonged with the analyses that produce those results. They now say what they aggregate over, studies or subsamples, in the suffix:</p>
+<table class="table"><colgroup><col width="50%"><col width="50%"></colgroup><thead><tr><th>was</th>
+<th>is</th>
+</tr></thead><tbody><tr><td><code>assoc_inter_study_association_meta_analysis()</code></td>
+<td><code><a href="../reference/meta_association_across_studies.html">meta_association_across_studies()</a></code></td>
+</tr><tr><td><code>assoc_inter_study_association_overlaps()</code></td>
+<td><code><a href="../reference/meta_association_overlaps_studies.html">meta_association_overlaps_studies()</a></code></td>
+</tr><tr><td><code>assoc_intra_study_association_subsamples_overlaps()</code></td>
+<td><code><a href="../reference/meta_association_overlaps_subsamples.html">meta_association_overlaps_subsamples()</a></code></td>
+</tr><tr><td><code>assoc_intra_study_association_replication()</code></td>
+<td><code><a href="../reference/meta_association_replication.html">meta_association_replication()</a></code></td>
+</tr><tr><td><code>enrich_inter_study_enrichment_compare()</code></td>
+<td><code><a href="../reference/meta_enrichment_compare_studies.html">meta_enrichment_compare_studies()</a></code></td>
+</tr><tr><td><code>enrich_intra_study_enrichment_subsamples_overlaps()</code></td>
+<td><code><a href="../reference/meta_enrichment_overlaps_subsamples.html">meta_enrichment_overlaps_subsamples()</a></code></td>
+</tr></tbody></table><p>The old names are gone rather than deprecated. A deprecated alias keeps a name alive so that working code goes on working, and none of these six could run: each of them read at least one variable that was never assigned.</p>
+</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-0-99-5">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-99-5"></a></h3>
+<ul><li>
+<p><strong>The row filter wrote into the workspace of whoever was using the package.</strong> <code>assoc_filter_sql()</code> registered the table it was about to query in the global environment under a fixed name, queried it, and removed it. An object of that name belonging to the caller was overwritten and then deleted, so what was lost was not a name but its contents; and the removal was not protected against failure, so the one case that left the workspace dirty was the case where the query had already failed. The query is handed an environment of its own now, holding nothing but the table, living only as long as the call, and with an empty parent so that the only name it resolves is the table. It was the last assignment to the global environment in the package.</p>
+<p>A second defect sat next to it: the documented <code>TABLE</code> placeholder, for a condition carrying a sub-statement, was replaced with the name of a local variable rather than with the name the table is registered under, so that branch asked for a table nobody had registered. No caller passes a sub-statement, which is how it stayed broken.</p>
+</li>
+<li>
+<p><strong>An annotation cache written by a different version of the package.</strong> The probe annotation is cached under <code>tools::R_user_dir("SEMseeker", "cache")</code>. It now records which columns it was built for, so a file written before a region class joined the vocabulary counts as a miss and is rebuilt, instead of being read and then used for a column it does not carry.</p>
+<p>That settles one direction only. The version that gets the other one wrong is a version already installed, which cannot be taught a format that postdates it: it reads the file, uses the result as a table, and stops on an undefined column far from anything it can see as a cause. So the name carries the shape as well, <code>probe_annotation_v2_&lt;key&gt;.rds</code>, and the two never open the same file. The file in the previous shape is left where it is, for the version still using it.</p>
+<p>On upgrade the annotation is therefore rebuilt once, about a minute, and read from the cache in about two seconds from then on.</p>
+</li>
+<li>
+<p><strong>A session outlived both the folder it was opened on and the call that closed it.</strong> The session was read from memory first and the folder consulted only when memory was empty, so while a session was standing the folder decided nothing; and closing an analysis left that session in memory. Two consequences, both silent. An analysis opened on a new folder in the same R session inherited the previous one’s options, because a default is applied only to a value that is still unset, so an option the second analysis never named arrived with nothing to announce it. And a read taken after a close was answered with the closed session rather than refused.</p>
+<p>The folder now identifies the session: a session in memory that belongs to a different folder is not returned, and the folder’s own file is read instead, or an empty session when that file is absent. Resuming is unaffected, since resuming means the same folder and the folders then match. Closing empties the session, and closing one that is already closed is not an error. A read that names no folder when no session is open now fails with the message the package writes for it, rather than with an error about an argument of length zero.</p>
+<p>No exported function changes behaviour: each one opens its own session and closes it. What changes is that state no longer crosses from one analysis to the next. Most inherited values happened to equal the defaults, which is why this stayed out of sight: seeing it takes two analyses in one process, in that order, with the first naming an option the second does not.</p>
+</li>
+<li><p><strong>A request for <code>multicore</code> on a platform without <code>fork()</code> was granted with a single worker.</strong> <code>future::plan(multicore)</code> does not refuse such a platform: it accepts the request and degrades to one worker. Windows has no <code>fork()</code>, so a run taking the default <code>parallel_strategy = "multicore"</code> executed the whole pipeline in series while believing it was parallel, and nothing in the log said so. macOS already had an explicit conversion, for an unrelated reason (fork is unsafe there alongside Polars); a platform that simply lacks <code>fork()</code> had none. <code>core_parallel_session()</code> now converts <code>multicore</code> to <code>multisession</code> wherever <code><a href="https://parallelly.futureverse.org/reference/supportsMulticore.html" class="external-link">parallelly::supportsMulticore()</a></code> is false, and logs the substitution the way the macOS path does. Measured on CI, same commit and same suite: 285 minutes on Windows against 134 on Linux. The ratio was the number of workers, not the speed of the platform.</p></li>
+<li>
+<p><strong>A per-sample burden restricted to a region class was computed over the whole sample.</strong> At <code>SCOPE = SAMPLE</code> the mask that selects the positions of a class was built from the full probe annotation table, including the probes with no annotation for that class. On a 450k run the mask covered all 485,512 positions whatever the class was, against 365,860 for <code>GENE_WHOLE</code>, 84,342 for <code>GENE_TSS1500</code> and 62,870 for <code>ISLAND_N_SHORE</code>, so every restricted burden equalled the burden of the whole sample, and all classes returned the same number. Per-instance results were never affected, and neither were WGBS/long-read runs, where the annotation is resolved by coordinate overlap and carries only the positions of the class.</p>
+<p><strong>Migration.</strong> Recompute the collapsed artefacts and any inference run on them: delete the <code>SCOPE = SAMPLE</code> pivots of the result folder, or rerun the analysis with <code>start_fresh = TRUE</code>. Per-instance results and the SEM layer need no action.</p>
+</li>
+<li><p><strong>A consumer wrote over the file it was consuming.</strong> <code>assoc_data_extractor()</code> read the canonical inference CSV, applied three filters — the figures of the marker, the <code>areas_sql_condition</code> of the request, the dropped <code>SAMPLES_SQL_CONDITION</code> columns — and wrote the filtered frame back over the same path. Extracting was therefore destructive: a narrow <code>areas_sql_condition</code> permanently reduced the result of the run, and the next iteration of its own loop read a file a previous iteration had truncated. It writes only to <code>destination_folder</code> now. <code>sem_metrics_name_collect()</code> left the read path with it — its body is commented out in full, but what it used to do is why it does not belong there: it wrote a registry to disk while a consumer was reading.</p></li>
+<li><p><strong><code>assoc_results_get()</code> guessed which region class and which extent to read.</strong> <code>area</code> defaulted to <code>"GENE"</code> and <code>scope</code> to <code>NULL</code>, which meant no filter at all. Both are required now, and removing the defaults immediately showed what they had been hiding: two enrichment backends declared neither, so they were reading every extent — the collapsed <code>SCOPE = SAMPLE</code> rows included — into a gene set, and four cross-study overlap call sites mixed the collapsed row of a region class with its per-instance rows. All seven now declare what they read.</p></li>
+<li><p><strong>Two dead adjustment flags removed.</strong> <code>adjust_per_area</code> and <code>adjust_globally</code> re-ran <code><a href="https://rdrr.io/r/stats/p.adjust.html" class="external-link">p.adjust()</a></code> at read time on top of an already adjusted column — <code>pvalue_column</code> defaults to <code>PVALUE_ADJ_ALL_BH</code>, so either one meant BH over BH. No call site passed <code>TRUE</code>. <code>adjust_per_area</code> also reused the name <code>area</code> as its loop counter, shadowing the parameter, so the filter that followed selected the last area of the loop rather than the requested one.</p></li>
+<li><p><strong>The significance flags matched the method string, not the level.</strong> <code>SIGNIFICATIVE_ADJ_ALL</code> and <code>SIGNIFICATIVE_ADJ</code> were computed over <em>every</em> column whose name contained the method — <code>grepl("BH", colnames)</code> — so a second adjusted level would have turned them into “significant at every level at once” without a visible change. They now select the <code>ALL</code> level by name. An empty selection yields <code>NA</code> instead of <code>TRUE</code>, which is what <code>all(logical(0))</code> used to return.</p></li>
+<li><p><strong><code>filter_p_value</code> filtered on a column that is never created.</strong> <code>assoc_analysis_save_results()</code> subset on <code>SIGNIFICATIVE_ADJ</code>, which is built by <code>assoc_results_get()</code> on the way out and never exists on the way in. The parameter defaults to <code>TRUE</code>, so the default path could not complete; every fixture in the suite sets it to <code>FALSE</code>, which is why nothing caught it. It filters on <code>SIGNIFICATIVE_ADJ_ALL</code>, the flag that exists at that point.</p></li>
+<li><p><strong>Two models adjusted p-values over a batch.</strong> <code><a href="../reference/assoc_apply_stat_model.html">assoc_apply_stat_model()</a></code> and <code>assoc_glm_model_bulk()</code> each wrote a <code>PVALUE_ADJ</code> over whatever chunk they had been handed, making the family a memory parameter; the value was then recomputed downstream anyway. Both removed. The one in <code><a href="../reference/assoc_apply_stat_model.html">assoc_apply_stat_model()</a></code> also split its rows on <code>grepl("TOTAL", AREA_OF_TEST)</code>, and <code>TOTAL</code> was removed in this release — the predicate had been false on every row since, so its two branches had quietly become one.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="new-features-0-99-5">New features<a class="anchor" aria-label="anchor" href="#new-features-0-99-5"></a></h3>
+<ul><li>
+<p><strong><code>PROMOTER</code> is a region class of its own, masked once instead of grouped on read.</strong> <code>AREA = GENE</code> gains <code>SUBAREA = PROMOTER</code>: the positions annotated to <code>TSS200</code>, <code>TSS1500</code> or <code>1stExon</code> are selected together, so one gene receives one measure of the promoter. Grouping the three windows when reading results instead put the same gene in three families, and a gene with three p-values has none, which is why the backends that require one per gene could not be used on this question at all.</p>
+<p>The class is a union, not a partition, and it is not alone in that: <code>GENE_WHOLE</code> has always been the union of every gene of a probe whatever the window. A probe annotated <code>TSS200</code> for one transcript and <code>TSS1500</code> for another is in the promoter of both genes and names each of them once, so no position is counted twice when the class is masked.</p>
+<p>The definition is the RefGene groups of the manifest. The regulatory column of the same manifest was considered and set aside: the two agree for about a third of the probes, that column is empty for three quarters of them, and it is not a rule about position relative to the transcription start, so it cannot be reproduced from coordinates alone.</p>
+<p><strong>What this changes in results you already have.</strong> Nothing within a class: the values of <code>GENE_TSS1500</code>, <code>GENE_BODY</code> and every other class are untouched, since each masks the positions independently. What grows is the family a correction for multiple testing ranges over. <code>PVALUE_ADJ_KEY</code> is unaffected, because it lives inside one key; <code>PVALUE_ADJ_SCOPE_</code> and <code>PVALUE_ADJ_ALL</code> change, because the family gained a member. A run asking <code>subareas = "ALL"</code> also gains one region class per marker and figure, and the time and the artefacts that go with it. A comparison against an earlier analysis therefore holds on the raw p-values and on the per-key adjusted ones, and does not hold on the adjusted values whose scope spans region classes.</p>
+<p>The class is built on both annotation paths. On the array it is a column of the per-probe table, read from the RefGene groups of the manifest. On the coordinate path it is the three windows of the gene model put together and kept labelled by gene, which is the part that matters: the whole-gene class reduces its overlapping ranges and therefore carries coordinates instead of gene names, and a promoter labelled that way would answer nothing. Overlaps between the three windows of one gene are left standing on purpose, because a position is counted once per gene downstream.</p>
+<p>On the enrichment side <code>gene_region = "PROMOTER"</code> now stands for the single window of the same name instead of naming the three. The grouping it used to do when reading results is what the class removes: it reached one gene from three families, and the backends that need one p-value per gene could not be used.</p>
+</li>
+<li><p><strong>Descriptors on any scope.</strong> The signal descriptors are no longer a separate path: <code>SIGNAL</code> is a marker like the others, so a request at <code>SCOPE = SAMPLE</code> produces its median, mean, variance, IQR and, on the beta scale, its two modes restricted to a region class, e.g. <code>GENE_TSS1500_SIGNAL_BETA_MEDIAN</code>.</p></li>
+<li><p><strong>Density.</strong> The mean of a binary marker over a scope is the fraction of its positions classified as epimutations. Unlike the raw burden it is comparable between region classes of different size, which the burden is not.</p></li>
+<li><p>Which reductions a marker admits is declared in one place. Continuous markers (<code>SIGNAL</code>, <code>DELTAS</code>, <code>DELTAR</code>) take the full descriptor set; counts take the sum and the mean, because their median and IQR are degenerate on a vector of zeros and ones. The two modes assume a bounded bimodal scale and are therefore restricted to the signal on the beta scale.</p></li>
+<li>
+<p><strong>Per-sample burden restricted to a region class.</strong> A per-sample number no longer has to be computed over every position of the sample. At <code>scope = "SAMPLE"</code> the region classes of the call are each reduced to one number per sample, so</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/association_analysis.html">association_analysis</a></span><span class="op">(</span></span>
+<span>  areas     <span class="op">=</span> <span class="st">"GENE"</span>,</span>
+<span>  subareas  <span class="op">=</span> <span class="st">"TSS1500"</span>,</span>
+<span>  inference_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>    independent_variable <span class="op">=</span> <span class="st">"Phenotest"</span>,</span>
+<span>    family_test          <span class="op">=</span> <span class="st">"spearman"</span>,</span>
+<span>    aggregation          <span class="op">=</span> <span class="st">"SUM"</span>,</span>
+<span>    scope                <span class="op">=</span> <span class="st">"SAMPLE"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>tests the burden carried by the TSS1500 probes alone, against the burden over the whole sample that <code>areas = "SAMPLE"</code> gives. The result rows say which one they are in <code>AREA</code>, <code>SUBAREA</code> and <code>SCOPE</code> rather than in a name squashed into one column, and the readable per-sample table is composed on read with <code>sem_study_summary_get(regions = c("SAMPLE", "GENE_TSS1500"))</code>, which joins <code>GENE_TSS1500_&lt;MARKER&gt;_&lt;FIGURE&gt;_&lt;AGG&gt;</code> onto the sample sheet. A class the run does not register refuses the request instead of answering with an empty result.</p>
+<p>Each position is counted <strong>once</strong>, even when the annotation maps it to several genes. The burden is computed from the POSITION pivot restricted to the probes of the region, not by summing the per-gene pivot: summing the latter would count a multi-gene probe once per gene.</p>
+</li>
+</ul></div>
+<div class="section level3">
+<h3 id="dependencies-0-99-5">Dependencies<a class="anchor" aria-label="anchor" href="#dependencies-0-99-5"></a></h3>
+<ul><li>
+<strong>Nine declared dependencies the package never called are gone.</strong> <code>FSA</code>, <code>fst</code>, <code>future.apply</code>, <code>gridExtra</code> and <code>zoo</code> leave <code>Imports</code>; <code>fitdistrplus</code>, <code>openai</code>, <code>pkgdown</code> and <code>wordcloud</code> leave <code>Suggests</code>. With <code>methods</code> added to <code>Imports</code>, which the package does use, and <code>ggrepel</code> and <code>memuse</code> to <code>Suggests</code>, the declared counts go from 47 and 40 to 43 and 38. A declared import is installed whether or not anything reaches it, so what this removes is install time for every user rather than source lines.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-0-99-5">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-99-5"></a></h3>
+<ul><li>The vignettes now show the names this version writes: <code>SIGNAL</code> pivots carry the scale of the run (<code>SIGNAL_BETA_*</code>, or <code>SIGNAL_MVALUE_*</code>), file names are uppercase, and the optional <code>AGGREGATION</code> segment is part of the documented pattern. <code><a href="../reference/sem_coverage_analysis_report.html">sem_coverage_analysis_report()</a></code> describes its <code>signal_data</code> path the same way.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.99.4" id="semseeker-0994">semseeker 0.99.4<a class="anchor" aria-label="anchor" href="#semseeker-0994"></a></h2>
+<div class="section level3">
+<h3 id="breaking-changes-0-99-4">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-99-4"></a></h3>
+<ul><li>
+<strong>The per-sample burden moved out of <code>SAMPLE_SHEET_RESULT.csv</code> into a new sibling file, <code>SAMPLE_STATS_RESULT.csv</code>.</strong> The columns that used to be appended to the sample sheet (<code>MUTATIONS_HYPER</code>, <code>DELTAS_HYPO</code>, …, and <code>PROBES_COUNT</code>) were aggregated over every probe with no genomic filter — that is the <em>sample</em> scope of the new artefact — and are now written there as <code>SAMPLE_&lt;MARKER&gt;_&lt;FIGURE&gt;</code> and <code>SAMPLE_N_PROBES</code>. The sample sheet stays the description of the study; the two files join on <code>Sample_ID</code>, and <code>sem_study_summary_get()</code> performs that join for you, so analyses inside the package are unaffected. Code that read the burden straight from <code>SAMPLE_SHEET_RESULT.csv</code> must read the sibling instead. <em>(Superseded in 0.99.5: the sibling file no longer exists, the join is composed from the <code>SCOPE = SAMPLE</code> artefacts, and <code>N_PROBES</code> returned to the sample sheet.)</em>
+</li>
+</ul></div>
+<div class="section level3">
+<h3 id="new-features-0-99-4">New features<a class="anchor" aria-label="anchor" href="#new-features-0-99-4"></a></h3>
+<ul><li><p><strong>Per-sample signal descriptors.</strong> Alongside the burden, the new sibling carries <code>SAMPLE_MEDIAN</code>, <code>SAMPLE_MEAN</code>, <code>SAMPLE_VARIANCE</code>, <code>SAMPLE_IQR</code> and <code>SAMPLE_N_PROBES</code> for every sample. On the beta scale it also carries the two modes of the bimodal distribution, <code>SAMPLE_MODE_LOW</code> and <code>SAMPLE_MODE_HIGH</code>, estimated as the highest density peak on each side of 0.5. On M-values the distribution is unimodal and the split carries no meaning, so the two columns are omitted rather than filled with a meaningless number. Column names are composed by a single shared helper, so producer and consumer cannot drift apart. Region scopes (<code>&lt;AREA&gt;[_&lt;SUBAREA&gt;]_*</code>) are the next step; the naming already accommodates them.</p></li>
+<li><p><strong>Coverage is now a mandatory pre-step of every SEM analysis.</strong> Coverage used to be an opt-in report, so a run could go straight to SEM detection on input that barely overlaps the reference annotation (long-read positions against an Illumina manifest, a batch with a probe mismatch, the wrong genome build) and produce thresholds computed on a handful of probes. Every run now: writes the coverage charts, logs a coverage banner (<code>input_positions</code> / <code>covered_by_reference</code> / percentage), writes a <code>COVERAGE_GATE.json</code> sidecar for audit, and <strong>stops</strong> when coverage falls below the new <code>coverage_minimum</code> parameter (default 80%). The charts are produced even when the gate rejects the run — they are what shows which regions were missing. Coordinate-based technologies (WGBS, long reads) derive their annotation from the positions themselves, so the threshold is not applied there. Lower <code>coverage_minimum</code> explicitly for deliberate cross-technology runs.</p></li>
+<li><p>The coverage charts are now computed over the full annotation set instead of the areas selected for the run. <code>areas</code> defaults to <code>POSITION</code> only, which the coverage report skips, so on a default run the charts were previously never produced.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-0-99-4">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-99-4"></a></h3>
+<ul><li>
+<code>inst/CITATION</code> now carries the Zenodo DOI <code>10.5281/zenodo.5095416</code> instead of a Bioconductor DOI that does not resolve (the package is not on Bioconductor yet), and the README no longer says a Zenodo DOI “will be registered” — the archive has existed since 2021.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-0-99-4">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-99-4"></a></h3>
+<ul><li><p><strong>A sample sheet that shares no identifier with the computed pivots no longer produces a silently empty result.</strong> <code>sem_study_summary_total()</code> merged the per-sample burden onto the sample sheet by name with <code>all.x = TRUE</code>: when the two sides had no identifier in common, every burden column landed as <code>NA</code> while <code>PROBES_COUNT</code> stayed populated, and each <code>depth = 1</code> inference downstream then failed with “data are not the same size”. The merge now stops with a message naming both sides, and reports partially missing samples as a warning. The accumulator inside the function is also a proper local binding now: it was resolved with <code><a href="https://rdrr.io/r/base/exists.html" class="external-link">exists()</a></code>, which reaches the global environment.</p></li>
+<li><p>The same <code><a href="https://rdrr.io/r/base/exists.html" class="external-link">exists()</a></code> pattern was removed from <code>sem_coverage_analysis()</code>, which could also raise “object ‘tot_result’ not found” when no area produced a usable table.</p></li>
+<li><p><strong>Sample identifiers containing <code>-</code>, <code>.</code> or spaces are now handled correctly.</strong> Sample-column names of the signal matrix are normalised (uppercase, non-alphanumeric characters replaced by <code>_</code>), but the sample sheet identifiers were used as-is when selecting those columns. With identifiers such as <code>C3L-00001-06</code> the two sides never matched: <code><a href="../reference/util_exploratory_analysis.html">util_exploratory_analysis()</a></code> wrote a cleaned signal parquet holding the <code>PROBE</code> column only, and the SEM pipeline stopped with <code>undefined columns selected</code>. Datasets whose identifiers are already alphanumeric (e.g. <code>GSM123456</code>) were unaffected. Both sides are now normalised through a single, idempotent internal helper before any name-based column selection; distinct identifiers that would collapse onto the same normalised name, and identifiers without a matching signal column, are reported explicitly instead of failing later.</p></li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.99.3" id="semseeker-0993">semseeker 0.99.3<a class="anchor" aria-label="anchor" href="#semseeker-0993"></a></h2>
+<div class="section level3">
+<h3 id="documentation-0-99-3">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-99-3"></a></h3>
+<ul><li>Aligned the delta-metric documentation in the vignettes and README with the implementation: the <code>DELTAS</code>/<code>DELTAR</code>/<code>DELTAP</code>/<code>DELTARP</code>/<code>DELTAQ</code>/<code>DELTARQ</code> descriptions now reflect the relative-delta ratio and its equal-width and quantile ranked variants. Corrected the pivot file-name examples to <code>Data/Pivots/&lt;MARKER&gt;/&lt;MARKER&gt;_&lt;FIGURE&gt;_&lt;AREA&gt;_&lt;SUBAREA&gt;_&lt;build&gt;.parquet</code> and updated a stale <code><a href="../reference/enrichment_analysis.html">enrichment_analysis()</a></code> reference.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-0-99-3">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-99-3"></a></h3>
+<ul><li>
+<strong><code>plot_box_plot()</code>: fixed R CMD check ERROR under ggplot2 &gt;= 4.0.</strong> <code>ggpubr::stat_compare_means(label = "p.format")</code> builds an internal <code>after_stat(create_p_label(...))</code> expression that ggplot2 &gt;= 4.0 cannot resolve when ggpubr is loaded via <code>::</code> but not attached, causing “could not find function ‘create_p_label’” (test-2-box-plot.R). The comparison p-value is now computed directly from <code>stats</code> (<code>t.test</code>/<code>wilcox.test</code>/<code>kruskal.test</code>/<code>anova</code>) and drawn with <code><a href="https://ggplot2.tidyverse.org/reference/annotate.html" class="external-link">ggplot2::annotate()</a></code>, removing the ggpubr rendering-path dependency. Behaviour change: the <code>kruskal.test</code> branch now shows the overall test p-value only; the per-pair <code>ggpubr</code> brackets have been dropped. Also fixed the <code>unit=</code>/<code>units=</code> partial-argument-match warning in <code>ggsave()</code>.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="dependencies-0-99-3">Dependencies<a class="anchor" aria-label="anchor" href="#dependencies-0-99-3"></a></h3>
+<ul><li>Bumped pinned GitHub Actions: <code>actions/cache</code> 4→6, <code>actions/upload-artifact</code> 4→7, <code>actions/dependency-review-action</code> 4→5, <code>codecov/codecov-action</code> 4→7.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.99.2" id="semseeker-0992">semseeker 0.99.2<a class="anchor" aria-label="anchor" href="#semseeker-0992"></a></h2>
+<div class="section level3">
+<h3 id="breaking-changes-0-99-2">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-99-2"></a></h3>
+<ul><li>
+<strong>LESIONS detection now uses genomic distance, not probe count.</strong> The legacy <code>sliding_window_size</code> parameter (probe-count based, default 11) has been REMOVED. It is replaced by <code>LESIONS_BP</code> (default 2000), the maximum bp distance for two probes to be considered part of the same enrichment window. Same registration pattern as <code>DELTAQ_Q</code> / <code>DELTAP_B</code>: registered in <code><a href="../reference/core_init_env.html">core_init_env()</a></code>, surfaces through the <code>Q</code> column of <code>keys_markers_default_discrete</code>, exposed via <code>semseeker(LESIONS_BP = ...)</code>. Rationale: probe-density varies dramatically across the genome and across array platforms (450K ~485k probes, EPIC ~865k, LONGREAD bedmethyl variable). A fixed 11-probe window covers ~70kb on average on 450K but ~500bp inside a CpG island — biologically incomparable. <code>LESIONS_BP=2000</code> matches the typical span of a CpG island or DMR and yields a single semantics across platforms. Migration: any caller passing <code>sliding_window_size=N</code> must replace it with <code>LESIONS_BP=M</code> (no equivalence formula; the metric has changed). Multi-window sensitivity will be tackled in a later release (vector-valued <code>LESIONS_BP</code>).</li>
+</ul></div>
+<div class="section level3">
+<h3 id="new-features-0-99-2">New features<a class="anchor" aria-label="anchor" href="#new-features-0-99-2"></a></h3>
+<ul><li><p><strong>CpG-island subareas aligned to Illumina <code>Relation_to_Island</code>.</strong> The <code>ISLAND</code> area now exposes all six Illumina contexts plus the whole neighbourhood: <code>WHOLE</code>, <code>ISLAND</code>, <code>N_SHORE</code>, <code>S_SHORE</code>, <code>N_SHELF</code>, <code>S_SHELF</code>, <code>OPENSEA</code>. Previously the island core (<code>Island</code>) and the open-sea compartment (<code>OpenSea</code>) were lost. <code>ISLAND_WHOLE</code> is <strong>redefined</strong> to mean the whole island neighbourhood (core + shores + shelves, ±4 kb), mirroring <code>GENE_WHOLE</code>; use the new <code>ISLAND</code> subarea for the core alone. <code>OPENSEA</code> groups each open-sea CpG by the inter-neighbourhood genomic gap that contains it, labelled <code>chr:start-end</code> (never spanning a chromosome). Semantics are centralised in <code>island_opensea.R</code> and shared by both the Illumina (<code>anno_probe_annotation_build</code>) and coordinate/AnnotationHub (<code>anno_area_granges_build</code>) backends. See the getting-started vignette.</p></li>
+<li>
+<p><strong><code>binomial_bulk</code> family + goodness-of-fit metrics extension.</strong> New <code>family_test = "binomial_bulk"</code> dispatches to <code>assoc_glm_model_bulk()</code> for bulk per-probe logistic regression via <code>Rfast::glm_logistic</code> (parallelised with <code>foreach %dorng%</code>), ~10-20× faster than the per-probe <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">stats::glm</a></code> path. Drop-in replacement for <code>family_test = "binomial"</code> at PROBE-level inference details (LESIONS, MUTATIONS). Same legacy schema: per-coef PVALUE/ESTIMATE columns plus top-level PVALUE/PVALUE_ADJ.</p>
+<p>Standard errors are derived from the Fisher information at the MLE (<code>Var(β̂) = (X' diag(p(1-p)) X)^{-1}</code>), matching <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">stats::glm</a></code> Wald output.</p>
+<p><code><a href="../reference/io_data_preparation.html">io_data_preparation()</a></code> gains a universal degenerate-burden filter: columns with <code>var(Y) == 0</code> are dropped before reaching the model. Critical for LESIONS @ PROBE where ~92% of probes are all-zero across samples (manifest-aligned pivot, retained for positional join with annotations). The filter applies to every family — binomial GLM no longer diverges on constant Y, limma/voom no longer produces NaN t-stats, polynomial no longer fits rank-deficient designs.</p>
+<p>Ten new metrics registered in <code>metrics_properties.rda</code>:</p>
+<table class="table"><colgroup><col width="25%"><col width="25%"><col width="25%"><col width="25%"></colgroup><thead><tr><th>Metric</th>
+<th>Engine</th>
+<th>Direction</th>
+<th>Notes</th>
+</tr></thead><tbody><tr><td><code>T_STAT_MODERATED</code></td>
+<td>limma_2, voom_2</td>
+<td>Higher better</td>
+<td>eBayes-moderated t-stat per coef</td>
+</tr><tr><td><code>B_STATISTIC</code></td>
+<td>limma_2, voom_2</td>
+<td>Higher better</td>
+<td>log-odds of differential expression (lods)</td>
+</tr><tr><td><code>F_STAT_MODERATED</code></td>
+<td>limma_2, voom_2</td>
+<td>Higher better</td>
+<td>joint F across non-intercept coefs (parabolic test)</td>
+</tr><tr><td><code>POSTERIOR_RESIDUAL_VAR</code></td>
+<td>limma_2, voom_2</td>
+<td>Lower better</td>
+<td>s2.post diagnostic</td>
+</tr><tr><td><code>MCFADDEN_R2</code></td>
+<td>binomial_bulk</td>
+<td>Higher better</td>
+<td>1 − devi/null_devi pseudo-R²</td>
+</tr><tr><td><code>NAGELKERKE_R2</code></td>
+<td>binomial_bulk</td>
+<td>Higher better</td>
+<td>scaled Cox-Snell pseudo-R²</td>
+</tr><tr><td><code>C_STATISTIC_AUC</code></td>
+<td>binomial_bulk</td>
+<td>Higher better</td>
+<td>discrimination (= AUC)</td>
+</tr><tr><td><code>DEVIANCE_RATIO</code></td>
+<td>binomial_bulk</td>
+<td>Lower better</td>
+<td>devi / null_devi</td>
+</tr><tr><td><code>AIC_VALUE</code></td>
+<td>all GLM</td>
+<td>Lower better</td>
+<td>uppercase canonical of legacy <code>aic_value</code>
+</td>
+</tr><tr><td><code>BIC_VALUE</code></td>
+<td>all GLM</td>
+<td>Lower better</td>
+<td>new</td>
+</tr></tbody></table><p>The metrics replace R²/R²_adj for limma/voom (lmFit doesn’t return R² natively, and the eBayes-moderated diagnostics are more informative) and provide the analogous goodness-of-fit signal for binomial logistic regression (R² doesn’t apply to {0,1} outcomes).</p>
+</li>
+<li><p><strong>Session provenance metadata</strong> (C-06). Every <code><a href="../reference/semseeker.html">semseeker()</a></code> run now writes <code>session_metadata.json</code> to the result folder at the start of analysis: <code>{"genome_build":"hg19","tech":"K850","semseeker_version":"0.99.0","created":"...","sample_n":120}</code> The file is human-readable and parseable without R, suitable for pipeline auditing and automated compatibility checks. Pivot files (parquet) additionally receive a sidecar <code>*_meta.json</code> with the same build/tech stamp; pivot file names now include the genome build as a suffix before the extension (e.g. <code>MUTATIONS_HYPER_GENE_TSS1500_hg19.parquet</code>) as belt-and-suspenders provenance. Inference CSV outputs gain two constant columns — <code>GENOME_BUILD</code> and <code>TECH</code> — that survive any downstream merge or stack operation. New exported function <code>core_check_session_compatibility(session_list)</code>: <strong>stops</strong> if <code>genome_build</code> differs across sessions (physically incomparable coordinates); <strong>warns</strong> if <code>tech</code> differs (cross-array meta-analysis is valid on the probe intersection but must be explicit). <code>assoc_intra_study_association_replication()</code> now calls this guard internally: stops with a clear message when origin results carry a different <code>GENOME_BUILD</code> than the current session.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="breaking-changes-0-99-2-1">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-99-2-1"></a></h3>
+<ul><li><p><strong><code><a href="../reference/semseeker.html">semseeker()</a></code> no longer auto-converts M-values to beta.</strong> The <code>auto_convert_mvalues</code> parameter has been removed and the <code>.looks_like_mvalues()</code> helper deleted. Input values are now passed through unchanged; if you need conversion, call <code><a href="../reference/sem_mvalue_to_beta.html">sem_mvalue_to_beta()</a></code> explicitly before <code><a href="../reference/semseeker.html">semseeker()</a></code>. The beta-vs-M-value flag is still detected and stored in <code>ssEnv$beta</code> by <code><a href="../reference/core_get_meth_tech.html">core_get_meth_tech()</a></code>, so downstream code that consults that flag continues to work.</p></li>
+<li><p><strong><code>start_fresh</code> defaults to <code>FALSE</code>.</strong> <code><a href="../reference/core_init_env.html">core_init_env()</a></code> no longer deletes the result folder before starting. Existing results are preserved unless the caller explicitly passes <code>start_fresh = TRUE</code>. The Shiny UI exposes this as a checkbox (“Delete result folder before running”, unchecked by default).</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-0-99-2">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-99-2"></a></h3>
+<ul><li><p><strong>macOS: tests default to <code>multisession</code> instead of <code>multicore</code></strong> (E-14). <code>multicore</code> (fork) is unsafe on macOS with Polars’ C++ thread pool — forked children can be killed by Mach exceptions. <code>setup.R</code> now selects <code>multisession</code> on Darwin, <code>multicore</code> on Linux. All <code>%dorng%</code> foreach bodies now call <code>core_update_session_info(ssEnv)</code> as their first statement to populate the worker’s <code>.pkgglobalenv</code> — required because <code>multisession</code> workers are fresh R processes where the session singleton is empty.</p></li>
+<li><p><strong><code>chr</code> prefix mismatch in Polars join</strong> (E-13). <code><a href="../reference/io_dump_sample_as_bed_file.html">io_dump_sample_as_bed_file()</a></code> prepends <code>chr</code> to chromosome names, but <code>signal_thresholds</code> retains bare numbers from probe annotations. The inner join in <code>util_join_values_to_thresholds()</code> returned 0 rows → no mutations detected. Fix: <code>util_join_values_to_thresholds()</code> now strips the <code>chr</code> prefix from both sides before joining.</p></li>
+<li><p><strong><code>exists("signal_data")</code> scoped to local environment in <code>sem_analyze_batch()</code> and <code><a href="../reference/sem_analyze_population.html">sem_analyze_population()</a></code></strong> (E-01). The previous <code>exists("signal_data")</code> used <code>inherits = TRUE</code> (R default), which walked all the way up to <code>.GlobalEnv</code>. If the user had a <code>signal_data</code> object in their session (the normal case — they load data before calling <code><a href="../reference/semseeker.html">semseeker()</a></code>), the guard fired even though the local copy had already been freed, and the subsequent <code>rm(signal_data)</code> produced a spurious <code>"object not found"</code> warning. In the worst case (interactive session where local and global scopes coincide) it could silently delete the user’s data. Fix: <code>exists("signal_data", envir = environment(), inherits = FALSE)</code> + <code>rm("signal_data", envir = environment())</code> in both files.</p></li>
+<li>
+<p><strong>Polars inner join replaces positional zip in <code><a href="../reference/sem_mutations_get.html">sem_mutations_get()</a></code>, <code><a href="../reference/sem_delta_single_sample.html">sem_delta_single_sample()</a></code>, <code><a href="../reference/sem_deltar_single_sample.html">sem_deltar_single_sample()</a></code>; coverage banner in <code><a href="../reference/sem_analyze_population.html">sem_analyze_population()</a></code></strong> (A-10). The previous implementation sorted both <code>values</code> and <code>thresholds</code> by CHR/START/END and then compared them row-by-row (positional zip). When <code>signal_thresholds</code> came from a different run (cross-run analysis, e.g. Nanopore sample vs Illumina reference batch passed via <code>populationControlRangeBetaValues</code>), the two position sets could differ in size or overlap, producing silently wrong mutation/delta calls or an out-of-bounds crash. Changes:</p>
+<ul><li>Added <code>util_join_values_to_thresholds()</code> — a private helper that performs a Polars lazy inner join on <code>(CHR, START, END)</code>. Shared by all three per-sample functions to ensure consistent intersection logic. Required for Nanopore bedmethyl files (28M+ rows where base-R <code><a href="https://rdrr.io/r/base/merge.html" class="external-link">merge()</a></code>/<code><a href="https://rdrr.io/r/base/match.html" class="external-link">match()</a></code> is too slow).</li>
+<li>
+<code><a href="../reference/sem_mutations_get.html">sem_mutations_get()</a></code>, <code><a href="../reference/sem_delta_single_sample.html">sem_delta_single_sample()</a></code>, <code><a href="../reference/sem_deltar_single_sample.html">sem_deltar_single_sample()</a></code> now use the helper; zero-overlap guard returns an empty result rather than crashing.</li>
+<li>Coverage banner moved from per-sample (inside <code><a href="../reference/sem_mutations_get.html">sem_mutations_get()</a></code>) to per-batch (at the start of <code><a href="../reference/sem_analyze_population.html">sem_analyze_population()</a></code> before the per-sample loop). Emitted once per batch: <code>input_positions | beta_range_positions | covered_by_inner_join</code>.</li>
+</ul></li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-a-assoc_bayes_analysis-rewrite-0-99-2">Bug fixes (A-09: assoc_bayes_analysis rewrite)<a class="anchor" aria-label="anchor" href="#bug-fixes-a-assoc_bayes_analysis-rewrite-0-99-2"></a></h3>
+<ul><li>
+<strong><code><a href="../reference/assoc_bayes_analysis.html">assoc_bayes_analysis()</a></code>: 9 bugs fixed</strong> (A-09).
+<ul><li>
+<strong>Loop off-by-one</strong> (bug 1): <code>for (a in length(markers))</code> iterated only once (<code>a = 2</code>, only “LESIONS”), silently skipping “MUTATIONS”. Fixed with <code><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along()</a></code>.</li>
+<li>
+<strong>Wrong file path</strong> (bug 2): <code>read_delim(io_pivot_file_name)</code> passed the function object instead of the local variable <code>pivot_filename</code> → runtime connection error.</li>
+<li>
+<strong>Missing assignment</strong> (bug 3): <code>tempDataFrame</code> used before being assigned from <code>pivot</code> → “object not found” crash. Added <code>tempDataFrame &lt;- pivot</code>.</li>
+<li>
+<strong><code><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset()</a></code> with string literal</strong> (bug 4): <code>subset(df, "Sample_Group" != "Reference")</code> is always <code>TRUE</code> → Reference samples never filtered → contaminated Bayes estimates. Fixed to bare column reference <code>subset(df, Sample_Group != "Reference")</code>.</li>
+<li>
+<strong>Column drop off-by-one</strong> (bug 3 cont.): <code>[, c(-1,-3)]</code> dropped the first data column or the <code>independent_variable</code> column depending on session config. Replaced with <code>colnames != "Sample_ID"</code> (remove only the merge key).</li>
+<li>
+<strong><code><a href="https://rdrr.io/r/base/exists.html" class="external-link">exists()</a></code> without scope</strong> (bug 5): same pattern as E-01; fixed with <code>inherits = FALSE, envir = environment()</code>.</li>
+<li>
+<strong>Duplicate <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max()</a></code> computation</strong> (bug 6): <code>max_P_case</code> was computed twice, <code>max_P_control</code> never computed → filtered output missed Control criterion.</li>
+<li>
+<strong>Output filename typo</strong> (bug 7): <code>"bayes_analisys"</code> → <code>"assoc_bayes_analysis"</code>.</li>
+<li>
+<strong><code>c</code> as loop variable</strong> (bug 8): foreach variable named <code>c</code> shadowed the base <code><a href="https://rdrr.io/r/base/c.html" class="external-link">c()</a></code> function. Renamed to <code>col_idx</code>.</li>
+<li>
+<strong>Hardcoded thresholds</strong> (bug 9): 0.9 / 0.1 are now <code>bayes_case_threshold</code> and <code>bayes_control_threshold</code> parameters with the original values as defaults.</li>
+</ul></li>
+</ul></div>
+<div class="section level3">
+<h3 id="statistical-model-changes-0-99-2">Statistical model changes<a class="anchor" aria-label="anchor" href="#statistical-model-changes-0-99-2"></a></h3>
+<ul><li>
+<strong><code>sem_lesions_get()</code>: replaced hypergeometric with binomial test</strong> (A-01). The sliding window advances one probe at a time, so each probe participates in up to <code>sliding_window_size</code> consecutive windows — sampling with replacement. The hypergeometric distribution assumes sampling without replacement and produced inflated (too-small) p-values. The new test is: <code>P(X ≥ ENRICHMENT | Binomial(sliding_window_size, p0))</code> where <code>p0 = MUTATIONS_COUNT / PROBES_COUNT</code> is the empirical background mutation rate for the grouping unit (gene, chromosome, …). Expected impact: more conservative lesion calls, better calibration for samples with low or high global methylation variation.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.11.0" id="semseeker-0110">semseeker 0.11.0<a class="anchor" aria-label="anchor" href="#semseeker-0110"></a></h2>
+<div class="section level3">
+<h3 id="new-features-0-11-0">New features<a class="anchor" aria-label="anchor" href="#new-features-0-11-0"></a></h3>
+<ul><li>Added three pkgdown vignettes: Getting started, Association analysis (all 15+ model families), Pathway and enrichment analysis (all 6 backends).</li>
+<li>Added GitHub Actions CI matrix: macOS, Ubuntu, Windows (<code>R-CMD-check.yml</code>).</li>
+<li>Added test coverage workflow (<code>test-coverage.yml</code>) with Codecov upload.</li>
+<li>Added <code>./ci-local.sh</code> for local Docker-based CI reproduction (<code>check</code> and <code>coverage</code> modes).</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-0-11-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-11-0"></a></h3>
+<ul><li>Fixed <code>future::plan(multicore, workers = 0)</code> crash when <code>availableCores()</code> returns 1 (e.g. in covr subprocess): added <code>max(1L, nCore)</code> guard in <code>parallel_session.R</code>.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-0-11-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-11-0"></a></h3>
+<ul><li>Corrected SEM citations: replaced Teschendorff with correct attribution to Gentilini et al. 2015 (<a href="doi:10.18632/aging.100792" class="uri">doi:10.18632/aging.100792</a>) and Corsaro et al. 2023 (<a href="doi:10.3390/cancers15164109" class="uri">doi:10.3390/cancers15164109</a>).</li>
+<li>Added differential signal analysis section (SIGNAL_MEAN) to getting-started vignette.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.10.0" id="semseeker-0100-and-earlier">semseeker 0.10.0 and earlier<a class="anchor" aria-label="anchor" href="#semseeker-0100-and-earlier"></a></h2>
+<p>See git log for earlier changes.</p>
+</div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">
