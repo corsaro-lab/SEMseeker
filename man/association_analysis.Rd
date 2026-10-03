@@ -19,6 +19,35 @@ association_analysis(
   \describe{
     \item{independent_variable}{Sample sheet column used as grouping /
       covariate variable.}
+    \item{independent_variable_order}{Optional. The levels of an ordinal
+      independent variable in the order the request intends,
+      \code{"+"}-separated, e.g.
+      \code{"reference + in situ + I + II + III + IV"}.
+
+      It is not a presentation detail. The order decides which comparisons
+      are consecutive, the sign of a difference between two levels, and
+      \code{levels()[1]}, which is the reference category every regression on
+      the variable is expressed against. Sorting the labels answers a
+      different question: the stage above sorts to
+      \code{I, II, III, in situ, IV, reference}, so the two comparisons that
+      matter are not adjacent and two that mean nothing are.
+
+      It also removes the need for a hand-built numeric column. The
+      regression families coerce their data to numeric, so a labelled ordinal
+      variable became \code{NA} and the only way to analyse it was to add a
+      second column holding the same thing as a number. With a declared order
+      the labels have positions and the position is the number.
+
+      A level present in the data that the order does not place is refused and
+      named: appending it would invent a position and dropping it would remove
+      samples silently. A declared level absent from the subset is dropped,
+      because a samples filter legitimately removes one.
+
+      Absent, the levels are sorted with \code{gtools::mixedsort}, which reads
+      embedded numbers as numbers (\code{"2"} before \code{"10"}). That helps
+      levels that are numbers written as text and does nothing for words. The
+      order used is recorded in the result as
+      \code{INDEPENDENT_VARIABLE_ORDER}.}
     \item{family_test}{Statistical model: \code{"wilcoxon"},
       \code{"stats::t.test"}, \code{"gaussian"}, \code{"poisson"},
       \code{"binomial"}, \code{"pearson"}, \code{"kendall"},

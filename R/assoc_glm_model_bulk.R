@@ -79,10 +79,13 @@ assoc_glm_model_bulk <- function(tempDataFrame, g_start, family_test,
   # would have been picked up instead.
   transformation_x_local <- if (!is.null(inference_detail$transformation_x))
     as.character(inference_detail$transformation_x) else "none"
+  level_order_local <- if (!is.null(inference_detail$independent_variable_order))
+    as.character(inference_detail$independent_variable_order) else NULL
   prepared <- io_data_preparation(family_test, transformation_y, tempDataFrame,
                                 independent_variable, g_start, ncol(tempDataFrame),
                                 covariates, key,
-                                transformation_x = transformation_x_local)
+                                transformation_x = transformation_x_local,
+                                independent_variable_order = level_order_local)
   tempDataFrame <- prepared$tempDataFrame
   iv_levels <- prepared$independent_variableLevels
 

@@ -35,6 +35,12 @@ assoc_validate_inference_schema <- function(inference_details, strict = TRUE) {
     "collinearity_check",
     "transformation_y",
     "transformation_x",
+    # The order of the levels of an ordinal independent variable, "+"-separated
+    # and optional. Absent, the levels are sorted with gtools::mixedsort. It is
+    # not a presentation detail: the order decides which comparisons are
+    # consecutive, the sign of a difference between them, and levels()[1], which
+    # is the reference category of every regression fitted on the variable.
+    "independent_variable_order",
     # AI-308: which of the two aggregation branches the request wants. SAMPLE
     # reduces the positions to one number per sample, INSTANCE to one number per
     # instance of the region class. They are alternatives, not addends, so the

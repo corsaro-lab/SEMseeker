@@ -10,6 +10,8 @@
 #' @param key named list with AREA, SUBAREA, MARKER and FIGURE identifiers, used
 #'   to name the artefact in the log when degenerate columns are dropped
 #' @param transformation_x transformation to apply to the independent variable
+#' @param independent_variable_order optional order of the levels of an ordinal
+#'   independent variable, "+"-separated. See util_level_order().
 #'   before the fit; "none" leaves it untouched
 #'
 #' @return A named list with two elements: \code{tempDataFrame} (the prepared
@@ -17,7 +19,8 @@
 #'   (the factor levels of the independent variable, or \code{NULL} for continuous
 #'   outcomes).
 #'
-io_data_preparation <- function(family_test,transformation_y,tempDataFrame, independent_variable, g_start, g_end, covariates, key, transformation_x = "none")
+io_data_preparation <- function(family_test,transformation_y,tempDataFrame, independent_variable, g_start, g_end, covariates, key, transformation_x = "none",
+                                independent_variable_order = NULL)
 {
 
   #
@@ -29,15 +32,21 @@ io_data_preparation <- function(family_test,transformation_y,tempDataFrame, inde
   independent_variableLevels <- NULL
   if (assoc_is_family_dicotomic(family_test))
   {
-    test_factor <- as.factor(tempDataFrame[, independent_variable])
-    #
+    # The order comes from util_level_order(), which is also what the other
+    # factor conversion in sem_prepare_study_for_analysis() uses: the two have
+    # different family lists, so an order imposed here only would disagree with
+    # the one imposed there. Declared when the request declares it, mixedsort
+    # otherwise - never the plain sort that used to be attempted on the line
+    # below, which read "10" as smaller than "2".
+    level_order <- util_level_order(tempDataFrame[, independent_variable],
+                                    independent_variable_order)
+
     independent_variableLevels <- NA
     independentVariableIsFactor <- FALSE
-    if(length(levels(test_factor))>1)
+    if(length(level_order) > 1)
     {
-      # sort alphabetically factors
-      # levels(test_factor) <- sort(levels(test_factor))
-      tempDataFrame[, independent_variable] <- as.factor(tempDataFrame[, independent_variable])
+      tempDataFrame[, independent_variable] <- factor(
+        as.character(tempDataFrame[, independent_variable]), levels = level_order)
       tempDataFrame[, independent_variable] <- droplevels(tempDataFrame[, independent_variable])
     }
     if(is.factor(tempDataFrame[, independent_variable]))
@@ -50,7 +59,24 @@ io_data_preparation <- function(family_test,transformation_y,tempDataFrame, inde
     }
   }
   else
+  {
+    # The regression families coerce the whole frame to numeric, so a labelled
+    # ordinal variable became NA here and the caller had to supply a second
+    # column holding the same thing as a number. With a declared order the
+    # labels have positions, so the position IS the number and the hand-built
+    # column is not needed. Without one, nothing changes: a numeric column
+    # coerces to itself.
+    if (length(util_split_and_clean(independent_variable_order)) > 1L &&
+        independent_variable %in% colnames(tempDataFrame) &&
+        !is.numeric(tempDataFrame[, independent_variable]))
+    {
+      level_order <- util_level_order(tempDataFrame[, independent_variable],
+                                      independent_variable_order)
+      tempDataFrame[, independent_variable] <- match(
+        as.character(tempDataFrame[, independent_variable]), level_order)
+    }
     tempDataFrame <- as.data.frame(vapply(tempDataFrame, as.numeric, numeric(nrow(tempDataFrame))))
+  }
 
   originalDataFrame <- tempDataFrame
   if (independentVariableIsFactor)

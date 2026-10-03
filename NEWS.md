@@ -60,6 +60,25 @@
   coefficients, their standard errors and their p-values are identical, which the
   tests assert as identity rather than as closeness.
 
+- **The levels of a variable with no declared order are now sorted
+  alphanumerically, so a number written as text reads as a number.** Levels
+  `1, 2, 3, 10` used to stand in the order `1 < 10 < 2 < 3`, because they were
+  sorted as text. They now stand in the order `1 < 2 < 3 < 10`.
+
+  Two things move with them, for any request whose independent variable has
+  levels of that shape and that does not declare an order:
+
+  ```
+  consecutive comparisons   1-10, 10-2, 2-3    ->    1-2, 2-3, 3-10
+  reference category        with levels 2 and 10: 10 ->  2
+  ```
+
+  The reference category is `levels()[1]` and every regression on the variable is
+  expressed against it, so where it moves the coefficients change meaning. A
+  request that declares its order is unaffected, and so is one whose levels are
+  words: for those the sort was wrong before and is wrong now in a different way,
+  which is what the declaration is for.
+
 ## New features
 
 - **A polynomial coefficient reports its standard error**, as
@@ -67,12 +86,49 @@
   never written, which left a cross-study pooling of these coefficients with
   nothing to weight them by.
 
+- **The order of an ordinal independent variable can be declared**, as
+  `inference_details$independent_variable_order`, `+`-separated and optional:
+
+  ```r
+  independent_variable_order = "reference + in situ + I + II + III + IV"
+  ```
+
+  Until now there was no way to say it, and an order is not a presentation
+  detail: it decides which comparisons are consecutive, the sign of a difference
+  between two levels, and `levels()[1]`, the reference category of every
+  regression fitted on the variable. Sorting the labels answers a different
+  question from the one being asked. The stage above sorts to
+  `I, II, III, in situ, IV, reference` - the Roman numerals happen to land
+  correctly and the words do not - so the two comparisons that matter, reference
+  against in situ and in situ against I, were not adjacent at all while two that
+  mean nothing were.
+
+  **It removes a column that had to be built by hand.** The regression families
+  coerce their data to numeric, so a labelled ordinal variable became `NA` and
+  the only way to analyse it was to add a second column holding the same thing as
+  a number, sorted the way the analysis expected. With a declared order the
+  labels have positions and the position is the number, so the variable is used
+  as it is. A request that declares no order is unchanged: a labelled variable
+  still does not become numbers.
+
+  The order is recorded in the result as `INDEPENDENT_VARIABLE_ORDER`, for the
+  same reason `TRANSFORMATION_X` is: a guessed order and a declared one read the
+  same in a result, and a direction reported downstream is only checkable if the
+  order it was computed against is written down.
+
+  A level present in the data that the declaration does not place is refused, and
+  the message names it: appending it would invent a position and dropping it would
+  remove samples from the analysis without saying so. The other direction is
+  allowed, because a samples filter legitimately removes a level a request still
+  names, and the request should not have to be rewritten for each subset.
+
 ## Bug fixes
 
 - **An empty covariate name stopped the run with a parse error.**
   `assoc_sig_formula_vars()` can return an empty string, and it reached the
   formula as a bare `I(x^1):`, which does not parse. Empty names are dropped, so
   the request becomes the one it describes: a model without covariates.
+
 
 # semseeker 0.99.5
 
