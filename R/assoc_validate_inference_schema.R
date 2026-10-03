@@ -30,6 +30,12 @@ assoc_validate_inference_schema <- function(inference_details, strict = TRUE) {
     "independent_variable",
     "family_test",
     "covariates",
+    # One transformation per covariate, "+"-separated and positionally paired
+    # with covariates, from the vocabulary of io_transform_apply(). "none" for a
+    # covariate used as it is. transformation_x covers the independent variable
+    # and no longer reaches here: a single value cannot answer for several
+    # covariates that need different treatment.
+    "covariates_transformation",
     "covariates_dummy",
     "covariates_pca",
     "collinearity_check",

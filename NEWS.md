@@ -2,6 +2,14 @@
 
 ## Breaking changes
 
+- **`transformation_x` applies to the independent variable and to nothing else.**
+  It also scaled every covariate, which is a transformation asked for one
+  variable and applied to several: a request for `scale` on the predictor scaled
+  age and body mass index with it. A request that uses `transformation_x =
+  "scale"` together with covariates therefore changes: the covariates are no
+  longer scaled unless the request says so, per covariate, in the new field
+  below.
+
 - **The polynomial family adjusts for its covariates, which it did not.** The
   model was built as
 
@@ -80,6 +88,63 @@
   which is what the declaration is for.
 
 ## New features
+
+- **A transformation per covariate, declared**, as
+  `inference_details$covariates_transformation`: `+`-separated, paired with
+  `covariates` by position, one entry each, `"none"` for a covariate used as it
+  is.
+
+  ```r
+  covariates                = "AGE + BMI + SMOKING"
+  covariates_transformation = "exp + pow_2 + none"
+  ```
+
+  Every regression family composed its formula as the predictor plus a **sum of
+  untransformed covariates**, so each covariate was linear and additive. That
+  was not a constraint anyone chose: the formula is built by string
+  concatenation and nothing but bare column names had ever been written in that
+  field. And it is not a cosmetic limit. If the burden grows exponentially with
+  age, adjusting a second-degree polynomial in stage with a linear term in age
+  does not leave small residuals: it leaves a curvature in age inside the
+  residual, and the model attributes it to stage, because stage is the only term
+  in the formula that can curve. The approximation does not blur the covariate,
+  it contaminates the estimate the request is about.
+
+  A single value could not answer for several covariates, which is why this is a
+  field of its own rather than a widening of `transformation_x`: the reason to
+  transform age is rarely the reason to transform body mass index.
+
+  The values are transformed **before the formula sees them**, so a transformed
+  covariate is a new column named `<COVARIATE>_<TRANSFORMATION>` - `AGE_EXP`,
+  `BMI_POW2` - and its coefficient is reported under that name. This follows the
+  shape `scale` already had, where the column became `<COVARIATE>_SCALED`, and it
+  is what keeps the name of a number the name of that number.
+
+  The two fields are **not recycled**. Lengths that disagree are refused, naming
+  both: R would have applied one covariate's transformation to another's values
+  and labelled the result for the column it came from.
+
+- **`pow_<n>` joins the transformation vocabulary**, for the dependent variable,
+  the independent one and the covariates alike: `pow_2` for the square,
+  `pow_0.5` for the square root.
+
+  The vocabulary now lives in one place. It was written twice, once for the
+  dependent variable and once for the independent one, with `quantile_<n>`
+  handled beside the second copy rather than inside it, so the two lists had
+  already drifted apart before a third caller existed.
+
+  **An unknown transformation is refused at the door**, by
+  `assoc_validate_transformation()`, run beside the scope and aggregation checks
+  before anything is computed. It used to fall through `switch()` and return the
+  values untouched, so a request naming `"lgo10"` was analysed on untransformed
+  data; what kept that from being invisible was a guard that renames the recorded
+  transformation to `NA_<name>` when the values come back unchanged, which is a
+  weak signal in a column of a result file and only after the whole analysis has
+  run. The refusal names the row, the field and the vocabulary.
+
+  `"factor"` is refused for a covariate, and the message says what to use
+  instead: `covariates_dummy` encodes a categorical covariate, where relabelling
+  it as a factor does not.
 
 - **A polynomial coefficient reports its standard error**, as
   `I_<VARIABLE>_<degree>_STD_ERROR`. The value was always in the fit and was

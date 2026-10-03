@@ -53,6 +53,30 @@ association_analysis(
       \code{"binomial"}, \code{"pearson"}, \code{"kendall"},
       \code{"spearman"}, or quantile regression as
       \code{"quantreg_<tau>_<runs>"} (e.g. \code{"quantreg_0.25_2000"}).}
+    \item{covariates}{Sample sheet columns to adjust for,
+      \code{"+"}-separated. They enter the model as main effects, which is
+      what holding them constant means.}
+    \item{covariates_transformation}{Optional. One transformation per
+      covariate, \code{"+"}-separated and paired with \code{covariates} by
+      position, e.g. \code{"exp + pow_2 + none"} for three covariates of
+      which the third is used as it is. The vocabulary is the one
+      \code{transformation_y} uses, plus \code{"pow_<n>"}.
+
+      A single value cannot answer for several covariates: asking for
+      \code{log10} of the covariates would mean \code{log10} of age and of
+      body mass index alike, and the reason to transform one is rarely the
+      reason to transform another. If the burden grows exponentially with age,
+      adjusting a second-degree polynomial in stage with a LINEAR term in age
+      does not leave small residuals: it leaves a curvature in age inside the
+      residual, and the model attributes it to stage, because stage is the
+      only term that can curve. The approximation does not blur the covariate,
+      it contaminates the estimate the request is about.
+
+      The values are transformed before the formula sees them, so a
+      transformed covariate is a new column named
+      \code{<COVARIATE>_<TRANSFORMATION>} and its coefficient is reported
+      under that name. The lengths of the two fields have to agree; they are
+      not recycled.}
     \item{transformation_y}{Transformation applied to the dependent variable:
       \code{"none"}, \code{"scale"}, \code{"log"}, \code{"log2"},
       \code{"log10"}, \code{"exp"}, or
