@@ -331,4 +331,79 @@ test_that("assoc_model_polynomial: with covariate exercises assoc_polynomial_for
 
   expect_s3_class(res, "data.frame")
   expect_equal(res$PL_DEGREE, 2)
+
+  # The covariate has a column of its own, which is what adjusting for it means.
+  # It used to appear only multiplied by a power of the predictor, and the names
+  # below are what a consumer reads, so assert the names and not the formula.
+  expect_true("COVB_ESTIMATE" %in% colnames(res))
+  expect_true("COVB_PVALUE"   %in% colnames(res))
+  expect_false(any(grepl("^I_X_[0-9]+_COV", colnames(res))))
+})
+
+test_that("assoc_model_polynomial: the three columns of a term agree on the term's name", {
+  skip_if_not_installed("caret")
+
+  tf <- sem_test_folder()
+  SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+
+  set.seed(11)
+  n  <- 60
+  df <- data.frame(y = seq_len(n) + stats::rnorm(n), STAGE = rep(1:6, each = 10))
+
+  res <- SEMseeker:::assoc_model_polynomial(
+    family_test           = "polynomial_2_1",
+    tempDataFrame         = df,
+    sig.formula           = stats::as.formula("y ~ STAGE"),
+    transformation_y      = "",
+    plot                  = FALSE,
+    samples_sql_condition = "",
+    key                   = .make_key2()
+  )
+
+  # The estimate used to be named for the literal string INDEPENDENT_VARIABLE
+  # while its own p-value was named for the variable, so a term's three numbers
+  # could not be found from one name.
+  for (term in c("I_STAGE_1", "I_STAGE_2")) {
+    expect_true(paste0(term, "_ESTIMATE")  %in% colnames(res), info = term)
+    expect_true(paste0(term, "_PVALUE")    %in% colnames(res), info = term)
+    expect_true(paste0(term, "_STD_ERROR") %in% colnames(res), info = term)
+  }
+
+  # And nothing is named after the deparsed call any more.
+  expect_false(any(grepl("STATS_POLY|PARSE_TEXT|RAW_EQ_TRUE|INDEPENDENT_VARIABLE",
+                         colnames(res))))
+
+  # The standard error is a number that was present in the fit and never written.
+  expect_true(all(res[["I_STAGE_1_STD_ERROR"]] > 0))
+})
+
+test_that("assoc_model_polynomial: without covariates the fit is unchanged", {
+  # The one branch now serves both cases, and the branch it replaced wrote its
+  # own model with stats::poly(..., raw = TRUE). A raw poly IS the monomials, so
+  # the design matrix is the same one and the fit must be identical - not close.
+  # This is what makes the rewrite safe to ship: the numbers of every existing
+  # covariate-free polynomial result do not move.
+  set.seed(20261003)
+  n  <- 120
+  df <- data.frame(y = NA_real_, STAGE = rep(1:6, each = n / 6))
+  df$y <- 3 + 0.8 * df$STAGE + 0.15 * df$STAGE^2 + stats::rnorm(n, 0, 1.5)
+
+  dependent_variable <- "y"; independent_variable <- "STAGE"; degree <- 2
+
+  superseded <- stats::lm(
+    eval(parse(text = dependent_variable)) ~
+      stats::poly(eval(parse(text = independent_variable)), degree, raw = TRUE),
+    data = df, na.action = stats::na.exclude)
+
+  current <- stats::lm(
+    SEMseeker:::assoc_polynomial_formula_build(dependent_variable, independent_variable,
+                                               degree, character(0)),
+    data = df, na.action = stats::na.exclude)
+
+  expect_identical(unname(stats::coef(superseded)), unname(stats::coef(current)))
+  expect_identical(unname(stats::coef(summary(superseded))[, 2]),
+                   unname(stats::coef(summary(current))[, 2]))
+  expect_identical(unname(stats::coef(summary(superseded))[, 4]),
+                   unname(stats::coef(summary(current))[, 4]))
 })

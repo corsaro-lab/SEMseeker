@@ -50,16 +50,15 @@ assoc_model_polynomial <- function (family_test, tempDataFrame, sig.formula , tr
   train.data  <- tempDataFrame[training.samples, ]
   test.data <- tempDataFrame[-training.samples, ]
 
-  # Build the formula for the model
-  if(length(covariates)>0)
-  {
-    formula <- assoc_polynomial_formula_build(dependent_variable, independent_variable, degree, covariates)
-    polynomial_model_result <- stats::lm(formula, data = train.data, na.action = stats::na.exclude)
-  }
-  else
-    # Build the polynomial_model_result
-    polynomial_model_result <- stats::lm(eval(parse(text=dependent_variable)) ~ stats::poly(eval(parse(text=independent_variable)),
-      degree, raw = TRUE), data = train.data, na.action = stats::na.exclude)
+  # One formula for both cases. The no-covariate branch used to write its own
+  # model, stats::poly(eval(parse(text = ...)), degree, raw = TRUE), which spans
+  # the same column space as I(x^1) + ... + I(x^degree) - a raw poly IS the
+  # monomials - so the fit was identical and only the coefficient names differed.
+  # They differed badly; see the loop below.
+  formula <- assoc_polynomial_formula_build(dependent_variable, independent_variable,
+                                            degree, covariates)
+  polynomial_model_result <- stats::lm(formula, data = train.data,
+                                       na.action = stats::na.exclude)
 
 
 
@@ -81,25 +80,31 @@ assoc_model_polynomial <- function (family_test, tempDataFrame, sig.formula , tr
   coefficients <- coef(summary(polynomial_model_result))
   # conf_int <- confint(polynomial_model_result)
 
-  # for each degree extract the p-value
+  # One cleaning for the three columns of a term, so a p-value, its estimate and
+  # its standard error carry the same name. They did not: the p-value ran through
+  # three gsub calls and the estimate through none, so the estimate came out as
+  # STATS_POLY_EVAL_PARSE_TEXT_EQ_INDEPENDENT_VARIABLE_DEGREE_RAW_EQ_TRUE_1,
+  # carrying the literal string INDEPENDENT_VARIABLE instead of the name of the
+  # variable - two runs on two different predictors produced the same column
+  # name - while its own p-value was in a column named for the variable. The
+  # first of those gsub calls never fired at all: its pattern begins with an
+  # underscore and the text it was meant to strip begins the name. All three are
+  # gone with the model that needed them, because I(x^k) cleans to I_<VAR>_<k>
+  # by itself.
+  #
+  # STD_ERROR is new. The value was always in coefficients[, 2] and was never
+  # written, which is what left a cross-study pooling of these coefficients with
+  # nothing to weight them by.
+  coefficient_columns <- c(ESTIMATE = 1L, STD_ERROR = 2L, PVALUE = 4L)
+
   for (i in seq_len(nrow(coefficients))) {
-    # i <- 1
-    p_value <- coefficients[i,4]
+    term_name <- core_name_cleaning(rownames(coefficients)[i])
 
-    row_name <- rownames(coefficients)[i]
-    pval_name <- core_name_cleaning(paste0(row_name,"_pvalue"))
-    pval_name <- core_name_cleaning(gsub("_STATS_POLY_EVAL_PARSE_TEXT_EQ","",pval_name))
-    pval_name <- core_name_cleaning(gsub("_RAW_EQ_TRUE","",pval_name))
-    pval_name <- core_name_cleaning(gsub("INDEPENDENT_VARIABLE",independent_variable,pval_name))
-    p_value <- data.frame(p_value)
-    colnames(p_value) <- pval_name
-    res <- cbind(res, p_value)
-
-    estimate_name <- core_name_cleaning(paste0(row_name,"_estimate"))
-    estimate <- data.frame(estimate = coefficients[i,1])
-    colnames(estimate) <- core_name_cleaning(estimate_name)
-    res <- cbind(res, estimate)
-
+    for (what in names(coefficient_columns)) {
+      value <- data.frame(coefficients[i, coefficient_columns[[what]]])
+      colnames(value) <- paste0(term_name, "_", what)
+      res <- cbind(res, value)
+    }
   }
 
 
