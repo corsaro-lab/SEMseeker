@@ -2,6 +2,85 @@
 
 ## Breaking changes
 
+- **`RANK_BISERIAL_CORRELATION` held the AUC, not the rank-biserial
+  correlation.** The wilcoxon branch computed it as `W/(n1*n2)`, which is the
+  common-language effect size A, that is the area under the curve. The
+  rank-biserial correlation is `2A - 1`. Measured on a worked example:
+
+  ```
+  Vargha-Delaney A        0.2667
+  W/(n1*n2)               0.2667    the column, identical to A
+  AUC computed by hand    0.2667    the same quantity again
+  2A - 1                 -0.4667    the statistic the column was named after
+  ```
+
+  Not a rescaling a reader can undo in their head: a different number with, in
+  that example, the opposite sign, so the column reported a positive association
+  where the statistic it is named after is negative. It also duplicated
+  `effect_size_estimate`, which is `effsize::VD.A()` of the same split and
+  therefore the same number under a second name.
+
+  It is now `2A - 1`. **Anyone who read that column as what it is called was
+  reading the wrong number, and anyone who read it as an AUC should now read
+  `C_STATISTIC_AUC`.**
+
+  Its sign depends on which group comes first, that is on the order of the
+  levels, which `independent_variable_order` now makes the request's to declare:
+  the sign of the effect is decided by the question rather than by the alphabet.
+
+- **The reported power was computed from the wrong effect size, in two
+  families.** `pwr::pwr.t2n.test()` takes Cohen's `d`, a standardised
+  difference, and neither branch was giving it one.
+
+  The wilcoxon branch passed A, which is bounded in `[0, 1]`. At `A = 0.5`, the
+  exact null, that reads as `d = 0.5`, a medium effect, and the reported power
+  was **0.532 where the truth is the significance level, 0.05**. Since most
+  positions carry no effect, that column sat above a half across the genome.
+
+  The t.test branch passed the raw difference of the means, which carries the
+  units of the data. The same comparison read on two scales, Cohen's `d = -1.50`
+  either way and the true power `1.000`:
+
+  ```
+  beta scale      mean difference -0.0424    power reported 0.053
+  M-value scale   mean difference -0.2462    power reported 0.171
+  ```
+
+  A large effect read as no power, and the number moved with the scale, which is
+  the one thing standardising exists to prevent. Both now standardise first,
+  `d = sqrt(2) * qnorm(A)` for the rank comparison and `effsize::cohen.d()` for
+  the t test. **Every reported power changes.**
+
+## New features
+
+- **The AUC is reported with a confidence interval**, as `C_STATISTIC_AUC` with
+  `C_STATISTIC_AUC_CI_LOWER` and `C_STATISTIC_AUC_CI_UPPER`. The name is the one
+  the metric registry already carried for it and that nothing produced.
+
+  The variance is the Hanley-McNeil closed form and the interval is built on the
+  logit, which was a measured choice and not a convention. Against a known AUC
+  over 4000 replicates:
+
+  ```
+  n1/n2    effect    symmetric          logit
+  10/9     null      90.4% (w 0.508)    95.8% (w 0.472)
+  10/9     medium    89.7%              97.4%
+  30/40    medium    94.0%              95.9%
+  100/100  small     94.9%              95.3%
+  ```
+
+  The logit form covers its nominal level where the symmetric one does not, and
+  at ten per group under the null it is both better covering and narrower. It
+  also cannot leave `[0, 1]`, so nothing is clipped back. What neither fixes, and
+  it is documented rather than left to be discovered: ten per group with the
+  groups almost separated covers 86.6%, because the estimate is at the edge of
+  its range with nine observations.
+
+  A summary carries the two bounds past the metric registry the way it already
+  carries p-value columns: an interval bound is an attribute of a metric and not
+  a metric to rank, so it is not registered. Without that the AUC would appear in
+  a summary and its interval would vanish from it.
+
 - **`transformation_x` applies to the independent variable and to nothing else.**
   It also scaled every covariate, which is a transformation asked for one
   variable and applied to several: a request for `scale` on the predictor scaled
