@@ -36,9 +36,16 @@ sem_prepare_study_for_analysis <- function(inference_detail, study_summary, fami
     return(NULL)
   }
 
-  # transform independent variable as factor for dichotomous families
+  # transform independent variable as factor for dichotomous families.
+  # The order comes from the same helper io_data_preparation() uses: the two
+  # places convert on DIFFERENT family lists - kruskal.test is factored there and
+  # not here - so an order imposed in one of them alone would disagree with the
+  # other for every family the two lists do not share.
   if (family_test == "binomial" || family_test == "wilcoxon" || family_test == "t.test")
-    study_summary[, independent_variable] <- as.factor(study_summary[, independent_variable])
+    study_summary[, independent_variable] <- factor(
+      as.character(study_summary[, independent_variable]),
+      levels = util_level_order(study_summary[, independent_variable],
+                                inference_detail$independent_variable_order))
 
   file_result_prefix <- as.character(independent_variable)
 

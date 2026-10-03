@@ -84,7 +84,9 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
 
   g_end <- ncol(tempDataFrame)
   transformation_x_local <- if (!is.null(inference_detail$transformation_x)) as.character(inference_detail$transformation_x) else "none"
-  prepared_data <- io_data_preparation(family_test,transformation_y,tempDataFrame, independent_variable, g_start, g_end, covariates, key, transformation_x = transformation_x_local)
+  level_order_local <- if (!is.null(inference_detail$independent_variable_order)) as.character(inference_detail$independent_variable_order) else NULL
+  prepared_data <- io_data_preparation(family_test,transformation_y,tempDataFrame, independent_variable, g_start, g_end, covariates, key, transformation_x = transformation_x_local,
+                                       independent_variable_order = level_order_local)
   # if(ncol(prepared_data$tempDataFrame) != ncol(tempDataFrame))
   #   return(NULL)
 

@@ -13,7 +13,8 @@ io_data_preparation(
   g_end,
   covariates,
   key,
-  transformation_x = "none"
+  transformation_x = "none",
+  independent_variable_order = NULL
 )
 }
 \arguments{
@@ -34,7 +35,10 @@ io_data_preparation(
 \item{key}{named list with AREA, SUBAREA, MARKER and FIGURE identifiers, used
 to name the artefact in the log when degenerate columns are dropped}
 
-\item{transformation_x}{transformation to apply to the independent variable
+\item{transformation_x}{transformation to apply to the independent variable}
+
+\item{independent_variable_order}{optional order of the levels of an ordinal
+independent variable, "+"-separated. See util_level_order().
 before the fit; "none" leaves it untouched}
 }
 \value{

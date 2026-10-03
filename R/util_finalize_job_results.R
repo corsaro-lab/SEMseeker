@@ -18,6 +18,12 @@ util_finalize_job_results <- function(results, inference_detail, family_test,
                                   start_time, processed_items) {
   if (!is.null(results) && nrow(results) != 0) {
     results$TRANSFORMATION_X <- inference_detail$transformation_x
+    # A guessed order and a declared one read the same in a result, and the
+    # order decides which comparisons are consecutive and which level is the
+    # reference. Recording it is what makes a direction reported downstream
+    # something a reader can check rather than take on trust.
+    results$INDEPENDENT_VARIABLE_ORDER <- if (!is.null(inference_detail$independent_variable_order))
+      as.character(inference_detail$independent_variable_order) else NA_character_
     assoc_analysis_save_results(results, fileNameResults, family_test, filter_p_value)
   }
   total_time <- difftime(Sys.time(), start_time, units = "mins")

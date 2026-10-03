@@ -70,10 +70,13 @@
   orig <- SEMseeker:::io_data_preparation
   # AI-255: io_data_preparation() lost dototal and depth_analysis with the TOTAL
   # synthesis they governed.
+  # The stub takes ... on purpose. Its job is to hand the frame back untouched,
+  # so every argument past that is incidental to it, and spelling them out meant
+  # that adding one to the real function broke four tests that are not about it.
   passthrough <- function(family_test, transformation_y, tempDataFrame,
                           independent_variable, g_start, g_end,
                           covariates, key,
-                          transformation_x = "none") {
+                          transformation_x = "none", ...) {
     list(tempDataFrame = tempDataFrame,
          independent_variableLevels = c(NA, NA))
   }
