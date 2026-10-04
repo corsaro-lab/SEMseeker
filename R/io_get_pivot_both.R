@@ -31,6 +31,16 @@ io_get_pivot_both <- function(marker)
   pivot_both <- do.call(polars::pl$concat, c(parts, list(how = "diagonal_relaxed")))$collect()
   pivot_both <- pivot_both$group_by("AREA", .maintain_order=FALSE)$sum()
 
+  # The cache this branch exists to fill. The target path used to be a bare
+  # `pivot_file_name_both`, a variable this function never assigned, so the
+  # build-from-HYPER-and-HYPO branch raised `object not found` after doing all
+  # of its work - and that branch is the normal one, taken whenever no BOTH
+  # pivot is already cached. The name comes from io_pivot_file_name_parquet(),
+  # the same function io_read_pivot() looks the cache up with, so what is
+  # written here is what the fast path above will find next time.
+  pivot_file_name_both <- io_pivot_file_name_parquet(marker, "BOTH",
+                                                     "PROBE", "WHOLE")
+  dir.create(dirname(pivot_file_name_both), recursive = TRUE, showWarnings = FALSE)
   pivot_both$write_parquet(pivot_file_name_both)
   # Sidecar JSON is materialised by core_ensure_sidecars() at pipeline end.
 

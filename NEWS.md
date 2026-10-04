@@ -2,6 +2,55 @@
 
 ## Breaking changes
 
+- **`plot_manhattan_plot_per_area()` is now
+  `sem_marker_value_per_area_plot()`, and it draws for the first time.** It was
+  exported, documented and reachable by nobody: no function, vignette or test in
+  the package called it, and it could not have produced a chart if one had.
+
+  It was also not a Manhattan plot. A Manhattan plot puts genomic position on
+  the x axis and a significance on the y; this puts a categorical region-class
+  instance on the x and a marker value on the y, jittered and filled by
+  phenotype. The name promised one chart and the body drew another.
+
+  Why it could not draw, in the order the failures occurred:
+
+  ```
+  io_pivot_to_long_format(marker, figure, area, subarea)   four arguments of six,
+                                                           and the two missing ones
+                                                           have no default and are used
+  pivot_data[, area]        area is "GENE"; the long frame has AREA / VALUE / phenotype
+  scale_fill_gradient()     continuous, against a phenotype that is usually a group
+  color = as.numeric(...)   gene symbols coerced to a vector of NA
+  ```
+
+  `family` and `adjust_method` were in the signature and never used.
+  `only_significant_areas` had an empty body: a documented parameter that did
+  nothing. And the documentation promised a PNG saved under
+  `Charts/MARKER_PER_AREA/` while the body returned the plot object and saved
+  nothing - which is why calling it appeared to succeed, because a ggplot object
+  is lazy and the error waited for something to render it.
+
+  **The new signature takes what it needs**, `phenotype_column` and
+  `sample_sheet`, which have to be passed down and were the first thing missing.
+  `family` and `adjust_method` are gone. `only_significant_areas` is gone rather
+  than implemented: restricting to the significant instances means reading the
+  inference file and choosing which adjustment family defines significance,
+  which is a different piece of work, and to look at a chosen set of instances
+  there is already `areas_selection`.
+
+  **Two changes of behaviour beyond the repair.** The fill scale follows the
+  type of the phenotype, discrete for a group and a gradient for a number. And
+  negative values are drawn where they are: the old body floored them with
+  `ifelse(VALUE < 0, 0, VALUE)`, which is dead for every count and delta marker
+  because those are non-negative by construction, but `SIGNAL` on the `MVALUE`
+  figure is negative over about half its range and that flooring drew all of it
+  at zero.
+
+  It saves, as its documentation always said it did, under
+  `Charts/MARKER_VALUE_PER_AREA/`, with the marker, the figure and the region
+  class in the file name so two charts of the same class cannot overwrite each
+  other, and returns the path invisibly.
+
 - **`RANK_BISERIAL_CORRELATION` held the AUC, not the rank-biserial
   correlation.** The wilcoxon branch computed it as `W/(n1*n2)`, which is the
   common-language effect size A, that is the area under the curve. The
@@ -267,6 +316,37 @@
   names, and the request should not have to be rewritten for each subset.
 
 ## Bug fixes
+
+- **The chart could be repaired and still had nothing to read: the pivot reader
+  raised on its second line.** `io_pivot_to_long_format()`, the one path from a
+  stored pivot to the long frame a chart needs, called `io_read_pivot()` - which
+  returns a lazy frame - and then used the result as a data.frame.
+  `subset(area_pivot, area_pivot$SAMPLEID == ...)` raises `SAMPLEID is not a
+  member of this polars object`, so no caller had ever drawn anything from a real
+  pivot. Four further defects sat behind that one, each of which would have turned
+  the error into a quietly empty answer: it filtered on a column called
+  `SAMPLEID` where pivots have `AREA`, it dropped the first row unconditionally,
+  `areas_selection = NULL` - the documented way to ask for every area - filtered
+  with `%in% NULL` and therefore kept nothing, and it accumulated with
+  `exists("res")`, which searches the calling frames and would have joined a
+  caller's unrelated `res` to the result.
+
+- **The pivot reader carried four of the six coordinates, so no real area class
+  could be read.** `aggregation` says how a block holding more than one position
+  was reduced, and it is part of the identity of the file. Without it the name
+  cannot even be built: reading a `GENE` pivot ended in `aggregation is required
+  for scope 'INSTANCE'`. It is now a parameter of both the reader and
+  `sem_marker_value_per_area_plot()`, and it is part of the name of the chart
+  written, so the `SUM` and the `MEAN` of the same class no longer land on the
+  same file. The per-position classes, where the aggregation resolves on its own,
+  are unaffected.
+
+- **`io_get_pivot_both()` built the BOTH pivot and then failed to cache it.** The
+  write target was a bare `pivot_file_name_both`, a variable the function never
+  assigned, so the branch that builds BOTH from HYPER and HYPO - the normal
+  branch, taken whenever no BOTH pivot is cached - raised `object not found`
+  after doing all of its work. The name now comes from
+  `io_pivot_file_name_parquet()`, the same function the cache is looked up with.
 
 - **An empty covariate name stopped the run with a parse error.**
   `assoc_sig_formula_vars()` can return an empty string, and it reached the
