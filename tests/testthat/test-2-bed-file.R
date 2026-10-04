@@ -6,8 +6,10 @@
 #                                prepends "chr" if absent; sorts by CHR/START/END
 #
 # The companion chart test (test-2-box-plot.R) already covers plot_box_plot() PNG
-# generation.  plot_manhattan_plot_per_area() depends on pivot parquet files and is
-# tested end-to-end via test-6-semseeker.R + test-7-association_analysis.R.
+# generation. The claim that used to stand here, that plot_manhattan_plot_per_area()
+# was tested end to end by test-6 and test-7, was false: nothing in the package
+# called it, so no pipeline reached it, and it could not have drawn anything if one
+# had. It is now sem_marker_value_per_area_plot(), with its own tests.
 # The tests here focus on the low-level I/O helper used by sem_analyze_single_sample().
 
 # ---------------------------------------------------------------------------
