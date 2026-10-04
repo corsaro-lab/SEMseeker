@@ -11,14 +11,15 @@
 #' Through 0.99.5 this was `plot_manhattan_plot_per_area()`. A Manhattan plot
 #' puts genomic position on the x axis and a significance on the y; this puts a
 #' categorical region-class instance on the x and a marker value on the y, which
-#' is a different chart answering a different question. The two functions that do
-#' draw a Manhattan plot are `anno_manhattan_plot_marker_per_probe()` and
-#' `sem_manhattan_plot_marker_per_sample()`, and measured on 2026-10-04 neither
-#' of them runs either: both call `core_init_env()` from inside a chart to
-#' re-initialise the session, the second asking for a figure named `BOTH` that
-#' the session vocabulary refuses, and the second also reads CSV pivots that
-#' nothing in the package has written since the move to parquet. They are tracked
-#' for the same treatment as this one and not fixed here.
+#' is a different chart answering a different question.
+#'
+#' The two functions that did draw a Manhattan plot,
+#' `anno_manhattan_plot_marker_per_probe()` and
+#' `sem_manhattan_plot_marker_per_sample()`, could not run either, and are gone:
+#' [sem_marker_value_per_sample_plot()] and [sem_marker_value_per_probe_plot()]
+#' replace them over one shared layout. The three doors name their x axis the
+#' same way: `per_area`, `per_sample` and `per_probe` each say what one point is,
+#' and the subject the chart holds fixed is an argument.
 #'
 #' @section What it could not do before:
 #' The old function could never draw anything, for reasons that compounded:

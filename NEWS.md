@@ -100,6 +100,36 @@
   `d = sqrt(2) * qnorm(A)` for the rank comparison and `effsize::cohen.d()` for
   the t test. **Every reported power changes.**
 
+- **The two Manhattan functions are gone, and the charts they were meant to draw
+  now exist.** Neither of them could run. `sem_manhattan_plot_marker_per_sample()`
+  was exported and documented and called `core_init_env()` from inside a chart,
+  asking the session for a figure named `BOTH` that the figure vocabulary
+  refuses, so it stopped before reading anything; past that it read CSV pivots,
+  which nothing has written since the move to parquet, so every marker would have
+  been dropped and the function would have returned having drawn nothing and said
+  nothing. `anno_manhattan_plot_marker_per_probe()` stopped inside
+  `io_get_pivot_both()`. Both also dropped markers with `tempKeys[-k]` while
+  indexing a different vector by `k`, so after the first removal they removed the
+  wrong entries, and the first read `ssEnv` five lines before assigning it and
+  passed `dpi = as.numeric("print")`, which is `NA`.
+
+  They are replaced by three doors over one shared layout:
+  `sem_marker_value_per_sample_plot()` (one probe, a point per sample),
+  `sem_marker_value_per_probe_plot()` (one sample, a point per probe) and
+  `sem_signal_threshold_per_sample_plot()` (the raw signal of one probe against
+  its reference envelope). The names say what one point is, which is the x axis,
+  and the subject the chart holds fixed is an argument - so `per_sample` and
+  `per_probe` now mean the opposite of what the old names meant, and agree with
+  `sem_marker_value_per_area_plot()`.
+
+- **Choosing a representative probe is no longer part of drawing a chart.**
+  Asking the old function for one chart was not possible: it scanned every
+  marker, computed five probe statistics, wrote them to `PROBES_STAT.csv` and
+  drew ten charts. The statistics are now their own step, which returns the probe
+  at the minimum, first quartile, median, third quartile or maximum of the cohort
+  burden distribution, together with the total it sits at - so a caller can see
+  how near the nearest probe was before reading a chart as representative.
+
 ## New features
 
 - **The AUC is reported with a confidence interval**, as `C_STATISTIC_AUC` with
@@ -214,8 +244,6 @@
   request that declares its order is unaffected, and so is one whose levels are
   words: for those the sort was wrong before and is wrong now in a different way,
   which is what the declaration is for.
-
-## New features
 
 - **A transformation per covariate, declared**, as
   `inference_details$covariates_transformation`: `+`-separated, paired with
@@ -353,6 +381,34 @@
   formula as a bare `I(x^1):`, which does not parse. Empty names are dropped, so
   the request becomes the one it describes: a model without covariates.
 
+
+
+- **The distance of each excursion had never been drawn.** The delta annotation
+  of the threshold chart was built with `ifelse(delta_label_value, "")`, a
+  two-argument call. It raises nothing: the character vector coerces to `NA`,
+  `ifelse` returns `NA` and `geom_text` draws nothing, so the only quantitative
+  content of the chart, and the reason it carries a `label_font_size` parameter,
+  had never appeared on a single image. The labels are drawn, and the segment now
+  starts at the threshold that was crossed rather than at zero, so its length is
+  the excursion and the same number the label states.
+
+- **The x axis of both charts showed indices instead of names.** They plotted
+  `as.numeric(factor(samples))`, a continuous axis labelled 1..n, while keeping
+  the 90-degree rotated text that only makes sense for names: there was no way to
+  tell which sample or which probe a point belonged to. The axis carries the
+  names, in the order the caller gives, and the text is dropped only once the
+  categories outnumber what can be read - a Manhattan-style chart legitimately
+  carries thousands of probes.
+
+- **A class with no colour was drawn as another class.** `scale_fill_manual()`
+  does not refuse a class it has no colour for: it draws it in `grey50`, which is
+  indistinguishable from a legitimate grey non-outlier. The shared drawing checks
+  and names the offending class instead.
+
+- **A probe selection that no one could reproduce.** The old signature took
+  `probes_range = 1000:2000`, positions in the row order of a file, which changes
+  with the order the pivot happens to be written in. The selection names the
+  probes.
 
 # semseeker 0.99.5
 
