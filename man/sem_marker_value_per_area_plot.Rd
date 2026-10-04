@@ -12,6 +12,7 @@ sem_marker_value_per_area_plot(
   phenotype_column,
   sample_sheet,
   areas_selection = NULL,
+  aggregation = NULL,
   overwrite = FALSE
 )
 }
@@ -31,6 +32,14 @@ from, e.g. `"Sample_Group"`.}
 \item{sample_sheet}{data.frame. The sample sheet the phenotype is read from.}
 
 \item{areas_selection}{character vector. Instances to keep, `NULL` for all.}
+
+\item{aggregation}{character. How a block holding more than one position was
+reduced: `"SUM"`, `"MEAN"`, `"MEDIAN"`, `"VARIANCE"`, `"IQR"`, `"MODELOW"`,
+`"MODEHIGH"`, `"VALUE"`. It is the sixth coordinate of the pivot, so it is
+part of both the file read and the file written: two aggregations of the
+same class are two different charts and must not overwrite each other. It
+may be left `NULL` only where it resolves on its own, on the per-position
+area classes.}
 
 \item{overwrite}{logical. Redraw when the file exists. `FALSE` by default,
 like the other charts.}
@@ -52,10 +61,14 @@ p-value is computed or drawn.
 Through 0.99.5 this was `plot_manhattan_plot_per_area()`. A Manhattan plot
 puts genomic position on the x axis and a significance on the y; this puts a
 categorical region-class instance on the x and a marker value on the y, which
-is a different chart answering a different question. The two Manhattan
-drawings the package does have are
-`anno_manhattan_plot_marker_per_probe()` and
-`sem_manhattan_plot_marker_per_sample()`.
+is a different chart answering a different question. The two functions that do
+draw a Manhattan plot are `anno_manhattan_plot_marker_per_probe()` and
+`sem_manhattan_plot_marker_per_sample()`, and measured on 2026-10-04 neither
+of them runs either: both call `core_init_env()` from inside a chart to
+re-initialise the session, the second asking for a figure named `BOTH` that
+the session vocabulary refuses, and the second also reads CSV pivots that
+nothing in the package has written since the move to parquet. They are tracked
+for the same treatment as this one and not fixed here.
 }
 
 \section{What it could not do before}{

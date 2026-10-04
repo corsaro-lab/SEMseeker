@@ -317,6 +317,37 @@
 
 ## Bug fixes
 
+- **The chart could be repaired and still had nothing to read: the pivot reader
+  raised on its second line.** `io_pivot_to_long_format()`, the one path from a
+  stored pivot to the long frame a chart needs, called `io_read_pivot()` - which
+  returns a lazy frame - and then used the result as a data.frame.
+  `subset(area_pivot, area_pivot$SAMPLEID == ...)` raises `SAMPLEID is not a
+  member of this polars object`, so no caller had ever drawn anything from a real
+  pivot. Four further defects sat behind that one, each of which would have turned
+  the error into a quietly empty answer: it filtered on a column called
+  `SAMPLEID` where pivots have `AREA`, it dropped the first row unconditionally,
+  `areas_selection = NULL` - the documented way to ask for every area - filtered
+  with `%in% NULL` and therefore kept nothing, and it accumulated with
+  `exists("res")`, which searches the calling frames and would have joined a
+  caller's unrelated `res` to the result.
+
+- **The pivot reader carried four of the six coordinates, so no real area class
+  could be read.** `aggregation` says how a block holding more than one position
+  was reduced, and it is part of the identity of the file. Without it the name
+  cannot even be built: reading a `GENE` pivot ended in `aggregation is required
+  for scope 'INSTANCE'`. It is now a parameter of both the reader and
+  `sem_marker_value_per_area_plot()`, and it is part of the name of the chart
+  written, so the `SUM` and the `MEAN` of the same class no longer land on the
+  same file. The per-position classes, where the aggregation resolves on its own,
+  are unaffected.
+
+- **`io_get_pivot_both()` built the BOTH pivot and then failed to cache it.** The
+  write target was a bare `pivot_file_name_both`, a variable the function never
+  assigned, so the branch that builds BOTH from HYPER and HYPO - the normal
+  branch, taken whenever no BOTH pivot is cached - raised `object not found`
+  after doing all of its work. The name now comes from
+  `io_pivot_file_name_parquet()`, the same function the cache is looked up with.
+
 - **An empty covariate name stopped the run with a parse error.**
   `assoc_sig_formula_vars()` can return an empty string, and it reached the
   formula as a bare `I(x^1):`, which does not parse. Empty names are dropped, so

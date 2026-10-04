@@ -107,3 +107,51 @@ test_that("nothing to draw is a warning and a NULL, not an empty chart", {
                                                      "WHOLE", "Sample_Group", NULL)
   expect_null(out)
 })
+
+# ---------------------------------------------------------------------------
+# End to end, through the REAL reader. The tests above stub
+# io_pivot_to_long_format(), which is what let its defects through: the chart
+# was repaired while the only path to a real pivot stayed broken. This one
+# writes a parquet pivot and asserts on the file that comes out.
+# ---------------------------------------------------------------------------
+
+test_that("the chart is drawn from a real pivot on disk", {
+  skip_on_cran()
+
+  folder <- sem_test_folder()
+  dir.create(file.path(folder, "Data"), recursive = TRUE, showWarnings = FALSE)
+  SEMseeker:::core_init_env(folder, parallel_strategy = "sequential",
+                            iqrTimes = 3, verbosity = 1)
+  on.exit({ SEMseeker:::core_close_env(); unlink(folder, recursive = TRUE) },
+          add = TRUE)
+
+  pivot_path <- SEMseeker:::io_pivot_file_name_parquet("MUTATIONS", "HYPER",
+                                                      "GENE", "WHOLE",
+                                                      aggregation = "SUM")
+  dir.create(dirname(pivot_path), recursive = TRUE, showWarnings = FALSE)
+  polars::as_polars_df(data.frame(AREA = c("BRCA1", "TP53"),
+                                  CASE_1 = c(3, -2), REF_1 = c(0, 1),
+                                  stringsAsFactors = FALSE)
+                       )$write_parquet(pivot_path)
+
+  sheet <- data.frame(Sample_ID = c("CASE_1", "REF_1"),
+                      Sample_Group = c("Case", "Reference"),
+                      stringsAsFactors = FALSE)
+
+  written <- SEMseeker:::sem_marker_value_per_area_plot(
+    "MUTATIONS", "HYPER", "GENE", "WHOLE", "Sample_Group", sheet,
+    aggregation = "SUM")
+
+  expect_true(!is.null(written))
+  expect_true(file.exists(written))
+  expect_gt(file.size(written), 1000)
+  # the sixth coordinate is in the name, so SUM and MEAN of the same class do
+  # not land on the same file.
+  expect_match(basename(written), "SUM")
+
+  # asking again without overwrite does not redraw, and says which file it is.
+  again <- SEMseeker:::sem_marker_value_per_area_plot(
+    "MUTATIONS", "HYPER", "GENE", "WHOLE", "Sample_Group", sheet,
+    aggregation = "SUM")
+  expect_equal(again, written)
+})
