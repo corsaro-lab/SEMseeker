@@ -130,7 +130,46 @@
   burden distribution, together with the total it sits at - so a caller can see
   how near the nearest probe was before reading a chart as representative.
 
+- **The four remaining chart functions are gone, and three doors replace them.**
+  None of the four could run, and none of them had a caller. The two circos
+  functions were one chart written twice: `enrich_pathfindR_circlize()` built
+  its data and drew, and `plot_area_plot_circlize()` held the same thirteen
+  drawing lines and nothing else - an extraction left half done, whose link
+  frame `results` was never assigned and was never a parameter, so it raised on
+  the line that chose the link colours. `enrich_lollipop_plot()` used
+  `performance_category` six times and assigned it nowhere; it exists nowhere in
+  the package. `plot_create_heatmap()` had a manual page and six independent
+  reasons it could not run.
+
+  They are replaced by `enrich_circos_plot()`, `enrich_term_lollipop_plot()` and
+  `sem_marker_heatmap_plot()`, all exported, all reading what the pipeline
+  already writes. The two enrichment charts take the **enricher as a parameter**
+  and resolve its column names through the enrichment format table, the way
+  `enrichment_analysis()` takes its enrichers, so one door serves every enricher
+  instead of one function per enricher.
+
+- **Choosing which probes or terms a chart shows is the caller's, by name.** The
+  heatmap and the circos take a selection of areas or of terms. The old charts
+  either drew everything or selected by position in the row order of a file.
+
 ## New features
+
+- **The enrichment format table says where each enricher keeps its genes**, as
+  `column_of_genes`, `+`-separated for an enricher that splits them across
+  columns as pathfindR does with `Up_regulated` and `Down_regulated`. It is what
+  lets one circos door serve any enricher. Six of the seven have it empty,
+  because nothing in the package had ever read a gene list out of any report but
+  pathfindR's, and the chart refuses those six **by name** rather than drawing a
+  circle with an ideogram and nothing on it - which is indistinguishable from a
+  study whose enrichment found nothing. Filling one in is a single table entry,
+  and it belongs to someone looking at that enricher's report.
+
+- **The circos drawing lives once**, with the ideogram, the outside labels and
+  the links between pairs in one place, and the preparation of what it draws in
+  three pure functions in front of it. `circlize` is base graphics and cannot
+  hand back an object, so what is asserted on is the preparation, which is where
+  the defects were.
+
 
 - **The AUC is reported with a confidence interval**, as `C_STATISTIC_AUC` with
   `C_STATISTIC_AUC_CI_LOWER` and `C_STATISTIC_AUC_CI_UPPER`. The name is the one
@@ -344,6 +383,49 @@
   names, and the request should not have to be rewritten for each subset.
 
 ## Bug fixes
+
+- **Both circos charts drew the wrong genome whenever a study was not hg19.**
+  They called `circlize::read.cytoband()` with no species, which defaults to
+  hg19, while the session has recorded `genome_build` all along: every gene was
+  placed at the wrong cytoband and nothing anywhere said so. The build is now
+  required and passed through.
+
+- **The circos gap count was correct only for exactly 25 sectors.**
+  `gap.after = c(rep(1, 23), 5, 5)` was written out by hand, and `circos.par()`
+  recycles rather than complaining, so a different build or a second
+  pseudo-sector silently mismatched. The gaps are derived from the sectors
+  present.
+
+- **The term slices ran one unit past the pseudo-chromosome they sit on**,
+  because a start of 1 plus the width n times ends at the width plus one.
+  `circlize` answers that with a warning about regions past the end of the
+  chromosome, not an error.
+
+- **The lollipop saved whichever chart had last been displayed.** Its `ggplot`
+  object was never assigned - the whole chart was an expression statement inside
+  a `for` loop, where a value is not printed - and `ggsave()` was called with no
+  `plot` argument, so it wrote `last_plot()`.
+
+- **A term whose adjusted p-value is exactly zero left the chart.** Zero means
+  "below what this run can represent", and `-log10(0)` is an infinity, so the
+  most significant term was silently dropped. Zeroes are floored at the smallest
+  positive value in the same report, which says the term is at least that
+  significant.
+
+- **The heatmap could not be reached even with its other five defects fixed.**
+  Its reshape cast on a column the line above had just set to a single constant,
+  producing one column, and the guard three lines later required more than two.
+  Its loop over the pairs of sample groups never iterated - `seq_len()` of the
+  matrix `combn()` returns fails on characters and returns `1` on numbers - its
+  file name did not depend on the iteration, so every pass would have written
+  the same file, it called a reader that does not exist in the package, and it
+  divided 2480 by a field holding the string `"print"`.
+
+- **A chart that writes a file no longer leaves a half-written one behind.** The
+  circos closes its device on the way out whatever happens, so a drawing that
+  raises part way through does not leave the device open with every later plot
+  in the session landing in that file.
+
 
 - **The chart could be repaired and still had nothing to read: the pivot reader
   raised on its second line.** `io_pivot_to_long_format()`, the one path from a
