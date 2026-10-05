@@ -212,10 +212,14 @@ jobs:
           # dependencies = "Suggests") because the full Suggests set pulls
           # in heavy chains (pathfindR → ggkegg, ctdR, etc.) that are not
           # needed for R CMD check and that have repeatedly broken CI.
-          #   Rfast    test-0-glm_model_bulk.R (AI-044 binomial_bulk)
-          #   mockery  test-association_model_limma.R (mocked bindings)
-          #   ggpubr   test-2-box-plot.R (box plot rendering)
-          install.packages(c("Rfast", "mockery", "ggpubr"))
+          #   Rfast     test-0-glm_model_bulk.R (AI-044 binomial_bulk)
+          #   mockery   test-association_model_limma.R (mocked bindings)
+          #   ggpubr    test-2-box-plot.R (box plot rendering)
+          #   circlize  test-0-enrich-circos.R (the circos drawing itself).
+          #             test-coverage.yml already listed it; this file did not,
+          #             so the three drawing tests skipped here and the
+          #             suggests-installed meta-test failed the run.
+          install.packages(c("Rfast", "mockery", "ggpubr", "circlize"))
         shell: Rscript {0}
 
       - uses: r-lib/actions/check-r-package@v2

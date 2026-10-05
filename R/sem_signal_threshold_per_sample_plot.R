@@ -163,7 +163,10 @@ sem_signal_threshold_per_sample_plot <- function(probe, sample_sheet,
   reference_lines <- reference_lines[is.finite(reference_lines$VALUE), ,
                                      drop = FALSE]
 
-  # δ is the distance outside the envelope. The label exists for the
+  # The label is the distance outside the envelope, prefixed with a delta.
+  # The character is written as a \u escape and not literally: R CMD check
+  # tolerates non-ASCII in a comment and refuses it in code, and this one is in
+  # a string.
   # excursions only: writing one for every sample would annotate "0" across the
   # whole axis.
   distance <- ifelse(class_of_sample == "Hyper",
@@ -172,7 +175,7 @@ sem_signal_threshold_per_sample_plot <- function(probe, sample_sheet,
   annotations <- data.frame(
     X = signal$SAMPLE[is_excursion],
     VALUE = signal$VALUE[is_excursion],
-    LABEL = paste0("δ ", format(distance[is_excursion],
+    LABEL = paste0("\u03B4 ", format(distance[is_excursion],
                                      scientific = TRUE, digits = 2)),
     COLOUR = palette[class_of_sample[is_excursion]],
     stringsAsFactors = FALSE)
