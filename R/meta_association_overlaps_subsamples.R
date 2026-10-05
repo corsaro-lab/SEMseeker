@@ -27,6 +27,23 @@
 #' @return Called for its side effect: CSV files written under the inference
 #'   folder. Returns \code{NULL} invisibly, and early if no results are found.
 # compare inference associations of different sub samples
+#' @examples
+#' # The overlap is computed across the subsamples of one study, so the details
+#' # are several rows of the same shape, one per subsample run:
+#' inference_details <- data.frame(
+#'   independent_variable = "Sample_Group",
+#'   family_test          = "wilcoxon",
+#'   transformation_y     = "none",
+#'   aggregation          = "MEAN",
+#'   scope                = "INSTANCE"
+#' )
+#' \dontrun{
+#' meta_association_overlaps_subsamples(
+#'   inference_details   = inference_details,
+#'   statistic_parameter = "PVALUE",
+#'   result_folder       = tempdir()
+#' )
+#' }
 #' @export
 meta_association_overlaps_subsamples <- function(inference_details,alpha = 0.05, adjust_per_area = FALSE,
   adjust_globally = FALSE,pvalue_column="PVALUE_ADJ_ALL_BH",statistic_parameter, adjustment_method = "BH",

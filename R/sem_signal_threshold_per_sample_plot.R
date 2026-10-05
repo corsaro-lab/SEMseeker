@@ -37,9 +37,17 @@
 #'   pivot or the thresholds of that probe are not there.
 #'
 #' @examples
-#' \donttest{
-#' # Needs a result folder holding the signal pivot and the signal thresholds.
-#' invisible(NULL)
+#' # The raw signal of one probe against the envelope computed from the
+#' # reference samples. The envelope is read from the study, never recomputed:
+#' # a threshold recomputed on the samples at hand is a different threshold.
+#' sample_sheet <- data.frame(
+#'   Sample_ID    = c("CASE_1", "CASE_2", "REF_1"),
+#'   Sample_Group = c("Case", "Case", "Reference")
+#' )
+#' \dontrun{
+#' sem_signal_threshold_per_sample_plot(
+#'   probe = "cg11680158", sample_sheet = sample_sheet
+#' )
 #' }
 #' @export
 sem_signal_threshold_per_sample_plot <- function(probe, sample_sheet,

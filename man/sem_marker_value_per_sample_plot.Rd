@@ -74,8 +74,17 @@ even where its own signal sits outside the envelope it helped define.
 }
 
 \examples{
-\donttest{
-# Needs a result folder holding the probe pivots of the marker.
-invisible(NULL)
+# One probe held fixed, a point per sample. Which probe is worth looking at
+# is a separate question, answered by the cohort burden distribution rather
+# than by this chart.
+sample_sheet <- data.frame(
+  Sample_ID    = c("CASE_1", "CASE_2", "REF_1"),
+  Sample_Group = c("Case", "Case", "Reference")
+)
+\dontrun{
+sem_marker_value_per_sample_plot(
+  marker = "DELTAS", figure = "BOTH", probe = "cg11680158",
+  sample_sheet = sample_sheet
+)
 }
 }

@@ -64,9 +64,14 @@
 #'   nothing to draw.
 #'
 #' @examples
-#' \donttest{
-#' # Needs a result folder holding the probe pivots of the marker.
-#' invisible(NULL)
+#' # One sample held fixed, a point per probe. The chart reads the probe pivots
+#' # of the marker, so it needs a result folder from a completed run.
+#' probes_of_interest <- c("cg11680158", "cg00000029")
+#' \dontrun{
+#' sem_marker_value_per_probe_plot(
+#'   marker = "DELTAS", figure = "BOTH", sample_name = "CASE_1",
+#'   probes_selection = probes_of_interest
+#' )
 #' }
 #' @export
 sem_marker_value_per_probe_plot <- function(marker, figure, sample_name,

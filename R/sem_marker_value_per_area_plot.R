@@ -80,9 +80,19 @@
 #'   nothing to draw.
 #'
 #' @examples
-#' \donttest{
-#' # Needs a result folder with the pivots of the requested class.
-#' invisible(NULL)
+#' # The chart reads a stored pivot, so it needs a result folder from a
+#' # completed run. Its arguments are the coordinates of that pivot plus the
+#' # sample sheet the fill is taken from:
+#' sample_sheet <- data.frame(
+#'   Sample_ID    = c("CASE_1", "REF_1"),
+#'   Sample_Group = c("Case", "Reference")
+#' )
+#' \dontrun{
+#' sem_marker_value_per_area_plot(
+#'   marker = "MUTATIONS", figure = "HYPER", area = "GENE", subarea = "WHOLE",
+#'   phenotype_column = "Sample_Group", sample_sheet = sample_sheet,
+#'   aggregation = "SUM"
+#' )
 #' }
 #' @export
 sem_marker_value_per_area_plot <- function(marker, figure, area, subarea,

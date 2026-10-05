@@ -56,3 +56,23 @@ per area, which studies called it significant. The aggregated table and one
 table per marker are written as CSV under the inference folder; the function
 is called for those files and returns nothing.
 }
+\examples{
+# The overlap is computed across studies that were analysed with the same
+# inference detail, so the detail is the argument that says which question
+# the studies answered:
+inference_detail <- data.frame(
+  independent_variable = "Sample_Group",
+  family_test          = "wilcoxon",
+  transformation_y     = "none",
+  aggregation          = "MEAN",
+  scope                = "INSTANCE"
+)
+\dontrun{
+meta_association_overlaps_studies(
+  inference_detail    = inference_detail,
+  studies             = c("STUDY_A", "STUDY_B"),
+  statistic_parameter = "PVALUE",
+  result_folder       = tempdir()
+)
+}
+}
