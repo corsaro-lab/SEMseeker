@@ -1,8 +1,11 @@
 ## Coverage for pure helpers behind the plotting layer.
-## The plot RENDERERS themselves read pipeline pivots / inference files (or,
-## for sem_manhattan_plot_marker_per_sample, reference ssEnv before it is
-## assigned), so they need full-pipeline fixtures / a source fix and are not
-## exercised here. These two internal helpers are pure and deterministic.
+## The plot RENDERERS themselves read pipeline pivots / inference files, so they
+## need full-pipeline fixtures and are not exercised here. The marker-value and
+## threshold charts are the exception: their drawings take their data as
+## arguments and are covered in test-0-lollipop-build.R,
+## test-0-marker-value-per-probe.R, test-0-marker-value-per-sample.R and
+## test-0-signal-threshold-plot.R. These two internal helpers are pure and
+## deterministic.
 ##
 ## Covered:
 ##   .assoc_volcano_pick_estimate_col()  choose the estimate column to plot

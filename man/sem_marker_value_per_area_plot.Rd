@@ -61,14 +61,15 @@ p-value is computed or drawn.
 Through 0.99.5 this was `plot_manhattan_plot_per_area()`. A Manhattan plot
 puts genomic position on the x axis and a significance on the y; this puts a
 categorical region-class instance on the x and a marker value on the y, which
-is a different chart answering a different question. The two functions that do
-draw a Manhattan plot are `anno_manhattan_plot_marker_per_probe()` and
-`sem_manhattan_plot_marker_per_sample()`, and measured on 2026-10-04 neither
-of them runs either: both call `core_init_env()` from inside a chart to
-re-initialise the session, the second asking for a figure named `BOTH` that
-the session vocabulary refuses, and the second also reads CSV pivots that
-nothing in the package has written since the move to parquet. They are tracked
-for the same treatment as this one and not fixed here.
+is a different chart answering a different question.
+
+The two functions that did draw a Manhattan plot,
+`anno_manhattan_plot_marker_per_probe()` and
+`sem_manhattan_plot_marker_per_sample()`, could not run either, and are gone:
+[sem_marker_value_per_sample_plot()] and [sem_marker_value_per_probe_plot()]
+replace them over one shared layout. The three doors name their x axis the
+same way: `per_area`, `per_sample` and `per_probe` each say what one point is,
+and the subject the chart holds fixed is an argument.
 }
 
 \section{What it could not do before}{
@@ -112,8 +113,18 @@ to look at a chosen set of instances, name them in `areas_selection`.
 }
 
 \examples{
-\donttest{
-# Needs a result folder with the pivots of the requested class.
-invisible(NULL)
+# The chart reads a stored pivot, so it needs a result folder from a
+# completed run. Its arguments are the coordinates of that pivot plus the
+# sample sheet the fill is taken from:
+sample_sheet <- data.frame(
+  Sample_ID    = c("CASE_1", "REF_1"),
+  Sample_Group = c("Case", "Reference")
+)
+\dontrun{
+sem_marker_value_per_area_plot(
+  marker = "MUTATIONS", figure = "HYPER", area = "GENE", subarea = "WHOLE",
+  phenotype_column = "Sample_Group", sample_sheet = sample_sheet,
+  aggregation = "SUM"
+)
 }
 }

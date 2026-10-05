@@ -59,3 +59,21 @@ within a single study, across the subsamples produced by a replication run.
 It joins the per-subsample inference results on the area taxonomy and writes,
 per area, which subsamples called it significant.
 }
+\examples{
+# The overlap is computed across the subsamples of one study, so the details
+# are several rows of the same shape, one per subsample run:
+inference_details <- data.frame(
+  independent_variable = "Sample_Group",
+  family_test          = "wilcoxon",
+  transformation_y     = "none",
+  aggregation          = "MEAN",
+  scope                = "INSTANCE"
+)
+\dontrun{
+meta_association_overlaps_subsamples(
+  inference_details   = inference_details,
+  statistic_parameter = "PVALUE",
+  result_folder       = tempdir()
+)
+}
+}
