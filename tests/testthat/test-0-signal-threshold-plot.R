@@ -36,7 +36,7 @@ test_that("the delta labels are drawn, one per excursion", {
 
   labels <- unlist(lapply(built$data, function(layer) layer$label))
   labels <- labels[!is.na(labels)]
-  deltas <- labels[grepl("δ", labels)]
+  deltas <- labels[grepl("\u03B4", labels)]
 
   # two excursions, two deltas. MID is inside the envelope and REF_1 is a
   # reference, so neither is annotated.
@@ -48,7 +48,7 @@ test_that("the delta is the distance outside the envelope, in the right directio
   built <- ggplot2::ggplot_build(
     .build(.signal(), .envelope(), .sheet4(), "CG1", .palette))
   labels <- unlist(lapply(built$data, function(layer) layer$label))
-  deltas <- labels[!is.na(labels) & grepl("δ", labels)]
+  deltas <- labels[!is.na(labels) & grepl("\u03B4", labels)]
 
   # CASE_1 is 0.95 against an upper limit of 0.8, so 0.15.
   # CASE_2 is 0.05 against a lower limit of 0.2, so 0.15 as well: a distance
@@ -97,7 +97,7 @@ test_that("the five envelope lines render, and their labels can be turned off", 
   bare_labels <- unlist(lapply(without$data, function(layer) layer$label))
   bare_labels <- bare_labels[!is.na(bare_labels)]
   expect_false("Upper Limit" %in% bare_labels)
-  expect_equal(sum(grepl("δ", bare_labels)), 2L)
+  expect_equal(sum(grepl("\u03B4", bare_labels)), 2L)
   bare_lines <- unlist(lapply(without$data, function(layer) layer$yintercept))
   expect_equal(length(bare_lines[!is.na(bare_lines)]), 5L)
 })
@@ -116,7 +116,7 @@ test_that("a reference sample is marked as one even outside the envelope it defi
   expect_equal(sum(fills == "blue"), 1L)
   # and it carries no delta: a reference is not reported as an excursion.
   labels <- unlist(lapply(built$data, function(layer) layer$label))
-  expect_equal(sum(grepl("δ", labels[!is.na(labels)])), 2L)
+  expect_equal(sum(grepl("\u03B4", labels[!is.na(labels)])), 2L)
 })
 
 test_that("a non-finite threshold drops its line instead of breaking the chart", {
