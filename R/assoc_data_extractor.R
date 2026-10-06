@@ -32,7 +32,7 @@ assoc_data_extractor <- function(inference_details,destination_folder="", result
       if (file.exists(fileNameResults))
       {
         results_inference <- utils::read.csv2(fileNameResults, header  =  TRUE)
-        results_inference <- subset(results_inference, FIGURE %in% keys$FIGURE)
+        results_inference <- results_inference[which(results_inference$FIGURE %in% keys$FIGURE), , drop = FALSE]
         results_inference <- assoc_filter_sql(inference_detail$areas_sql_condition, results_inference)
 
         # remove any column with name containg SAMPLES_SQL_CONDITION

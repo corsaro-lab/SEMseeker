@@ -162,7 +162,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
       assoc_analysis_log(cbind(prep$inference_detail, keys[k, ]),
         start_time, Sys.time(), processed_items)
       if (nrow(results) != 0)
-        results <- subset(results, MARKER == key$MARKER)
+        results <- results[which(results$MARKER == key$MARKER), , drop = FALSE]
 
       # Force release of polars wrappers + assoc_apply_stat_model_batch_lazy locals
       # (y_mat ~12 GB on 367k×4k SIGNAL@PROBE + MArrayLM fit + voom weights
@@ -303,7 +303,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
     assoc_analysis_log(cbind(prep$inference_detail, keys[k, ]),
       start_time, Sys.time(), processed_items)
     if (nrow(results) != 0)
-      results <- subset(results, MARKER == key$MARKER)
+      results <- results[which(results$MARKER == key$MARKER), , drop = FALSE]
   }
 
   # final per-marker save (was lines 428-430)

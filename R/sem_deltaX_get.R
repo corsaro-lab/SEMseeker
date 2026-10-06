@@ -51,8 +51,8 @@ sem_deltaX_get <- function(markers = NULL) {
   keys  <- ssEnv$keys_markers_figures
   keys  <- keys[, !(colnames(keys) %in% c("FIGURE", "COMBINED")), drop = FALSE]
   keys  <- unique(keys)
-  keys  <- subset(keys, !is.na(SOURCE) & !is.na(Q) & Q != 1)
-  if (!is.null(markers)) keys <- subset(keys, MARKER %in% markers)
+  keys  <- keys[which(!is.na(keys$SOURCE) & !is.na(keys$Q) & keys$Q != 1), , drop = FALSE]
+  if (!is.null(markers)) keys <- keys[which(keys$MARKER %in% markers), , drop = FALSE]
   if (nrow(keys) == 0L) return(invisible())
 
   area    <- "POSITION"
