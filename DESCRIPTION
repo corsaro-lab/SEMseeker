@@ -25,7 +25,7 @@ biocViews: Epigenetics, DNAMethylation, MethylationArray, DifferentialMethylatio
         StatisticalMethod, Software, Coverage, Sequencing
 Imports: caret, dplyr, methods, doFuture, doRNG, fastDummies, foreach, future,
         GenomicRanges, ggplot2, ggvenn, graphics, grDevices, gtools,
-        jsonlite, lqmm, matrixStats, plyr, polars, progressr, reshape,
+        jsonlite, lqmm, matrixStats, plyr, polars, progressr,
         reshape2, R.utils, rlang, stats, stringr, tools, utils, withr,
         VennDiagram, effsize, pwr, combinat, philentropy, parallelly,
         knitr, lmtest, glmnet, sqldf, readr, tidyr, readxl, xtable
