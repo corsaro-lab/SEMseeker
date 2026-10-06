@@ -19,7 +19,7 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
   # so we need to filter the results
   #
   colnames(results) <- core_name_cleaning(colnames(results))
-  results <- subset(results, FAMILY_TEST==as.character(family_test))
+  results <- results[which(results$FAMILY_TEST == as.character(family_test)), , drop = FALSE]
 
   # check if results is empty
   if(is.null(results))
@@ -117,7 +117,7 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
   # filter either stopped the run or was never reached. It filters on the flag
   # that exists here.
   if(filter_p_value && "SIGNIFICATIVE_ADJ_ALL" %in% colnames(results))
-    results <- subset(results, SIGNIFICATIVE_ADJ_ALL)
+    results <- results[which(results$SIGNIFICATIVE_ADJ_ALL), , drop = FALSE]
 
   # remove duplicates based on MARKER   FIGURE  AREA    SUBAREA AREA_OF_TEST    FAMILY_TEST TRANSFORMATION_Y    PVALUE  R_MODEL
   # calculating the max of all others columns

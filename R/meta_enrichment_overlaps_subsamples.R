@@ -229,12 +229,15 @@ meta_enrichment_overlaps_subsamples <- function(inference_details,pathways_sql_s
           {
             filename <- io_inference_file_name(inference_detail, paste(keys[i, ]$AREA, keys[i, ]$SUBAREA, keys[i, ]$MARKER, keys[i, ]$FIGURE , sep="_"),dest_folder,file_extension = "csv",suffix = "PIVOT", prefix = "")
             # Create a simple pivot table
+            # Columns named as strings: the count column dplyr::count() adds is
+            # "n", and naming it here rather than reading a bare n keeps the
+            # pipeline free of names R CMD check cannot bind.
             pivot_table <- pathway_results %>%
-              dplyr::count(eval(parse(text=column_of_id)), KEY_SELECTOR) %>%   # Count occurrences of combinations
+              dplyr::count(dplyr::across(dplyr::all_of(c(column_of_id, "KEY_SELECTOR")))) %>%
               tidyr::pivot_wider(
-                names_from = KEY_SELECTOR,                    # Columns created from unique IDs
-                values_from = n,                    # Fill values from the count
-                values_fill = 0                     # Replace missing combinations with 0
+                names_from = "KEY_SELECTOR",        # one column per key
+                values_from = "n",                  # filled with the count
+                values_fill = 0                     # missing combinations are 0
               )
             colnames(pivot_table)[1] <- column_of_id
             pivot_table <- merge(unique(pathway_results[,c(column_of_description,column_of_id)]),pivot_table, by = column_of_id, all.y = TRUE)

@@ -30,7 +30,7 @@ meta_enrichment_compare_studies <- function(result_folder, ...){
     core_log_event(studies_comb)
     for(k in seq_len(ncol(studies_comb)))
     {
-      pathway_inference_comb <- subset(pathway_inference, STUDY %in% studies_comb[,k])
+      pathway_inference_comb <- pathway_inference[which(pathway_inference$STUDY %in% studies_comb[,k]), , drop = FALSE]
       keys <- unique(pathway_inference_comb[, c("key")])
       dest_folder <- paste(result_folder, subFolder, sep="")
       study_count <- length(unique(pathway_inference_comb$STUDY))

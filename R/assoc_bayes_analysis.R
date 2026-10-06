@@ -25,7 +25,6 @@
 #' @return Invisibly \code{NULL}. Bayesian posterior probability tables
 #'   (\code{bayes_analysis_*.csv}) are written to the \code{Euristic/}
 #'   sub-folder of \code{result_folder}.
-#' @importFrom doRNG %dorng%
 #' @examples
 #' result_dir <- tempdir()
 #' \dontrun{
@@ -136,8 +135,8 @@ assoc_bayes_analysis <- function(
                                      drop = FALSE]
 
       # A-09 fix 4: column reference, not string literal - "x" != "y" is always TRUE
-      tempDataFrame <- subset(tempDataFrame, Sample_Group != "Reference")
-      tempDataFrame <- subset(tempDataFrame, Sample_Group != 0)
+      tempDataFrame <- tempDataFrame[which(tempDataFrame$Sample_Group != "Reference"), , drop = FALSE]
+      tempDataFrame <- tempDataFrame[which(tempDataFrame$Sample_Group != 0), , drop = FALSE]
       tempDataFrame <- as.data.frame(tempDataFrame)
 
       if (nrow(tempDataFrame) == 0) next
@@ -170,22 +169,11 @@ assoc_bayes_analysis <- function(
       meta_cols      <- unique(c("Sample_Group", independent_variable))
       data_col_idx   <- which(!colnames(tempDataFrame) %in% meta_cols)
 
-      var_to_export  <- c("tempDataFrame", "ssEnv", "progress_bar",
-                          "phenotype", "keys", "k", "n_case", "n_control",
-                          "bayes_case_threshold", "bayes_control_threshold",
-                          "independent_variable", "meta_cols")
-
-      # A-09 fix 8: loop variable renamed col_idx (was 'c', which shadows base c())
-      results_temp <- foreach::foreach(
-        col_idx  = data_col_idx,
-        .combine = rbind,
-        .export  = var_to_export
-      ) %dorng% {
-        # AI-056: workers must NOT saveRDS on every iteration (the worker-copy
-        # of ssEnv can't propagate to master anyway, and the per-iter disk
-        # write is the AI-041 performance trap).
-        core_update_session_info(ssEnv, save_to_disk = FALSE)
-
+      # One row per area whose posterior passes both thresholds. A plain lapply:
+      # the body is a handful of sums per area, deterministic, so neither the
+      # workers of a foreach nor the seeds of doRNG bought anything here, and
+      # the loop variable is now an ordinary function argument.
+      results_temp <- do.call(rbind, lapply(data_col_idx, function(col_idx) {
         area <- names(tempDataFrame)[col_idx]
         if (ssEnv$showprogress)
           progress_bar(sprintf("genomic area: %s",
@@ -196,7 +184,7 @@ assoc_bayes_analysis <- function(
         # Bayes theorem:  P(A|B) = P(B|A) * P(A) / P(B)
         # A = being a Case;  B = being epimutated in this area
         P_B <- sum(epimutated) / length(epimutated)
-        if (P_B == 0) return(NULL)   # no epimutations → skip (avoid 0/0)
+        if (P_B == 0) return(NULL)   # no epimutations: skip (avoid 0/0)
 
         P_A      <- n_case    / (n_case + n_control)
         P_B_A    <- sum(epimutated &  phenotype) / sum( phenotype)
@@ -206,7 +194,6 @@ assoc_bayes_analysis <- function(
         P_B_notA <- sum(epimutated & !phenotype) / sum(!phenotype)
         P_notA_B <- (P_B_notA * P_notA) / P_B  # P(Control | Epimutated)
 
-        # A-09 fix 9: configurable thresholds (were hardcoded 0.9 / 0.1)
         if (P_A_B >= bayes_case_threshold && P_notA_B < bayes_control_threshold)
           data.frame(
             MARKER                               = as.character(keys[k, "MARKER"]),
@@ -217,10 +204,7 @@ assoc_bayes_analysis <- function(
             P_to_be_Case_cond_to_be_Epimutated   = P_A_B,
             P_to_be_Control_cond_to_be_Epimutated = P_notA_B
           )
-      }
-
-      # AI-056: post-foreach end-of-batch snapshot (matches AI-041 pattern).
-      core_update_session_info(ssEnv, save_to_disk = TRUE)
+      }))
 
       if (is.null(dim(results_temp))) next
       results_temp <- as.data.frame(results_temp)
@@ -252,11 +236,11 @@ assoc_bayes_analysis <- function(
     max_P_case    <- max(results$P_to_be_Case_cond_to_be_Epimutated,    na.rm = TRUE)
     max_P_control <- max(results$P_to_be_Control_cond_to_be_Epimutated, na.rm = TRUE)
 
-    results_filtered <- subset(results,
-      P_to_be_Case_cond_to_be_Epimutated    != 0 &
-      P_to_be_Control_cond_to_be_Epimutated != 0 &
-      P_to_be_Case_cond_to_be_Epimutated    == max_P_case
-    )
+    results_filtered <- results[which(
+      results$P_to_be_Case_cond_to_be_Epimutated    != 0 &
+      results$P_to_be_Control_cond_to_be_Epimutated != 0 &
+      results$P_to_be_Case_cond_to_be_Epimutated    == max_P_case
+    ), , drop = FALSE]
 
     fileNameFiltered <- io_file_path_build(
       baseFolder      = ssEnv$result_folderEuristic,

@@ -37,7 +37,7 @@ anno_create_position_pivots <- function(population, keys) {
   # to derive the PROBE/GENE/... aggregations later.
   selection <- c("MUTATIONS", "DELTAR", "DELTAS", "LESIONS")
   keys <- keys[order(keys$MARKER), ]
-  keys <- subset(keys, MARKER %in% selection)
+  keys <- keys[which(keys$MARKER %in% selection), , drop = FALSE]
   if (nrow(keys) == 0L) return(invisible())
 
   pop_clean <- population[!is.na(population$Sample_Group), ]

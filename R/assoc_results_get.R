@@ -88,9 +88,9 @@ assoc_results_get <- function (inference_detail, marker,
   # The invariant SCOPE = INSTANCE & AREA = GENE belongs to enrichment, and is
   # enforced where enrichment enters - not here, where the cross-study overlaps
   # legitimately iterate over every area of the registry.
-  results_inference <- subset(results_inference, AREA == area)
+  results_inference <- results_inference[which(results_inference$AREA == area), , drop = FALSE]
   if (!is.null(scope) && "SCOPE" %in% colnames(results_inference))
-    results_inference <- subset(results_inference, SCOPE == scope)
+    results_inference <- results_inference[which(results_inference$SCOPE == scope), , drop = FALSE]
   # AI-257: name the level instead of matching the method string. `grepl("BH",
   # colnames)` caught every adjusted column at once, so the flag silently became
   # an AND across levels the moment a second one existed. SIGNIFICATIVE_ADJ

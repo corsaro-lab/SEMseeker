@@ -106,16 +106,16 @@ meta_association_overlaps_subsamples <- function(inference_details,alpha = 0.05,
     # write a file for each marker
     for (marker in unique(aggregated_results$MARKER))
     {
-      tt <- subset(aggregated_results, MARKER == marker)
+      tt <- aggregated_results[which(aggregated_results$MARKER == marker), , drop = FALSE]
       # AI-255: per-instance artefacts, said by the taxonomy
-      tt <- subset(tt, SCOPE == "INSTANCE")
+      tt <- tt[which(tt$SCOPE == "INSTANCE"), , drop = FALSE]
 
       tt$KEY <- paste0(tt$AREA,"_",tt$SUBAREA,"_",tt$MARKER,"_",tt$FIGURE,"_",tt$AREA_OF_TEST)
       SPLIT <- split(tt$KEY, tt$SAMPLES_SQL_CONDITION)
       # get the common keys
       common_keys <- Reduce(intersect, SPLIT)
       # get the common keys
-      tt <- subset(tt, KEY %in% common_keys)
+      tt <- tt[which(tt$KEY %in% common_keys), , drop = FALSE]
       # remove KEY column
       tt$KEY <- NULL
 
