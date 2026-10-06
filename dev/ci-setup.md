@@ -29,29 +29,31 @@ re-enabled once macOS CI was confirmed green (run `23841500938`, 18m42s).
 
 ## Branch protection
 
-`main` is protected via GitHub API:
+`main` and `develop` are protected with the same settings (read back from the
+GitHub API on 2026-10-06):
 
-- Direct pushes blocked
-- A PR is required
-- All active CI checks must pass before merge (`strict: true`)
-- Configured with:
-  ```bash
-  gh api --method PUT repos/corsaro-lab/SEMseeker/branches/main/protection --input - <<'EOF'
-  {
-    "required_status_checks": {
-      "strict": true,
-      "contexts": [
-        "R-CMD-check / macos-latest (release)",
-        "R-CMD-check / windows-latest (release)",
-        "R-CMD-check / ubuntu-latest (release)"
-      ]
-    },
-    "enforce_admins": false,
-    "required_pull_request_reviews": { "required_approving_review_count": 0 },
-    "restrictions": null
-  }
-  EOF
-  ```
+- direct pushes are blocked: every change arrives through a pull request;
+- no approving review is required (`required_approving_review_count: 0`), but
+  the rules apply to administrators too (`enforce_admins: true`);
+- `strict: false`: a branch does not have to be up to date with its base
+  before merging;
+- four required checks. The names carry no workflow prefix:
+  - `macos-latest (release)`, `windows-latest (release)`,
+    `ubuntu-latest (release)` from `R-CMD-check.yml`;
+  - `internal-references` from `security.yml`.
+
+The repository allows squash, merge commits and auto-merge. Feature pull
+requests into `develop` are squashed; the release pull request from `develop`
+into `main` is merged with a merge commit, so that the two branches keep a
+common ancestor and the next release does not conflict.
+
+To add a required check without touching the others:
+
+```bash
+gh api --method POST \
+  repos/corsaro-lab/SEMseeker/branches/<branch>/protection/required_status_checks/contexts \
+  -f 'contexts[]=<check name>'
+```
 
 ---
 
