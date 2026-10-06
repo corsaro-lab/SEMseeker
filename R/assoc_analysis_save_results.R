@@ -35,7 +35,7 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
 
     pvalue_columns <- colnames(results)[grepl("PVALUE", colnames(results)) & !grepl("_ADJ", colnames(results))]
 
-    # AI-257: drop every adjusted column of a previous pass before recomputing.
+    # drop every adjusted column of a previous pass before recomputing.
     # `PVALUE_ADJ` is in the list because it is the name the three levels
     # replaced: a file written before this release carries it, and leaving it
     # there would put a column whose family nobody can name next to three that
@@ -44,7 +44,7 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
       colnames(results) == "PVALUE_ADJ"
     results <- unique(results[, !stale_adj, drop = FALSE])
 
-    # AI-257: the FDR is controlled over three nested families, and each column
+    # the FDR is controlled over three nested families, and each column
     # says which one it belongs to. See .assoc_adjust_levels() for why there are
     # three and not one.
     results <- .assoc_adjust_levels(results, method = ssEnv$multiple_test_adj,
@@ -63,7 +63,7 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
         colnames(results) <- core_name_cleaning(colnames(results))
       }
 
-      # AI-257: order by the widest level, named outright. It used to be
+      # order by the widest level, named outright. It used to be
       # `grepl(multiple_test_adj, colnames)[1]` - the first column whose name
       # merely CONTAINS the method - which with three adjusted levels picks
       # whichever one happens to come first in the frame.
@@ -77,7 +77,7 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
     if(nrow(results)==0)
       return()
 
-    # AI-255: DEPTH is not stamped any more. It was a number standing in for
+    # DEPTH is not stamped any more. It was a number standing in for
     # what SCOPE, AREA and SUBAREA now say outright, and it stood in badly: the
     # 1/2/3 ladder projected a partial order onto a line, and its rung 2 marked
     # rows produced by composing aggregates - a quantity that no longer exists.
@@ -99,7 +99,7 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
       return()
   }
 
-  # AI-257: select the columns by name, not by `grepl(method, colnames)`.
+  # select the columns by name, not by `grepl(method, colnames)`.
   # That predicate matched every column whose name merely CONTAINS the method
   # string, so adding PVALUE_ADJ_KEY_BH and PVALUE_ADJ_SCOPE_BH next to
   # PVALUE_ADJ_ALL_BH would silently turn this flag into "significant at all
@@ -111,7 +111,7 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
     results, colnames(results)[grepl("PVALUE", colnames(results)) &
                                  !grepl("_ADJ", colnames(results))], ssEnv$alpha)
 
-  # AI-257: this used to read SIGNIFICATIVE_ADJ, a column this function never
+  # this used to read SIGNIFICATIVE_ADJ, a column this function never
   # creates - it is built by assoc_results_get() on the way out, not on the way
   # in. `filter_p_value` defaults to TRUE (assoc_analysis.R:124-125), so the
   # filter either stopped the run or was never reached. It filters on the flag
@@ -122,9 +122,9 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
   # remove duplicates based on MARKER   FIGURE  AREA    SUBAREA AREA_OF_TEST    FAMILY_TEST TRANSFORMATION_Y    PVALUE  R_MODEL
   # calculating the max of all others columns
   # C-06: include provenance columns in the grouping key so summarise() preserves them
-  # AI-248: AGGREGATION is part of the identity. Without it the summarise(max)
+  # AGGREGATION is part of the identity. Without it the summarise(max)
   # below would fuse the median and the mean of the same scope into one row.
-  # AI-255: SCOPE belongs here too. Without it the collapsed row and the
+  # SCOPE belongs here too. Without it the collapsed row and the
   # per-instance row of the same region class would be fused by the summarise
   # below - the very thing the aggregation axis was added to prevent, one
   # coordinate further along.
@@ -136,7 +136,7 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
 
   if(ncol(results[,!colnames(results) %in% group_column])>2)
   {
-    # AI-061+ (2026-06-09): use base |> pipe (R 4.1+) instead of %>%.
+    # 2026-06-09: use base |> pipe (R 4.1+) instead of %>%.
     # The %>% reference was unresolved at runtime (no @importFrom magrittr)
     # and caused "could not find function %>%" mid-association on ewas v31.
     results <- results |>
@@ -151,7 +151,7 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
 
 #' The three nested families a p-value is adjusted over (internal)
 #'
-#' AI-257. The family over which an FDR is controlled is a statistical choice,
+#' The family over which an FDR is controlled is a statistical choice,
 #' and it has to be readable from the column that carries the result. Until this
 #' release two things made it something else:
 #'
@@ -183,7 +183,7 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
 #' **Why each family is defined the same way on every row.** The tempting design
 #' is a single column whose family adapts - the instances where there are
 #' instances, something else where there are none. That is one name meaning two
-#' things depending on the row, which is what `depth` did and what AI-255 removed
+#' things depending on the row, which is what `depth` did and what the taxonomy unification removed
 #' it for. Each of the three is one rule, applied uniformly; at
 #' `SCOPE = INSTANCE` the `SCOPE` level pools genes with cytobands and islands,
 #' which is a number to read with that in mind, not a number to hide.
@@ -206,10 +206,10 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
   if (is.null(results) || nrow(results) == 0 || !("PVALUE" %in% colnames(results)))
     return(results)
 
-  # AI-257: the two narrow levels are computed on PVALUE only, not on every
+  # the two narrow levels are computed on PVALUE only, not on every
   # column matching "PVALUE". A file already carries one adjusted column per
   # p-value column at the ALL level, and these files reach 600-880 MB on a
-  # 485k-probe run (AI-078); tripling that width to adjust the intercept's
+  # 485k-probe run; tripling that width to adjust the intercept's
   # p-value buys nothing. PVALUE is the model's own p-value - the one the
   # taxonomy is about and the one the enrichment reads.
   levels <- list(
@@ -243,7 +243,7 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
 
 #' Adjust a vector of p-values by the estimator the run declared (internal)
 #'
-#' AI-257. One estimator for all three levels, so that the numbers in the three
+#' One estimator for all three levels, so that the numbers in the three
 #' columns differ by their family and by nothing else. Before this, the narrow
 #' level had `method = "BH"` written into it while the global level honoured
 #' `ssEnv$multiple_test_adj`: a run asking for `q` got a column named for BH's
@@ -287,7 +287,7 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
 
 #' The adjusted columns of one level (internal)
 #'
-#' AI-257. `PVALUE_ADJ_ALL_BH` and `I_AGE_PVALUE_ADJ_ALL_BH` both belong to the
+#' `PVALUE_ADJ_ALL_BH` and `I_AGE_PVALUE_ADJ_ALL_BH` both belong to the
 #' ALL level; `PVALUE_ADJ_KEY_BH` does not. Selecting them by the level's own
 #' infix is what keeps a new level from being swept into an existing flag.
 #'
@@ -304,7 +304,7 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
 
 #' Is every one of these columns below alpha, row by row (internal)
 #'
-#' AI-257. Returns `NA` when there is no column to answer with, instead of the
+#' Returns `NA` when there is no column to answer with, instead of the
 #' `TRUE` that `all(logical(0))` yields - "every one of no columns is
 #' significant" is how an empty selection used to pass for a positive result.
 #'
@@ -332,7 +332,7 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
 
 #' Put the taxonomy key first, and refuse a key with a hole in it (internal)
 #'
-#' AI-255. The six coordinates plus `AREA_OF_TEST` - the instance within the
+#' The six coordinates plus `AREA_OF_TEST` - the instance within the
 #' artefact - are the identity of a result row, so they lead the file. A reader
 #' opening the CSV sees what the row *is* before seeing what was measured on it,
 #' and the column order stops depending on the order in which the models happened

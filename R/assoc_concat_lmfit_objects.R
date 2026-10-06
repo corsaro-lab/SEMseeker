@@ -1,4 +1,4 @@
-# AI-061+ (2026-06-09): concatenate a list of `limma::MArrayLM` objects
+# 2026-06-09: concatenate a list of `limma::MArrayLM` objects
 # produced by chunked-per-chr lmFit calls into a single MArrayLM ready
 # for a global `limma::eBayes()` call.
 #

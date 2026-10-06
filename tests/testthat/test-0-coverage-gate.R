@@ -1,4 +1,4 @@
-## AI-074 — coverage is a mandatory pre-step of every SEM analysis.
+## coverage is a mandatory pre-step of every SEM analysis.
 ##
 ## Three contracts, in decreasing order of importance:
 ##   1. the coverage charts are produced on EVERY run, including the runs the

@@ -79,7 +79,7 @@ test_that("io_inference_file_name assembles a marker path", {
 
   expect_type(path, "character")
   expect_length(path, 1L)
-  # AI-255: DEPTH left the path with the concept it named.
+  # DEPTH left the path with the concept it named.
   expect_false(grepl("DEPTH", path, ignore.case = TRUE))
   expect_match(path, "MUTATIONS", ignore.case = TRUE)
   expect_match(path, "\\.csv$", ignore.case = TRUE)

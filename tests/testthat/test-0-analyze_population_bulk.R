@@ -1,6 +1,6 @@
 # test-0-analyze_population_bulk.R
 #
-# Unit test per sem_analyze_population_bulk (AI-042, 2026-06-08): verifica che
+# Unit test per sem_analyze_population_bulk (2026-06-08): verifica che
 # DELTAS, MUTATIONS, DELTAR pivots siano bit-identici alla formula attesa
 # (rank-invariante per MUTATIONS, magnitude per DELTAS/DELTAR) usando un
 # input sintetico piccolo. LESIONS pivot si verifica solo a livello shape +

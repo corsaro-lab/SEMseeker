@@ -1,6 +1,6 @@
 #' The FIGURE of the SIGNAL marker for this session (internal)
 #'
-#' AI-248. `SIGNAL` used to carry the figure `MEAN`, which was a **placeholder**
+#' `SIGNAL` used to carry the figure `MEAN`, which was a **placeholder**
 #' that made the key unique - not a statement about the data. It described (badly)
 #' a way of aggregating the signal, and now that aggregation has an axis of its
 #' own the placeholder has to go.

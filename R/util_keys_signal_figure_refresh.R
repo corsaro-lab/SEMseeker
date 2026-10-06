@@ -1,6 +1,6 @@
 #' Realign the SIGNAL keys to the scale of the data (internal)
 #'
-#' AI-248. The figure of `SIGNAL` is the scale of the value (`BETA` / `MVALUE`,
+#' The figure of `SIGNAL` is the scale of the value (`BETA` / `MVALUE`,
 #' see [io_signal_figure()]), but the keys are built by `util_keys_create()`
 #' inside `core_init_env()`, before any data has been read - at that point the
 #' scale is unknown and the bounded one is assumed.

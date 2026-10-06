@@ -96,7 +96,7 @@ assoc_volcano_plot_inference <- function(inference_detail,
     dpi <- if (!is.null(ssEnv$plot_resolution_ppi))
       as.numeric(ssEnv$plot_resolution_ppi) else 600
   }
-  # AI-044 (2026-06-09): use SEMseeker's pastel palette (`color_palette`)
+  # 2026-06-09: use SEMseeker's pastel palette (`color_palette`)
   # consistently with the rest of the package (plot_box_plot, fitted model
   # charts). `color_palette_darker` is a base-R name vector used for
   # accent strokes (e.g. trend lines); raw "red" / "blue" look harsh
@@ -117,7 +117,7 @@ assoc_volcano_plot_inference <- function(inference_detail,
     inference_detail <- as.list(inference_detail[1L, , drop = FALSE])
   }
 
-  # AI-044 (2026-06-09): pvalue_column resolution order:
+  # 2026-06-09: pvalue_column resolution order:
   #   1. explicit `pvalue_column` argument (caller override)
   #   2. `inference_detail$pvalue_column` (forward-compat - not yet in
   #      assoc_validate_inference_schema but accepted if user supplies)

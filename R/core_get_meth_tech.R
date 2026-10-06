@@ -125,7 +125,7 @@ core_get_meth_tech <- function(signal_data) {
   else
     paste("INFO:", format(Sys.time(), "%a %b %d %X %Y"), "values appear to be M-values."))
 
-  # AI-248: the figure of SIGNAL is the scale, and the scale is only knowable
+  # the figure of SIGNAL is the scale, and the scale is only knowable
   # here - the keys were built before any data was read.
   ssEnv <- util_keys_signal_figure_refresh(ssEnv)
 

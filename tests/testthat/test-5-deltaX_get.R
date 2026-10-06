@@ -12,7 +12,7 @@ test_that("sem_deltaX_get", {
   tt <- SEMseeker:::core_get_meth_tech(signal_data)
 
   ####################################################################################
-  LESIONS_BP <- 2000L  # AI-092
+  LESIONS_BP <- 2000L
   bonferroni_threshold <- 0.05
 
   if (!exists("signal_thresholds"))

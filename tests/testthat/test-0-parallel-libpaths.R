@@ -1,4 +1,4 @@
-# AI-184 (2026-06-26): multisession/cluster workers are fresh R processes
+# 2026-06-26: multisession/cluster workers are fresh R processes
 # spawned via parallelly::makeClusterPSOCK. When the parent runs under `renv`,
 # those workers must inherit the parent .libPaths() (which includes the renv
 # project library) or they silently die at the first library() lookup — no
@@ -8,7 +8,7 @@
 # This test asserts the contract end-to-end: after core_parallel_session() sets up a
 # multisession plan, a worker future reports the SAME .libPaths() as the parent.
 
-test_that("multisession workers inherit the parent .libPaths() (AI-184)", {
+test_that("multisession workers inherit the parent .libPaths()", {
   skip_on_cran()
 
   # Minimal session env: just enough for core_parallel_session() to run. A real
@@ -41,8 +41,8 @@ test_that("multisession workers inherit the parent .libPaths() (AI-184)", {
   # The parent library paths must all be visible to the worker. We assert
   # set-inclusion (not strict equality): the worker may legitimately prepend
   # extra paths, but it must never LOSE the parent's — losing them is exactly
-  # the renv-invisible-SEMseeker bug AI-184 fixes.
+  # the renv-invisible-SEMseeker bug fixed by propagating the library paths.
   expect_true(all(parent_libs %in% worker_libs),
               info = paste0("worker .libPaths() is missing parent entries; ",
-                            "rscript_libs propagation regressed (AI-184)."))
+                            "rscript_libs propagation regressed."))
 })

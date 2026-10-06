@@ -5,7 +5,7 @@
 #' POSITION/WHOLE pivot parquet on disk is up to date with respect to the
 #' samples in \code{population}.
 #'
-#' Implementation note (2026-06-01, AI-027):
+#' Implementation note (2026-06-01, unified pivot reader):
 #'   The previous R-side \code{for (s in 1:N)} loop with per-sample
 #'   \code{readr::read_tsv} + \code{$join(how = "full")} paid the R→Rust FFI
 #'   cost N times and ran single-threaded. It has been replaced by a single
@@ -120,7 +120,7 @@ anno_create_position_pivots <- function(population, keys) {
 
     file.rename(tmp_filename, pivot_filename)
     # Sidecar JSON is now materialised by core_ensure_sidecars() at the end of the
-    # pipeline (single point of responsibility, AI-027).
+    # pipeline (single point of responsibility).
     gc(verbose = FALSE)
   }
 

@@ -1,4 +1,4 @@
-# AI-061: lazy / low-memory batch path for limma_<N> and voom_<N>.
+# lazy / low-memory batch path for limma_<N> and voom_<N>.
 #
 # Why a separate function: apply_stat_model_batch.R receives a fully
 # materialised, transposed, sample-merged tempDataFrame that the caller
@@ -13,7 +13,7 @@
 # called and was OOM-killed at ~60 GB.
 #
 # This function takes the pivot's polars LazyFrame directly, applies
-# the AI-043 area_to_remove filter LAZILY, materialises only ONE
+# the area_to_remove filter LAZILY, materialises only ONE
 # R matrix (genes × samples) without an intervening data.frame, and
 # explicitly rm()+gc()'s the polars-side artifacts before lmFit so
 # the peak working set drops to roughly:
@@ -84,8 +84,8 @@ assoc_apply_stat_model_batch_lazy <- function(pivot_lazy,
     pivot_lazy <- pivot_lazy$drop(drop_cols)
   }
 
-  # AI-043 resume: filter out areas already in the on-disk CSV.
-  # AI-061+ (2026-06-09): no more gsub("-","_") normalisation on either
+  # resume: filter out areas already in the on-disk CSV.
+  # 2026-06-09: no more gsub("-","_") normalisation on either
   # side - names stay pass-through from the upstream annotation. The
   # downstream CSV and the pivot AREA column carry identical raw names,
   # so $is_in() matches exactly.
@@ -101,15 +101,15 @@ assoc_apply_stat_model_batch_lazy <- function(pivot_lazy,
     )
   }
 
-  # AI-044 / AI-061 (2026-06-09): apply transformation_y + universal
+  # 2026-06-09: apply transformation_y + universal
   # degenerate-burden filter LAZILY before materialisation. Before this
   # change the lazy path silently skipped io_data_preparation() entirely,
   # so any `transformation_y` ≠ "none" on a limma_/voom_ inference_detail
   # produced a CSV with UN-transformed values (silent bug), and rows with
   # var(Y) == 0 made it through to lmFit producing NaN t-stats. See
   # `io_data_preparation_lazy()` for the polars-native equivalent of the
-  # R-side `io_data_preparation()` Y-side transformations + AI-044 filter.
-  # Unification of the two paths is tracked as AI-097 in the backlog.
+  # R-side `io_data_preparation()` Y-side transformations + filter.
+  # Unifying the two paths into one API is still to be done.
   schema_pre <- names(pivot_lazy$collect_schema())
   sample_cols_pre <- setdiff(schema_pre, c("AREA", "PROBE", "CHR", "START", "END",
                                             "K27", "K450", "K850"))
@@ -122,7 +122,7 @@ assoc_apply_stat_model_batch_lazy <- function(pivot_lazy,
     family_test       = family_test
   )
 
-  # AI-061+ (2026-06-09): SEPARATE LAZY PREP FROM FIT.
+  # 2026-06-09: SEPARATE LAZY PREP FROM FIT.
   # We need n_genes + sample_cols BEFORE materialising y_mat so the
   # memory gate can decide monolithic vs chunked. Both pieces are
   # discoverable lazily - schema gives us sample columns, $select($len)

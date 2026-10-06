@@ -1,4 +1,4 @@
-# AI-108 (2026-06-09): guard the AI-106 sanitize+memo+counter-rename
+# 2026-06-09: guard the sanitize+memo+counter-rename
 # pattern. The contract is:
 #
 #   1. The on-disk CSV writes AREA_OF_TEST as the RAW upstream-annotated
@@ -74,7 +74,7 @@ test_that("make.unique disambiguates collisions after sanitisation", {
   expect_equal(safe_to_real[[safe[3]]], "HLA.A")
 })
 
-# ---- Source-level guards on the AI-106 surface -------------------------
+# ---- Source-level guards on the surface -------------------------
 # These tests inspect deparse() of the installed functions to guarantee
 # that the gsub("-","_") (or its polars equivalent) does NOT come back
 # silently in a future refactor. They are intentionally NOT runtime tests
@@ -83,15 +83,15 @@ test_that("make.unique disambiguates collisions after sanitisation", {
 
 test_that("assoc_apply_stat_model_batch_lazy does NOT '-'→'_' rewrite AREA (bulk path)", {
   src <- paste(deparse(SEMseeker:::assoc_apply_stat_model_batch_lazy), collapse = "\n")
-  # Polars-side normalisation that AI-106 removed:
+  # Polars-side normalisation that was removed:
   expect_false(
     grepl('str\\$replace_all\\(\\s*"-"\\s*,\\s*"_"\\s*\\)', src),
-    info = "AI-106 removed the polars '-'→'_' on AREA — keep it removed"
+    info = "the polars '-'→'_' on AREA was removed: keep it removed"
   )
   # R-side: should not gsub on AREA either:
   expect_false(
     grepl('gsub\\(\\s*"-"\\s*,\\s*"_"\\s*,\\s*[^)]*AREA[^)]*\\)', src),
-    info = "AI-106 removed the R-side '-'→'_' on AREA — keep it removed"
+    info = "the R-side '-'→'_' on AREA was removed: keep it removed"
   )
 })
 
@@ -99,7 +99,7 @@ test_that("assoc_run_marker does NOT '-'→'_' rewrite AREA before resume match"
   src <- paste(deparse(SEMseeker:::assoc_run_marker), collapse = "\n")
   expect_false(
     grepl('gsub\\(\\s*"-"\\s*,\\s*"_"\\s*,\\s*tempDataFrame\\$AREA\\s*\\)', src),
-    info = "AI-106 removed the AI-062 AREA rewrite — keep it removed"
+    info = "the AREA rewrite was removed: keep it removed"
   )
 })
 
@@ -107,7 +107,7 @@ test_that("io_data_preparation does NOT '-'→'_' rewrite tempDataFrame colnames
   src <- paste(deparse(SEMseeker:::io_data_preparation), collapse = "\n")
   expect_false(
     grepl('gsub\\(\\s*"-"\\s*,\\s*"_"\\s*,\\s*colnames\\(tempDataFrame\\)\\s*\\)', src),
-    info = "AI-106 removed io_data_preparation's colname sanitisation — keep it removed"
+    info = "io_data_preparation's colname sanitisation was removed: keep it removed"
   )
 })
 

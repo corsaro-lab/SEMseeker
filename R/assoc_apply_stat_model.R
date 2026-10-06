@@ -28,12 +28,12 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
 {
   arguments <- list(...)
 
-  # AI-040 Fase 2+3: limma_<N> and voom_<N> bypass the per-area foreach.
+  # Fase 2+3: limma_<N> and voom_<N> bypass the per-area foreach.
   # limma needs the full M x N response matrix for eBayes shrinkage to
   # mean anything; voom literally cannot estimate its mean-variance
   # trend on a 1-row matrix. assoc_apply_stat_model_batch() fits once on the
   # whole chunk and returns N rows with the same schema the foreach
-  # would have produced. The guard mirrors the AI-038 dispatch=guard
+  # would have produced. The guard mirrors the dispatch=guard
   # pattern: fail fast with install hint if limma is missing.
   if (grepl("^(limma|voom)_", family_test)) {
     if (!requireNamespace("limma", quietly = TRUE)) {
@@ -56,7 +56,7 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
     ))
   }
 
-  # AI-044 (2026-06-08): bulk path for logistic regression. Same
+  # 2026-06-08: bulk path for logistic regression. Same
   # dispatch=guard pattern as limma/voom - guard against missing
   # Rfast lives inside assoc_glm_model_bulk(). Returns one row per probe
   # with the legacy schema (per-coef PVALUE/ESTIMATE + top-level
@@ -94,7 +94,7 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
   independent_variable1stLevel <- prepared_data$independent_variableLevels[1]
   independent_variable2ndLevel <- prepared_data$independent_variableLevels[2]
 
-  # AI-106 (2026-06-09): name memoisation. R formula identifiers cannot
+  # 2026-06-09: name memoisation. R formula identifiers cannot
   # contain '-', ':', '/', etc., but the upstream annotation may carry
   # raw names like "HLA-A" or "chr10:100028204-100028508". We sanitise
   # the colnames to a R-safe form BEFORE the foreach loop, keep a
@@ -129,7 +129,7 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
     "assoc_apply_stat_model_sig_formula", "data_distribution_info", "assoc_glm_model", "assoc_test_model", "assoc_test_model_paired", "Breusch_Pagan_pvalue",
     "progress_bar","progression_index", "progression", "progressor_uuid", "owner_session_uuid", "trace","signal_values","ssEnv","g_start",
     "assoc_execute_model", "assoc_is_family_dicotomic", "core_log_event","mediate","mediation","core_get_session_info","core_update_session_info", "samples_sql_condition",
-    # AI-106 (2026-06-09): safe_to_real mapping must reach each foreach worker
+    # 2026-06-09: safe_to_real mapping must reach each foreach worker
     "safe_to_real")
 
   result_columns <- c("MARKER", "FIGURE", "AREA", "SUBAREA", "AREA_OF_TEST", "CI.LOWER", "CI.UPPER", "PVALUE", "STATISTIC_PARAMETER", "AIC_VALUE", "RESIDUALS", "SHAPIRO_PVALUE", "R_MODEL", "STD.ERROR", "N_PERMUTATIONS", "N_PERMUTATIONS_TEST")
@@ -162,7 +162,7 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
     # By catching errors ourselves and returning NULL, we prevent the condition
     # object from reaching doFuture's result-combination logic.
     # plyr::rbind.fill silently ignores NULL results.
-    # AI-041: in-memory only; saveRDS happens at end-of-batch in the caller,
+    # in-memory only; saveRDS happens at end-of-batch in the caller,
     # not per-gene (was the hot-path culprit causing ~5-7x slowdown).
     core_update_session_info(ssEnv, save_to_disk = FALSE)
     ssEnv <- core_get_session_info()
@@ -184,18 +184,18 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
       local_result$FIGURE <-  as.character(key$FIGURE)
       local_result$AREA <-  as.character(key$AREA)
       local_result$SUBAREA <-  as.character(key$SUBAREA)
-      # AI-248: which operator reduced the positions to this number. Absent for
+      # which operator reduced the positions to this number. Absent for
       # the depths that do not aggregate, present wherever the caller declared
       # it - and part of the row identity, so two aggregations of the same
       # scope never collapse into one.
       if (!is.null(key$AGGREGATION))
         local_result$AGGREGATION <- as.character(key$AGGREGATION)
-      # AI-255: SCOPE completes the identity of the row. Without it a burden over
+      # SCOPE completes the identity of the row. Without it a burden over
       # the whole sample and a burden per gene are two rows that differ only in
       # AREA, which reads as two region classes rather than as two extents.
       if (!is.null(key$SCOPE))
         local_result$SCOPE <- as.character(key$SCOPE)
-      # AI-106 (2026-06-09): reverse-map back to the upstream raw name
+      # 2026-06-09: reverse-map back to the upstream raw name
       # (HLA-A, chr10:100028204-100028508, ...) so the CSV preserves it
       # for enrichment / resume match. Fallback to burdenValue itself if
       # the mapping is missing (defensive - should not happen).
@@ -267,7 +267,7 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
               " No new tests to perform in this chunk (already cached)." )
   }
 
-  # AI-041: end-of-foreach disk snapshot (workers used save_to_disk=FALSE
+  # end-of-foreach disk snapshot (workers used save_to_disk=FALSE
   # inside the per-gene loop; here we persist the session exactly once after
   # the parallel section closes).
   core_update_session_info(ssEnv, save_to_disk = TRUE)
@@ -279,14 +279,14 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
     # result_temp <- unique(result_temp)
     result_temp <- result_temp %>% dplyr::distinct()
 
-    # AI-257: no adjustment here any more. What this function holds is one
+    # no adjustment here any more. What this function holds is one
     # chunk - assoc_run_marker() splits a pivot at ceiling(6e6 / ncol)
     # rows - so any family it could form is a memory parameter, not a
     # statistical choice. assoc_analysis_save_results() is the only place where
     # every row of a family is together, and it computes all three levels there.
     #
     # The block removed here also split on `grepl("TOTAL", AREA_OF_TEST)`, and
-    # TOTAL went with AI-255: it labelled rows built by composing aggregates
+    # TOTAL went with the taxonomy unification: it labelled rows built by composing aggregates
     # over a partition that is not disjoint. The predicate had been false on
     # every row since, so the two branches had quietly become one.
     colnames(result_temp) <- core_name_cleaning(colnames(result_temp))

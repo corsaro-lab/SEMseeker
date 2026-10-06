@@ -4,7 +4,7 @@ enrich_phenotype_phenolyzer <- function(study,
   inference_detail, significance = TRUE)
 {
 
-  # AI-311: what an enrichment can be about is declared once, not written
+  # what an enrichment can be about is declared once, not written
   # out again here. A pathway is a set of genes, so the input is one row
   # per gene (SCOPE = INSTANCE) of the GENE region class.
   .enrich_in <- enrich_input_invariant()
@@ -63,7 +63,7 @@ enrich_phenotype_phenolyzer <- function(study,
     results_inference <- assoc_results_get(
       inference_detail =  inference_detail,
       marker = keys[i,"MARKER"],
-      # AI-257: neither coordinate was declared here, so this read took the
+      # neither coordinate was declared here, so this read took the
       # GENE default and every scope - the collapsed rows included. A pathway
       # needs a p-value per gene; a per-sample burden has no genes to list.
       area  = .enrich_in$area,

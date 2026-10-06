@@ -1,6 +1,7 @@
 #' Materialise the per-sample statistics of the run
 #'
-#' AI-223, rewritten by AI-255. This used to produce `SAMPLE_STATS_RESULT.csv`,
+#' Written for the per-sample table, rewritten by the taxonomy unification.
+#' This used to produce `SAMPLE_STATS_RESULT.csv`,
 #' a second kind of artefact with its own shape - samples down the rows,
 #' features across the columns - and its own producer, mask and aggregation
 #' code. That shape is what hid the fact that a burden over the whole sample and
@@ -64,7 +65,7 @@ sem_sample_stats_build <- function() {
 
 #' Usable positions per sample, a property of the imputation (internal)
 #'
-#' AI-255. `N_PROBES` is **not** an aggregation of a marker and not a property
+#' `N_PROBES` is **not** an aggregation of a marker and not a property
 #' of a scope: it is how many positions of that sample survived the treatment of
 #' missing values. It therefore belongs on the sample sheet, with the other
 #' descriptive properties of the sample, and not in the taxonomy - which is why

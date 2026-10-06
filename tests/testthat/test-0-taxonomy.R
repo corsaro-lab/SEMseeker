@@ -1,4 +1,4 @@
-## AI-248 — taxonomy SCOPE x MARKER x FIGURE x AGGREGATION.
+## taxonomy SCOPE x MARKER x FIGURE x AGGREGATION.
 ##
 ## Contracts:
 ##   1. exactly two compositors — one for column names (io_feature_colname),
@@ -105,7 +105,7 @@ test_that("util_aggregate_values computes what the name says", {
   expect_equal(SEMseeker:::util_aggregate_values(values, "VARIANCE"),
                stats::var(values))
   expect_equal(SEMseeker:::util_aggregate_values(values, "IQR"), stats::IQR(values))
-  # AI-255: VALUE is the identity, and it is only meaningful on a single
+  # VALUE is the identity, and it is only meaningful on a single
   # position — asking it of a set is a request that contradicts itself.
   expect_equal(SEMseeker:::util_aggregate_values(0.42, "VALUE"), 0.42)
   expect_error(SEMseeker:::util_aggregate_values(values, "VALUE"),
@@ -172,7 +172,7 @@ test_that("the pivot name carries the aggregation, and the scale for SIGNAL", {
   # the two scales must not overwrite each other in the same folder
   expect_false(identical(beta_mean, mval_mean))
 
-  # AI-255: omitting the aggregation resolves to VALUE where the block is a
+  # omitting the aggregation resolves to VALUE where the block is a
   # single position — the identity now has a name instead of being an absence.
   position <- SEMseeker:::io_pivot_file_name_parquet("MUTATIONS", "HYPER",
                                                      "POSITION", "WHOLE")
@@ -254,7 +254,7 @@ test_that("every coordinate of the key is required", {
 }
 
 test_that("a request that names no aggregation is refused, in either scope", {
-  # AI-308: the loop used to run over depth 1, 2, 3: three values of a column
+  # the loop used to run over depth 1, 2, 3: three values of a column
   # that had already been retired, so it ran the same assertion three times. The
   # axis that does vary is the scope, and it varies in two.
   keys <- .tax_keys(MARKER = "MUTATIONS", FIGURE = "HYPER", DISCRETE = TRUE)
@@ -397,7 +397,7 @@ test_that("two aggregations of the same artefact are two different numbers", {
 })
 
 test_that("the FDR family is the key, and the numbers say so", {
-  # AI-257. The family over which an FDR is controlled has to be a statistical
+  # The family over which an FDR is controlled has to be a statistical
   # choice, and twice it had been something else: adjusted per CHUNK inside
   # assoc_apply_stat_model() (so the family was the memory split), then adjusted
   # across the whole file (so it grew with how many aggregations were asked for).
@@ -441,7 +441,7 @@ test_that("the FDR family is the key, and the numbers say so", {
 })
 
 test_that("the SCOPE level pools what the key separates, and says which is which", {
-  # AI-257. The middle family. Every row here shares SCOPE = INSTANCE, so the
+  # The middle family. Every row here shares SCOPE = INSTANCE, so the
   # SCOPE level adjusts across both aggregations at once while the KEY level
   # keeps them apart. Two columns, two families, one set of p-values: if the two
   # ever came out equal the middle level would be buying nothing.
@@ -468,7 +468,7 @@ test_that("the SCOPE level pools what the key separates, and says which is which
 })
 
 test_that("at SCOPE = SAMPLE the key holds one row, and the scope level is what answers", {
-  # AI-257. The reason there are three levels and not two. A collapsed artefact
+  # The reason there are three levels and not two. A collapsed artefact
   # is one number per sample, so its key holds a single row and BH on n = 1 is
   # the identity: PVALUE_ADJ_KEY_BH == PVALUE, exactly, and a column named for an
   # adjustment that did not happen is how multiplicity goes unreported. The scope
@@ -497,7 +497,7 @@ test_that("at SCOPE = SAMPLE the key holds one row, and the scope level is what 
 })
 
 test_that("the level a flag answers for is named, not matched by the method string", {
-  # AI-257. `grepl(method, colnames)` caught every adjusted column at once, so
+  # `grepl(method, colnames)` caught every adjusted column at once, so
   # adding a second level silently turned the significance flag into an AND
   # across levels. The selector names the level.
   results <- data.frame(
@@ -523,7 +523,7 @@ test_that("the level a flag answers for is named, not matched by the method stri
 })
 
 test_that("one estimator serves the three levels, and an unnameable one yields NA", {
-  # AI-257. The narrow level used to have method = "BH" written into it while
+  # The narrow level used to have method = "BH" written into it while
   # the global level honoured the run's setting, so a run asking for something
   # else got a column named for one estimator and computed with another.
   p <- c(0.001, 0.02, 0.30, 0.60)

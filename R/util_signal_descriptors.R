@@ -1,7 +1,7 @@
 #' Reduce one sample's signal vector to its descriptors
 #'
 #' Generic descriptive statistics on a numeric vector: no SEM domain knowledge,
-#' no I/O. AI-223 calls it once per sample on the whole probe set (scope
+#' no I/O. The per-sample table calls it once per sample on the whole probe set (scope
 #' `SAMPLE`); the region scopes reuse it unchanged on the subset of positions of
 #' an area/subarea.
 #'
@@ -15,7 +15,7 @@
 #' distribution is unimodal and the split is meaningless, which is why
 #' [io_signal_stats()] does not declare the mode columns there.
 #'
-#' **The numerosity guard (AI-255).** The old guard asked only for two distinct
+#' **The numerosity guard.** The old guard asked only for two distinct
 #' points, which is what `density()` needs to run - not what the estimate needs
 #' to mean something. On a handful of values the kernel bandwidth dominates and
 #' "the highest peak below 0.5" is noise, but the function would still return a
@@ -35,7 +35,7 @@ util_signal_descriptors <- function(values, beta = TRUE) {
   out    <- stats::setNames(vector("list", length(wanted)), wanted)
   out[]  <- NA_real_
 
-  # AI-255: N_PROBES describes the INPUT - how many finite values were reduced -
+  # N_PROBES describes the INPUT - how many finite values were reduced -
   # and is reported here for callers that want it. It is deliberately not in
   # io_signal_stats(), which is the vocabulary of columns an artefact carries,
   # because no artefact carries it any more: it is a property of the imputation
@@ -76,7 +76,7 @@ util_signal_descriptors <- function(values, beta = TRUE) {
 
 #' Minimum numerosity for a two-peak density estimate (internal)
 #'
-#' AI-255. A deliberate, conservative default rather than a derived quantity:
+#' A deliberate, conservative default rather than a derived quantity:
 #' below roughly a hundred values a gaussian-kernel density on [0,1] is shaped
 #' more by its bandwidth than by the data, and the two-peak structure the modes
 #' claim to find is not identifiable. Callers that legitimately want the modes

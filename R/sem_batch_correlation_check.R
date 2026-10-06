@@ -13,7 +13,7 @@
 # FactoMineR / factoextra from Imports and re-enable the macOS R-CMD-check
 # matrix slot.
 #
-# Tracked for un-freeze in sestante/backlog.json (ai_id AI-016). When
+# Kept frozen until it is reworked. When
 # reviving the feature:
 #   1. Uncomment the body below.
 #   2. Re-add Hmisc, FactoMineR, factoextra to DESCRIPTION Imports.

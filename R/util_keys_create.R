@@ -10,7 +10,7 @@ util_keys_create <- function(ssEnv, arguments)
   keys_markers_default_discrete <-  data.frame("MARKER"=c("MUTATIONS","LESIONS","DELTAQ","DELTARQ","DELTAP","DELTARP"))
 
 
-  # AI-092: LESIONS uses LESIONS_BP (max bp distance for two probes to be in
+  # LESIONS uses LESIONS_BP (max bp distance for two probes to be in
   # the same enrichment window, default 2000 = typical CpG-island / DMR span)
   # instead of the legacy sliding_window_size (probe-count based, no longer
   # supported). Same registration pattern as DELTAQ_Q / DELTAP_B.
@@ -31,7 +31,7 @@ util_keys_create <- function(ssEnv, arguments)
   keys_markers_figures_default_continuos <- merge(keys_markers_default_continuos, keys_figures_default_continuos, by = NULL)
   rm(keys_figures_default_continuos, keys_markers_default_continuos)
 
-  # AI-248: the figure of SIGNAL is the SCALE of the value (BETA / MVALUE), not
+  # the figure of SIGNAL is the SCALE of the value (BETA / MVALUE), not
   # a way of aggregating it - "MEAN" used to sit here as a placeholder that made
   # the key unique. The scale is unknown at init (no data read yet), so this is
   # the bounded default; core_get_meth_tech() realigns it via

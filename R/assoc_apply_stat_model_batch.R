@@ -1,4 +1,4 @@
-# AI-040 Fase 2 + Fase 3: batch path for limma_<N> and voom_<N>.
+# batch path for limma_<N> and voom_<N>.
 #
 # Why a separate batch path:
 #   - Per-area limma (one area at a time) feeds lmFit a 1-row matrix, so
@@ -210,7 +210,7 @@ assoc_apply_stat_model_batch <- function(tempDataFrame, g_start, family_test,
     result_temp[[enames[i]]] <- fit$coefficients[, i]
   }
 
-  # AI-044 (2026-06-09): emit eBayes-derived goodness-of-fit metrics
+  # 2026-06-09: emit eBayes-derived goodness-of-fit metrics
   # registered in metrics_properties.rda. These replace R²/R²_adj for the
   # limma/voom batch path (R² isn't natively returned by lmFit and is
   # not the canonical limma diagnostic anyway).

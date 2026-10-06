@@ -53,7 +53,7 @@ meta_association_overlaps_studies <- function(inference_detail, studies,alpha = 
 {
 
   pvalue_column <- core_name_cleaning(pvalue_column)
-  # AI-255: this used to keep the "depth 3" row, i.e. the per-area one. The rows
+  # this used to keep the "depth 3" row, i.e. the per-area one. The rows
   # are joined on the taxonomy below, so which detail supplies the run-level
   # parameters is no longer a question about depth: take the first.
   if (nrow(inference_detail) > 1)
@@ -109,7 +109,7 @@ meta_association_overlaps_studies <- function(inference_detail, studies,alpha = 
     for (m in unique(aggregated_study_results$MARKER))
     {
       tt <- aggregated_study_results[aggregated_study_results$MARKER == m, ]
-      # AI-255: the per-instance artefacts, said by the taxonomy instead of by a depth number
+      # the per-instance artefacts, said by the taxonomy instead of by a depth number
       tt <- tt[tt$SCOPE == "INSTANCE", ]
 
       tt$KEY <- paste0(tt$AREA,"_",tt$SUBAREA,"_",tt$MARKER,"_",tt$FIGURE,"_",tt$AREA_OF_TEST)
@@ -222,12 +222,12 @@ meta_association_overlaps_studies <- function(inference_detail, studies,alpha = 
       aggregated_study_results_table <- merge(aggregated_study_results_table, aggregated_study_results_table_statistic_parameter, by = c("AREA", "SUBAREA", "MARKER", "FIGURE", "AREA_OF_TEST"))
     }
 
-    # AI-106 (2026-06-09): removed the legacy round-trip
+    # 2026-06-09: removed the legacy round-trip
     #   gsub("-","_") then gsub("_","-")
     # which forced ALL underscores into dashes - a posticcio for CSV
     # written with the old sanitisation that incidentally corrupted
     # WGBS coordinate names ("chr1_12345_12346" → "chr1-12345-12346").
-    # Post-AI-106 all CSVs preserve raw names from the upstream
+    # Post-all CSVs preserve raw names from the upstream
     # annotation; no transformation is needed here.
 
 
@@ -275,7 +275,7 @@ meta_association_overlaps_studies <- function(inference_detail, studies,alpha = 
           categories <- names(SPLIT)
           if(length(categories)<2)
             next
-          # AI-044 (2026-06-09): use shared `util_pretty_label()` helper.
+          # 2026-06-09: use shared `util_pretty_label()` helper.
           categories <- util_pretty_label(categories)
           folder <- io_dir_check_and_create(ssEnv$result_folderChart,c("OVERLAPS",core_name_cleaning(inference_detail$areas_sql_condition)))
           filename <-

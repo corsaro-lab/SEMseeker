@@ -1,4 +1,4 @@
-# AI-061+ (2026-06-09): documents the SAFE PATTERN for extracting schema
+# 2026-06-09: documents the SAFE PATTERN for extracting schema
 # and row count when staying lazy through position_pivot_to_probe.
 #
 # Background — the bug this test guards against:

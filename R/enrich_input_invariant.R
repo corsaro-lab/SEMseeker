@@ -1,6 +1,6 @@
 #' What an enrichment can be about (internal)
 #'
-#' AI-311. An enrichment over pathways takes a **set of genes**. That is not a
+#' An enrichment over pathways takes a **set of genes**. That is not a
 #' filter this package applies for convenience, it is what the analysis is: a
 #' pathway is a set of genes, so a CpG island is not a member of one and a
 #' collapsed per-sample burden is not a gene. The two coordinates are therefore
@@ -25,7 +25,7 @@ enrich_input_invariant <- function() list(scope = "INSTANCE", area = "GENE")
 
 #' Refuse an enrichment whose input was never computed
 #'
-#' AI-311. The invariant above used to be applied as a `subset()` on results
+#' The invariant above used to be applied as a `subset()` on results
 #' already read. A result folder holding no `SCOPE = INSTANCE`, `AREA = GENE`
 #' row therefore produced *nothing*, quietly: every backend received zero rows
 #' and wrote no result. A reader of that folder sees "no significant
@@ -33,7 +33,7 @@ enrich_input_invariant <- function() list(scope = "INSTANCE", area = "GENE")
 #' input was never computed", which is a statement about the pipeline.
 #'
 #' That gap widened when the two aggregation branches stopped being additive
-#' (AI-308): `association_analysis(scope = "SAMPLE")` is now a legitimate and
+#': `association_analysis(scope = "SAMPLE")` is now a legitimate and
 #' complete request, and it produces a folder on which every enrichment is
 #' silently empty.
 #'

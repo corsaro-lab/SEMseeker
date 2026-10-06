@@ -1,6 +1,7 @@
 #' Compose the on-disk name of a pivot (internal)
 #'
-#' AI-248, rewritten by AI-255. The file name of a pivot **is** its identity key
+#' Written when the aggregation became explicit, rewritten by the taxonomy
+#' unification. The file name of a pivot **is** its identity key
 #' ([io_artefact_key()]) plus an extension: a pivot copied out of its folder and
 #' attached to a mail still says what it is.
 #'
@@ -12,13 +13,13 @@
 #' SIGNAL_BETA_INSTANCE_PROBE_WHOLE_VALUE_HG19.parquet
 #' }
 #'
-#' The aggregation is in the name because before AI-248 the name did **not** say
+#' The aggregation is in the name because the name used to **not** say
 #' which operator had produced the file: an existing pivot was reused on trust.
 #' With one operator per marker that trust was justified; with several it is the
 #' worst kind of bug - silent, because the file is there and the run does not
 #' complain while a mean is consumed as if it were a sum.
 #'
-#' The scope is in the name because AI-255 made it a coordinate: a burden over
+#' The scope is in the name because the taxonomy unification made it a coordinate: a burden over
 #' the whole sample and a burden per gene are the same marker reduced over
 #' different extents, and used to live in files of different *shape* - a CSV
 #' sibling and a pivot - which is what hid the difference.
@@ -51,7 +52,7 @@ io_pivot_file_name_parquet <- function(marker, figure, area, subarea,
 
 #' Resolve an omitted aggregation, or refuse to guess (internal)
 #'
-#' AI-255. The absence of the segment used to mean "POSITION-level pivot, nothing
+#' The absence of the segment used to mean "POSITION-level pivot, nothing
 #' aggregated yet". That reading only ever worked because there was one such
 #' case; with `VALUE` in the vocabulary the case has a name, and the absence goes
 #' back to being an error everywhere else.

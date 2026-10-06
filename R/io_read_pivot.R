@@ -71,7 +71,7 @@ io_read_pivot <- function(marker, figure, area = "POSITION", subarea = "WHOLE",
   }
 
   # --- Branch 1b: derived artefact, built on demand --------------------------
-  # AI-255. Anything that is not the base position pivot is derived, and it is
+  # Anything that is not the base position pivot is derived, and it is
   # derived HERE rather than having to be foreseen at SEM time. This is what
   # removes the old "produce it with semseeker(...) and rerun the analysis":
   # changing your mind now costs one scan instead of a whole run. The written
@@ -81,7 +81,7 @@ io_read_pivot <- function(marker, figure, area = "POSITION", subarea = "WHOLE",
   if (isTRUE(build) && !is_base) {
     agg <- .io_aggregation_resolve(aggregation, scope, area)
 
-    # AI-255: build EVERY aggregation this key admits, not just the one asked
+    # build EVERY aggregation this key admits, not just the one asked
     # for. The scan of the position pivot is the expensive part and it is shared:
     # one group_by emits SUM, MEAN, MEDIAN, VARIANCE and IQR together. Building
     # them one at a time would turn three requests on the same area into three

@@ -13,7 +13,7 @@ sem_compare_markers <- function(inference_detail, result_folder, studies, adjust
     for (s in seq_len(nrow(studies)))
     {
       # get the inference details for the study
-      # AI-257: SCOPE declared. Without it this read mixed the collapsed row of a
+      # SCOPE declared. Without it this read mixed the collapsed row of a
       # region class with its per-instance rows, which are different quantities.
       temp_res <- assoc_results_get(inference_detail = inference_detail, marker = MARKER,
          area = AREA, scope = "INSTANCE",

@@ -1,4 +1,4 @@
-## AI-310: the semantics of a request, and of the identity of what it produces.
+## the semantics of a request, and of the identity of what it produces.
 ##
 ## These are conceptual invariants rather than behaviours of one function. Each
 ## of them has already been violated at least once, silently, and in every case
@@ -273,7 +273,7 @@ test_that("the enrichment input invariant is declared once, not five times", {
 })
 
 test_that("an enrichment on a folder without gene rows is refused, not answered emptily", {
-  # The case AI-308 made easy to reach: a run at scope = "SAMPLE" is a complete,
+  # The case that scope piloting one branch made easy to reach: a run at scope = "SAMPLE" is a complete,
   # legitimate analysis that cannot feed a pathway enrichment. Before this, every
   # backend read zero rows and wrote nothing, and the folder looked like a study
   # where no pathway was significant.

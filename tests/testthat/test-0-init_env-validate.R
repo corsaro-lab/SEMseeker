@@ -1,4 +1,4 @@
-# Tests for .core_init_env_validate_args() diagnostic error message (AI-035).
+# Tests for .core_init_env_validate_args() diagnostic error message.
 # These tests pin the user-facing wording of the error so a regression
 # would be caught immediately.
 
@@ -20,7 +20,7 @@ test_that(".core_init_env_validate_args errors on an unrecognised named arg", {
 })
 
 test_that(".core_init_env_validate_args shows the argument NAME (not just value)", {
-  # Pre-AI-035 the error said "ERROR: This options are not recognized: FALSE"
+  # Pre-the error said "ERROR: This options are not recognized: FALSE"
   # (only the value), which made the typo invisible. Now it must contain the name.
   args <- list(phenolyser = FALSE)
   err <- tryCatch(

@@ -32,7 +32,7 @@ core_log_event <- function(...)
   else
     verbosity <- as.numeric(ssEnv$verbosity)
 
-  # Auto-augment messages with memory + CPU usage. AI-061+ (2026-06-09):
+  # Auto-augment messages with memory + CPU usage. (2026-06-09):
   # expanded augmentation policy on user request:
   #   - DEBUG: always augmented (legacy behaviour)
   #   - WARNING / ERROR: always augmented (mem/cpu snapshot at the
@@ -96,7 +96,7 @@ core_log_event <- function(...)
     cat(log_event_to_save, "\n", file = journal_file, append = TRUE)
   }
 
-  # AI-061+ (2026-06-09): rewritten with explicit parens and a verbosity
+  # 2026-06-09: rewritten with explicit parens and a verbosity
   # ladder. The previous form had operator-precedence inconsistencies
   # between the four branches (the verbosity == 1 line let BANNER through
   # by accident via && / || precedence, while the verbosity == 2/3 lines

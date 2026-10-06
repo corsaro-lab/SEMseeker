@@ -79,7 +79,7 @@ anno_probe_features_get <- function(area_subarea) {
   # -----------------------------------------------------------------------
   if (ssEnv$tech %in% c("WGBS", "LONGREAD")) {
 
-    # AI-027: read via unified dispatcher. NULL means neither cached
+    # read via unified dispatcher. NULL means neither cached
     # nor per-sample bed files exist for SIGNAL - same failure
     # mode as the previous file.exists() check.
     sig_pivot_lazy <- io_read_pivot("SIGNAL", io_signal_figure(), "POSITION", "WHOLE")

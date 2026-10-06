@@ -5,7 +5,7 @@
 #' keys and the declared vocabulary cannot drift apart.
 #'
 #' It used to serve a second side - the producer of `SAMPLE_STATS_RESULT.csv`
-#' composed that file's column names from it via [io_stat_colname()]. AI-255
+#' composed that file's column names from it via [io_stat_colname()]. The taxonomy unification
 #' removed the file, and with it that call site; this vector now has one
 #' consumer, and [io_stat_colname()] has none.
 #'
@@ -14,7 +14,7 @@
 #' roughly gaussian and the two-mode split carries no meaning, so the columns
 #' are omitted rather than filled with a meaningless number.
 #'
-#' **`N_PROBES` is not here (AI-255).** This vector is the vocabulary of columns
+#' **`N_PROBES` is not here.** This vector is the vocabulary of columns
 #' an artefact carries, and no artefact carries `N_PROBES` any more: it is a
 #' property of the imputation - how many positions of that sample survived the
 #' treatment of missing values - and it travels on `SAMPLE_SHEET_RESULT`.

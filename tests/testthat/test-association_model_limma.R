@@ -1,10 +1,10 @@
-# AI-040 Fase 1: limma_<degree> family
+# limma_<degree> family
 #
 # Three guarantees this test file pins down:
 #   (1) the family_test string parser accepts limma_<degree> and
 #       limma_<degree>_<partition>, and rejects malformed strings;
 #   (2) the dispatcher fails fast with an install hint when limma is
-#       not available — applies the AI-038 dispatch=guard pattern;
+#       not available: applies the dispatch=guard pattern;
 #   (3) on simulated data, the limma per-area output is numerically
 #       compatible with stats::lm() (degenerate case: 1-row response
 #       matrix → eBayes shrinkage collapses to OLS t-statistics).
@@ -80,7 +80,7 @@ test_that("limma_<degree> is accepted, limma_<degree>_<partition> is accepted, m
   testthat::expect_true(nrow(res_bad2) <= 1L)
 })
 
-# (2) Dispatcher guard (AI-038 dispatch=guard pattern) ----------------
+# (2) Dispatcher guard (dispatch=guard pattern) ----------------
 
 test_that("assoc_execute_model rejects family_test='limma_2' with an install hint when limma is missing", {
   # We can't reliably uninstall limma in CI to assert this end-to-end.

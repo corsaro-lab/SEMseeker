@@ -1,6 +1,7 @@
 #' Aggregations admissible for an artefact (internal)
 #'
-#' AI-248, extended by AI-255. Single source of truth of the AGGREGATION axis:
+#' Written when the aggregation became explicit, extended by the taxonomy
+#' unification. Single source of truth of the AGGREGATION axis:
 #' which ways of reducing a set of positions to one number are admissible for a
 #' given artefact. The producer iterates over this to know what to compute, the
 #' consumer validates against it, and [io_artefact_key()] names the result - so

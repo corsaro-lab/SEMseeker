@@ -1,4 +1,4 @@
-## AI-308: SCOPE picks one branch of aggregation, and that branch restricts.
+## SCOPE picks one branch of aggregation, and that branch restricts.
 ##
 ## Two properties, both of which fail *silently*: a result file is produced
 ## either way, and it looks complete either way.
@@ -108,7 +108,7 @@ test_that("the scope is returned in canonical spelling", {
 })
 
 test_that("a request whose model cannot be fitted stops the run", {
-  # AI-309: the row used to be dropped and the run continued, so the result file
+  # the row used to be dropped and the run continued, so the result file
   # was indistinguishable from one where every requested test had been fitted.
   # A reader cannot tell a model that found nothing from a model never run.
   expect_error(SEMseeker:::assoc_validate_family(.scope_details("SAMPLE", family_test = NA)),

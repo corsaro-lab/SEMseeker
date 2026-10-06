@@ -1,4 +1,4 @@
-# AI-061+ (2026-06-09): memory gate for the batch-lazy lmFit dispatcher.
+# 2026-06-09: memory gate for the batch-lazy lmFit dispatcher.
 #
 # Decides whether the limma::lmFit call should run monolithic (single
 # y_mat materialisation) or chunked-per-chromosome (one chr at a time,
@@ -7,7 +7,7 @@
 # fast with an actionable error when even per-chr chunking would
 # exceed the budget.
 #
-# Pattern mirrors `.sem_knn_memory_gate()` (AI-096 Phase 2): explicit
+# Pattern mirrors `.sem_knn_memory_gate()` (Phase 2): explicit
 # estimates of every contributor, fraction-of-RAM budget tunable via
 # env var, "fail-fast with all four numbers" diagnostic on overrun.
 #
@@ -24,10 +24,10 @@
 # 0.6 leaves room for the OS, Polars cache, R working set and other
 # processes - matches the SEMSEEKER_KNN_MEM_FRACTION convention.
 
-#' Memory gate for the AI-061 batch-lazy lmFit path
+#' Memory gate for the batch-lazy lmFit path
 #'
 #' @param n_probes  integer. Total probe/area count of the input pivot
-#'   (after the AI-044 degenerate-row filter has been applied lazily).
+#'   (after the degenerate-row filter has been applied lazily).
 #' @param n_samples integer. Sample count after dropping rows with NA in
 #'   the IV / covariates.
 #' @param n_coef    integer. Number of columns in the lmFit design matrix
@@ -115,7 +115,7 @@
   }
   available_GB <- total_GB * mem_frac
 
-  # AI-061+ empirical safety factor on the gate threshold.
+  # empirical safety factor on the gate threshold.
   # The 1.5× lmfit_GB factor (line 71) under-estimates real peak because:
   #   - polars→R hand-off materialises 1-2 extra wide-frame copies during
   #     as.data.frame(collect()) before lmFit even starts

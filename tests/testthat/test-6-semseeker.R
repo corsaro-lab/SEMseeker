@@ -8,7 +8,7 @@ test_that("semeeker", {
   # "sequential" so the test works under devtools::load_all() too. The
   # "multisession" strategy from setup.R only resolves SEMseeker::: against
   # the INSTALLED package, which makes load_all-time test runs fail on
-  # post-merge signature changes (e.g. AI-075 io_bed_file_name(skip_dir_create)).
+  # post-merge signature changes (e.g. io_bed_file_name(skip_dir_create)).
   # Same rationale as test-7-association_analysis.R.
   SEMseeker::semseeker(
     input         = signal_data,
@@ -44,7 +44,7 @@ test_that("semeeker", {
     # so a hard expect_true(file.exists(...)) here fires false positives for
     # combos that are not meant to exist (e.g. MUTATIONS_MEAN). Fixing the
     # iteration to filter only (HYPER, HYPO) figures + comparable markers
-    # is tracked separately — see AI-090.
+    # is still to be reworked.
     if(file.exists(mutations_pivot_file_name))
       mutations_pivot <- as.data.frame(polars::pl$read_parquet(mutations_pivot_file_name))
     else
@@ -52,7 +52,7 @@ test_that("semeeker", {
 
     io_pivot_file_name <- SEMseeker:::io_pivot_file_name_parquet(marker,figure,area,subarea)
     # derived markers (LESIONS, DELTA*) may not exist when mutations are too
-    # sparse for that figure × area × subarea combo — see AI-090 to rework
+    # sparse for that figure × area × subarea combo: still to rework
     # the iteration so we can hard-assert presence on the combos that ARE
     # supposed to exist.
     if(!file.exists(io_pivot_file_name))

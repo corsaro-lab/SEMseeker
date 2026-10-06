@@ -1,6 +1,7 @@
 #' Every aggregation name the taxonomy knows (internal)
 #'
-#' AI-248, extended by AI-255. The full vocabulary of the AGGREGATION axis,
+#' Written when the aggregation became explicit, extended by the taxonomy
+#' unification. The full vocabulary of the AGGREGATION axis,
 #' independent of any artefact: every name that is a name at all.
 #'
 #' This answers a different question from [util_aggregations_allowed()], and the

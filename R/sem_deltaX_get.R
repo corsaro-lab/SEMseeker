@@ -110,7 +110,7 @@ sem_deltaX_get <- function(markers = NULL) {
               if (endsWith(mar, "P")) "P/equal-width" else "Q/quantile",
               ") direct from ", src, " pivots")
 
-    # AI-027: read via unified dispatcher. The file.exists() guard above
+    # read via unified dispatcher. The file.exists() guard above
     # has already filtered out cases where neither source pivot exists.
     lf_h <- io_read_pivot(src, "HYPER", area, subarea)
     lf_o <- io_read_pivot(src, "HYPO",  area, subarea)

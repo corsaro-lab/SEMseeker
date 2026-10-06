@@ -1,4 +1,4 @@
-# AI-044 (2026-06-08): unit test for the binomial_bulk path.
+# 2026-06-08: unit test for the binomial_bulk path.
 #
 # What this file pins down:
 #   1. assoc_glm_model_bulk() returns one row per probe with the legacy schema
@@ -7,7 +7,7 @@
 #      it would have seen with the per-probe stats::glm path.
 #   2. Coefficient estimates from Rfast::glm_logistic match stats::glm
 #      to ~4 decimal places on a simulated binary outcome with a factor IV.
-#   3. The AI-044 universal degenerate-burden filter (in io_data_preparation,
+#   3. The universal degenerate-burden filter (in io_data_preparation,
 #      hit upstream) ensures that all-zero / all-one probes never reach
 #      Rfast — but assoc_glm_model_bulk's per-probe safety net still returns NA
 #      for any degenerate Y that somehow slips through.
@@ -95,7 +95,7 @@ test_that("assoc_glm_model_bulk produces one row per probe with legacy schema", 
   expect_true(all(c("MARKER", "FIGURE", "AREA", "SUBAREA", "AREA_OF_TEST",
                     "FAMILY_TEST", "R_MODEL", "PVALUE")
                    %in% colnames(res)))
-  # AI-257: the model emits raw p-values and nothing adjusted. A batch is not a
+  # the model emits raw p-values and nothing adjusted. A batch is not a
   # family — assoc_analysis_save_results() forms the three families and names
   # each column after its own.
   expect_false(any(grepl("_ADJ", colnames(res))))

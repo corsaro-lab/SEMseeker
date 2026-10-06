@@ -1,4 +1,4 @@
-# AI-096 Phase 2 (2026-06-09): KNN imputation memory gate.
+# 2026-06-09: KNN imputation memory gate.
 #
 # Estimates the peak RAM needed for KNN on the input matrix and compares
 # it to the available system RAM (scaled by SEMSEEKER_KNN_MEM_FRACTION,
@@ -166,7 +166,7 @@ sem_inpute_missing_values <- function(signal_data){
       stop()
     }
 
-    # AI-096 Phase 2 (2026-06-09): memory gate for KNN imputation.
+    # 2026-06-09: memory gate for KNN imputation.
     # KNN requires the full matrix + a sample×sample distance matrix
     # + working buffers. On ewas-scale (367k × 4013 ≈ 12 GB) the
     # 64 GB Mac can absorb it; on long-reads (10⁶ × variable) it

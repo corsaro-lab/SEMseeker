@@ -137,7 +137,7 @@ assoc_covariates_model <- function(inference_detail, study_summary)
       covariate_dummy <- as.character(covariates_dummy[i])
       encoded_covariate <- fastDummies::dummy_cols(study_summary, select_columns = covariate_dummy, remove_first_dummy = TRUE)
       encoded_covariate <- encoded_covariate[, !(colnames(encoded_covariate) %in% colnames(study_summary))]
-      # AI-068: when the dummy column is constant within the subset filtered
+      # when the dummy column is constant within the subset filtered
       # by samples_sql_condition (e.g. Tumour_Locus is always 'Breast' once
       # samples are restricted to Tissue=='Breast'), dummy_cols + remove_first
       # leaves zero columns. Without this guard the colnames<- below fails with
@@ -186,10 +186,10 @@ assoc_covariates_model <- function(inference_detail, study_summary)
       # Keep only non-constant columns
       filtered_covariates <- covariates[!zero_var_cols]
 
-      # AI-070: PCA on < 3 covariates is pointless - 1-col PCA = identity,
+      # PCA on < 3 covariates is pointless - 1-col PCA = identity,
       # 2-col PCA = orthogonal rotation that loses interpretability without
       # reducing dimensionality. Skip PCA in those cases and use the raw
-      # (non-constant) covariates directly. This also subsumes the AI-069
+      # (non-constant) covariates directly. This also subsumes the earlier
       # Kaiser-Guttman edge case (sdev^2 == 1 on single scaled dummy).
       if (length(filtered_covariates) < 3L) {
         core_log_event("JOURNAL: PCA skipped - only ", length(filtered_covariates),
@@ -223,7 +223,7 @@ assoc_covariates_model <- function(inference_detail, study_summary)
         prev_columns <- prev_columns[!grepl(paste0("^",cname), prev_columns)]
         study_summary[,cname] <- pca_result[,cname]
       }
-      }  # close AI-070 else (PCA branch)
+      }  # close else (PCA branch)
     }
 
   covariates_to_remove <- c()

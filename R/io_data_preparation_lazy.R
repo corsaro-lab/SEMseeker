@@ -1,12 +1,12 @@
-#' Polars-native equivalent of `io_data_preparation()` for the AI-061
+#' Polars-native equivalent of `io_data_preparation()` for the lazy
 #' lazy batch path. Two responsibilities:
 #'
 #'   1. **Apply `transformation_y` on every sample column** of the pivot,
-#'      so the AI-061 lazy path produces statistically equivalent CSVs
+#'      so the lazy path produces statistically equivalent CSVs
 #'      to the per-area `apply_stat_model_batch.R` path which goes
 #'      through R-side `io_data_preparation()`.
 #'
-#'   2. **Drop AI-044 universal degenerate-burden rows** (`var(Y) == 0`,
+#'   2. **Drop universal degenerate-burden rows** (`var(Y) == 0`,
 #'      i.e. every sample carries the same value for that probe/area),
 #'      so `limma::lmFit` doesn't see constant-Y rows that produce
 #'      NaN t-stats and pollute the inference CSV.
@@ -14,7 +14,7 @@
 #' Both steps stay end-to-end lazy: the operations are appended to the
 #' input `pivot_lazy` and the caller decides when to `collect()`. NO
 #' materialisation happens here - that is the whole point of the
-#' AI-061 lazy path.
+#' lazy path.
 #'
 #' Scope is intentionally narrower than `io_data_preparation()`:
 #'   - Y-side ONLY (transformation_y, degenerate-row filter). The
@@ -38,7 +38,7 @@
 #'   `io_data_preparation()`.
 #' @param apply_degenerate_filter Logical, default `TRUE`. Drop rows
 #'   where `min(sample_cols) == max(sample_cols)` (no variance in Y).
-#'   Matches the AI-044 filter applied in `io_data_preparation()` for the
+#'   Matches the filter applied in `io_data_preparation()` for the
 #'   non-lazy path. Set `FALSE` only for diagnostic test code that wants
 #'   to see the raw transformations alone.
 #' @param key Optional named list with `MARKER`/`FIGURE`/`AREA`/`SUBAREA`
@@ -102,7 +102,7 @@ io_data_preparation_lazy <- function(pivot_lazy,
       paste0(" Use one of: ", paste(supported, collapse = ", "), ".")
     warning(sprintf(paste0(
       "io_data_preparation_lazy: transformation_y='%s' is NOT supported by ",
-      "the AI-061 lazy batch path. Continuing with transformation_y='none'.",
+      "the lazy batch path. Continuing with transformation_y='none'.",
       "%s"),
       trans_y, explain_alt), call. = FALSE)
     core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
@@ -144,7 +144,7 @@ io_data_preparation_lazy <- function(pivot_lazy,
     pivot_lazy <- do.call(pivot_lazy$with_columns, trans_exprs)
   }
 
-  # ---- Step 2: AI-044 universal degenerate-burden filter -----------
+  # ---- Step 2: universal degenerate-burden filter -----------
   # A row is "degenerate" iff every sample column carries the same
   # value (var(Y) == 0). We detect this lazily via:
   #   min_horizontal(sample_cols) != max_horizontal(sample_cols)

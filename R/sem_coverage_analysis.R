@@ -1,6 +1,6 @@
 #' @param observed_probes character. Probe identifiers present in the input.
 #' @param keys data.frame of AREA / SUBAREA (optionally COMBINED) to report on.
-#'   Defaults to the areas selected for the run. AI-074 passes the FULL
+#'   Defaults to the areas selected for the run. The mandatory coverage gate passes the FULL
 #'   annotation set here: `areas` defaults to POSITION only
 #'   (util_keys_create.R:83) and this function skips POSITION and PROBE, so on
 #'   a default run the session keys are empty and no chart was ever produced.
@@ -26,10 +26,10 @@ sem_coverage_analysis <- function(observed_probes, keys = NULL)
     core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " No keys found for coverage analysis.")
     return()
   }
-  # AI-074: local accumulators. The previous exists()-based logic resolved
+  # local accumulators. The previous exists()-based logic resolved
   # through globalenv(), so an object of the same name left in an interactive
   # session changed the result - same defect class fixed in
-  # sem_study_summary_total() under AI-083. Now that coverage runs on EVERY SEM
+  # sem_study_summary_total() by the fix for empty per-sample burden columns. Now that coverage runs on EVERY SEM
   # analysis this function must be deterministic.
   cov_result <- NULL
   tot_result <- NULL

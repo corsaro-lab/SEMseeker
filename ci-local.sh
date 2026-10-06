@@ -231,7 +231,7 @@ REOF
     ;;
 
   suite)
-    # AI-255. The same measurement the other two systems take, so the three are
+    # The same measurement the other two systems take, so the three are
     # comparable: the package is INSTALLED and the suite runs against it, with
     # explicit totals from the returned data frame.
     #
@@ -239,7 +239,7 @@ REOF
     # Under load_all a helper file's closure is package:SEMseeker, whose
     # environment chain reaches neither the global environment nor setup.R's, so
     # helpers reading a fixture as a free variable die there and pass in CI - the
-    # harness silently skips whole tests rather than failing them (AI-254).
+    # harness silently skips whole tests rather than failing them.
     # Three benches that differ from each other is how a defect stays hidden.
     #
     #   ./ci-local.sh suite                       whole suite

@@ -90,7 +90,7 @@ diagnostic_performance <-
         {
           # k <- 3
           key <- keys [k, ]
-          # AI-255: the diagnostic reads the same artefact the inference tested,
+          # the diagnostic reads the same artefact the inference tested,
           # so it has to name the same aggregation. Defaulting to the produced
           # one keeps the historical behaviour for callers that do not pass an
           # inference detail.
@@ -116,7 +116,7 @@ diagnostic_performance <-
             #     AREA = readr::col_character(),
             #   ),
             #   show_col_types=FALSE, progress=FALSE)
-            # AI-027: read via unified dispatcher.
+            # read via unified dispatcher.
             ss_pivot_lazy <- io_read_pivot(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
             tempDataFrame <- as.data.frame(ss_pivot_lazy$collect())
             row.names(tempDataFrame) <- tempDataFrame$AREA
@@ -150,7 +150,7 @@ diagnostic_performance <-
             #   stop("ERROR: I'm stopping here, the grouping variable should be only two!")
             tempDataFrame <- as.data.frame(tempDataFrame)
             tempDataFrame[is.na(tempDataFrame)] <- 0
-            # AI-106 (2026-06-09): same sanitize+memo+counter-rename pattern
+            # 2026-06-09: same sanitize+memo+counter-rename pattern
             # as apply_stat_model.R. Colnames hold AREA_OF_TEST gene/CpG
             # island names that may carry ' ', '-', ':', '/', "'" - all
             # invalid as R identifiers. Sanitise here only for internal
@@ -190,14 +190,14 @@ diagnostic_performance <-
               else
                 progress_bar <- ""
 
-              # AI-106 (2026-06-09): safe_to_real reaches each worker so the
+              # 2026-06-09: safe_to_real reaches each worker so the
               # AREA_OF_TEST written in the result_temp data.frame is the
               # raw upstream name (no '-'→'_' rewrite).
               var_to_export <- c("tempDataFrameComb","ssEnv","progress_bar","actual_labels","keys","k","progression_index", "progression", "progressor_uuid", "owner_session_uuid", "trace","safe_to_real")
               # for (c in 2:ncol(tempDataFrameComb))
               results_temp <- foreach::foreach(c  =  2:ncol(tempDataFrameComb), .combine  =  rbind, .export  =  var_to_export) %dorng%
               {
-                # AI-056: workers must NOT saveRDS on every iteration.
+                # workers must NOT saveRDS on every iteration.
                 core_update_session_info(ssEnv, save_to_disk = FALSE)
                 area_of_test <- names(tempDataFrameComb)[c]
                 if(ssEnv$showprogress)
@@ -267,7 +267,7 @@ diagnostic_performance <-
                 #   "SCORE"=0,"BURDEN"=burden,"JSD"=jsd)
 
                 # replace Na or Nan with 0
-                # AI-106 (2026-06-09): reverse-map AREA_OF_TEST back to the
+                # 2026-06-09: reverse-map AREA_OF_TEST back to the
                 # raw upstream name so the CSV preserves it for enrichment
                 # / resume match. Defensive fallback if the mapping is
                 # missing (should not happen).
@@ -287,7 +287,7 @@ diagnostic_performance <-
                 results_temp
               }
 
-              # AI-056: post-foreach end-of-batch snapshot (matches AI-041 pattern).
+              # post-foreach end-of-batch snapshot (matches pattern).
               core_update_session_info(ssEnv, save_to_disk = TRUE)
 
               results_temp <- as.data.frame(results_temp)

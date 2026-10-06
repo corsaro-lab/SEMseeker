@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Enable once per clone with:  git config core.hooksPath .githooks
+# The same rule runs in CI on the whole tree; this hook only gives the answer
+# before the commit instead of after the push.
+exec "$(git rev-parse --show-toplevel)/.github/scripts/check-internal-references.sh" --staged

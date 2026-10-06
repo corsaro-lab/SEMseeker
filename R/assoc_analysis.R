@@ -184,11 +184,11 @@ association_analysis <- function(inference_details, result_folder, maxResources 
   anno_annotate_position_pivots()
 
   inference_details <- assoc_validate_inference_schema(unique(inference_details))
-  # AI-248: shape first, then meaning. Refuse a request that cannot be honoured
+  # shape first, then meaning. Refuse a request that cannot be honoured
   # before any result is written: checking it inside the per-marker loop would
   # surface the mistake after part of the output exists.
   #
-  # AI-308: the scope goes first, because which aggregations are admissible
+  # the scope goes first, because which aggregations are admissible
   # depends on it. The two peaks of a bimodal density need one big group, so
   # they exist at SCOPE = SAMPLE and nowhere else; asking for them per instance
   # used to travel all the way to io_pivot_build() and stop there, with the run
@@ -196,7 +196,7 @@ association_analysis <- function(inference_details, result_folder, maxResources 
   inference_details <- assoc_validate_scope(inference_details)
   inference_details <- assoc_validate_aggregation(inference_details)
   inference_details <- assoc_validate_transformation(inference_details)
-  # AI-309: and the model. A family test that is absent or unknown used to make
+  # and the model. A family test that is absent or unknown used to make
   # the row vanish from the loop below, leaving a result file indistinguishable
   # from one where the test had run.
   inference_details <- assoc_validate_family(inference_details)
@@ -209,12 +209,12 @@ association_analysis <- function(inference_details, result_folder, maxResources 
 
     core_log_inference_header(inference_detail)
 
-    # AI-309: validated at the door, so there is nothing to check and nothing to
+    # validated at the door, so there is nothing to check and nothing to
     # skip here. The `next` this replaces is the reason a malformed request
     # could produce a complete-looking file.
     family_test <- util_split_and_clean(inference_detail$family_test)
 
-    # AI-255: the models read artefacts, not columns - assoc_run_marker() opens
+    # the models read artefacts, not columns - assoc_run_marker() opens
     # the pivot for every key, collapsed or not. So what this needs from the
     # sample sheet is the phenotype and the covariates, and joining the
     # per-sample statistics onto it would build artefacts nobody then reads:
@@ -235,7 +235,7 @@ association_analysis <- function(inference_details, result_folder, maxResources 
                                              collapse = ", "),
                 ", which the sample sheet does not carry: joining the per-sample ",
                 "features as well.")
-      # AI-308: the request no longer names region classes: they are the
+      # the request no longer names region classes: they are the
       # (AREA, SUBAREA) pairs of the run. A covariate the sheet does not carry
       # can name any of them, plus "SAMPLE" for the unrestricted feature, so the
       # join offers the whole registry rather than a list the request no longer
@@ -259,7 +259,7 @@ association_analysis <- function(inference_details, result_folder, maxResources 
           paste(areas_selection, "_", sep = "")))
       core_log_event("JOURNAL:", "Result saved into file:", fileNameResults, ".")
 
-      # AI-255: one road. There used to be two calls here, chosen by
+      # one road. There used to be two calls here, chosen by
       # depth_analysis, because the collapsed artefact and the per-instance one
       # had different shapes - a table of columns against a pivot of rows. They
       # have the same shape now, so a model handed a row does not know, and has
@@ -275,7 +275,7 @@ association_analysis <- function(inference_details, result_folder, maxResources 
       last_results  <- results
       last_filename <- fileNameResults
 
-      # AI-061+ (2026-06-09): volcano plot for this marker right after the
+      # 2026-06-09: volcano plot for this marker right after the
       # CSV is finalised. One call per marker; assoc_volcano_plot_inference
       # splits internally by (AREA, SUBAREA) and writes one PNG per
       # combination under <result_folder>/Chart/VOLCANO/. Best-effort:

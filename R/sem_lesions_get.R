@@ -1,4 +1,4 @@
-# AI-092: LESIONS clustering by GENOMIC distance (bp) rather than matrix
+# LESIONS clustering by GENOMIC distance (bp) rather than matrix
 # distance (probe count). The legacy sliding_window_size parameter is gone;
 # the only knob is now LESIONS_BP, registered in core_init_env() and exposed via
 # semseeker(LESIONS_BP = ...).

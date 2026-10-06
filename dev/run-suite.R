@@ -13,7 +13,7 @@
 # helper file's closure is package:SEMseeker, whose environment chain reaches
 # neither the global environment nor setup.R's, so the two harnesses do not
 # measure the same thing - and the one that skips tests silently is the one that
-# hides defects. See AI-254.
+# hides defects.
 #
 # Why explicit totals and not the default reporter: the totals come from the
 # returned data frame, so they cannot be lost to a truncated console.

@@ -6,7 +6,7 @@ enrich_STRINGdb <- function(study,
   inference_detail, significance = TRUE, stringDBVersion = "12.0")
 {
 
-  # AI-311: what an enrichment can be about is declared once, not written
+  # what an enrichment can be about is declared once, not written
   # out again here. A pathway is a set of genes, so the input is one row
   # per gene (SCOPE = INSTANCE) of the GENE region class.
   .enrich_in <- enrich_input_invariant()
@@ -79,7 +79,7 @@ enrich_STRINGdb <- function(study,
       results_inference <- assoc_results_get(
         inference_detail =  inference_detail,
         marker = keys[i,"MARKER"],
-        # AI-257: neither coordinate was declared here - see enrich_WebGestalt.
+        # neither coordinate was declared here - see enrich_WebGestalt.
         area  = .enrich_in$area,
         scope = .enrich_in$scope,
         pvalue_column=  pvalue_column,

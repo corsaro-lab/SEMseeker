@@ -1,4 +1,4 @@
-# AI-040 Fase 2 + Fase 3: batch path for limma_<N> and voom_<N>.
+# batch path for limma_<N> and voom_<N>.
 #
 # Three things this file pins down:
 #   1. assoc_apply_stat_model_batch() returns one row per area, same schema
@@ -68,7 +68,7 @@
     return(code)
   }
   orig <- SEMseeker:::io_data_preparation
-  # AI-255: io_data_preparation() lost dototal and depth_analysis with the TOTAL
+  # io_data_preparation() lost dototal and depth_analysis with the TOTAL
   # synthesis they governed.
   # The stub takes ... on purpose. Its job is to hand the frame back untouched,
   # so every argument past that is incidental to it, and spelling them out meant

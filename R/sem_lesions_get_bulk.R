@@ -8,7 +8,7 @@
 #' altri sites del package (io_signal_save, sem_deltaX_get).
 #'
 #' Usa una **physical window in bp** centrata su ogni position p, con radius
-#' `LESIONS_BP` letto da ssEnv (default 5000 bp, vedi AI-092 + AI-048).
+#' `LESIONS_BP` letto da ssEnv (default 5000 bp).
 #' Per ogni probe i su chr c, considera le sonde j con
 #'   |START[j] - START[i]| <= LESIONS_BP   AND   CHR[j] == CHR[i]
 #' Per ogni sample s, ENRICHMENT[i,s] = sum_{j in window} MUTATIONS[j,s];

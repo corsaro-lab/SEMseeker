@@ -1,4 +1,4 @@
-# AI-092: LESIONS clustering by genomic distance (bp) — canary tests
+# LESIONS clustering by genomic distance (bp): canary tests
 # verifying that LESIONS_BP behaves as the bp-distance threshold for cluster
 # membership, with the expected monotonic relationship: smaller LESIONS_BP
 # isolates the dense local cluster; larger LESIONS_BP merges spatially

@@ -1,17 +1,17 @@
 #' Split composite area names into one row per area (internal)
 #'
-#' Extracted by AI-255 from `anno_annotate_position_pivots()` so the on-demand
+#' Extracted from `anno_annotate_position_pivots()` by the taxonomy unification so the on-demand
 #' builder ([io_pivot_build()]) and the batch annotation share one implementation
 #' - two copies of this logic would drift, and the drift would be silent.
 #'
-#' AI-050: Bioconductor annotation packages assign some probes to multiple genes
+#' Bioconductor annotation packages assign some probes to multiple genes
 #' (intergenic overlaps, antisense, ...), producing composite `AREA` strings like
 #' `"NUDT6;SPATA5"`. Treating the composite as a single gene was a regression
 #' that made `assoc_apply_stat_model()` fail to parse (PVALUE=NA) and inflated
 #' false positives downstream, because one p-value got smeared across N
 #' enrichment hits. Splitting gives one clean mono-gene row per area.
 #'
-#' AI-061+: `","` and `"/"` are separators too. Comma-separated tokens are
+#' `","` and `"/"` are separators too. Comma-separated tokens are
 #' already complete HGNC symbols; `"/"` needs the smart split of
 #' [.anno_smart_split_area_name()] so `"HLA-A/B/C"` becomes
 #' `("HLA-A","HLA-B","HLA-C")` rather than `("HLA-A","B","C")`.

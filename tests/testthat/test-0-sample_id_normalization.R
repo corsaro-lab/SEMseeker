@@ -1,4 +1,4 @@
-## AI-224 — sample identifier normalisation must be forced on BOTH sides
+## sample identifier normalisation must be forced on BOTH sides
 ## (sample sheet + signal matrix) before any name-based column subsetting.
 ##
 ## Regression: SEMseeker cleaned `colnames(signal_data)` with
@@ -127,7 +127,7 @@ test_that("util_exploratory_analysis keeps sample columns with non-alphanumeric 
   cleaned <- as.data.frame(polars::pl$read_parquet(parquet_path[1]))
   sample_cols <- setdiff(colnames(cleaned), "PROBE")
 
-  # THE regression: before AI-224 this parquet held the PROBE column only
+  # THE regression: before the fix this parquet held the PROBE column only
   expect_gt(length(sample_cols), 0)
   expect_true(all(expected_ids %in% sample_cols))
 

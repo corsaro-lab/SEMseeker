@@ -1,4 +1,4 @@
-# AI-106+ (2026-06-09): contract tests for sem_prepare_batch_signal().
+# 2026-06-09: contract tests for sem_prepare_batch_signal().
 #
 # The function is the single source of truth for normalising a SIGNAL
 # matrix into a shape consistent with the probe_features used downstream.

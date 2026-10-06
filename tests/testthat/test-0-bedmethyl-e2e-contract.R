@@ -1,4 +1,4 @@
-# AI-109 follow-up (2026-06-09): contract-level E2E tests for the
+# 2026-06-09: contract-level E2E tests for the
 # bedmethyl parser (modkit / nanopolish output). bedmethyl is the
 # canonical long-read methylation-call file format; SEMseeker accepts
 # it through `io_bedmethyl_read()` which converts a directory of modkit

@@ -1,4 +1,4 @@
-#' sem_analyze_population_bulk - vectorized population analysis (AI-042, 2026-06-08)
+#' sem_analyze_population_bulk - vectorized population analysis (2026-06-08)
 #'
 #' Drop-in replacement per sem_analyze_population() che SOSTITUISCE il per-sample
 #' loop (con dump bedgraph per ogni sample x marker x figure) con operazioni
@@ -40,7 +40,7 @@ sem_analyze_population_bulk <- function(signal_data, sample_sheet,
   core_log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),
             " [apb] FRAME ENTERED mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
   core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
-            " [sem_analyze_population_bulk] start (AI-042 vectorized)")
+            " [sem_analyze_population_bulk] start (vectorized)")
 
   # ---- Step 1: prepare paths and inputs ------------------------------------
   pivots_dir <- file.path(ssEnv$result_folderData, "Pivots")
@@ -49,7 +49,7 @@ sem_analyze_population_bulk <- function(signal_data, sample_sheet,
     dir.create(file.path(pivots_dir, m), recursive = TRUE, showWarnings = FALSE)
   }
 
-  # AI-061+ (2026-06-09): EARLY-RETURN if every destination pivot already
+  # 2026-06-09: EARLY-RETURN if every destination pivot already
   # exists. The per-figure skip checks further down inside this function
   # do guard the actual compute, but the SETUP between [start] and the
   # first per-figure block - io_read_pivot SIGNAL + collect_schema(4014
@@ -80,7 +80,7 @@ sem_analyze_population_bulk <- function(signal_data, sample_sheet,
          " - io_signal_save() deve essere chiamato prima.")
   }
 
-  # AI-061+ (2026-06-09): use the in-memory `signal_thresholds`
+  # 2026-06-09: use the in-memory `signal_thresholds`
   # data.frame DIRECTLY (it's the function argument - caller has it
   # available, no need for disk I/O). The polars 1.11 quirk that
   # required the arrow tempfile workaround was: as_polars_df on a
@@ -101,13 +101,13 @@ sem_analyze_population_bulk <- function(signal_data, sample_sheet,
     )
   )$lazy()
 
-  # AI-061+ (2026-06-09): release the R-side signal_thresholds binding
+  # 2026-06-09: release the R-side signal_thresholds binding
   # after the data is copied into polars. signal_thresholds is the
   # function ARG (~50 MB on ewas 367k probes × 5 thresholds cols), and
   # without explicit cleanup R keeps it alive for the rest of the
   # function while polars also holds its own copy in Rust heap - both
   # heaps holding the same data is exactly what we tried to avoid
-  # everywhere else (see AI-096 lazy passthrough).
+  # everywhere else (the lazy passthrough).
   # NOTE: the CALLER's binding (analyze_batch.R: populationControlRange-
   # BetaValues) is still alive in the parent frame - full release
   # requires the caller to also rm() after this function returns.
@@ -115,7 +115,7 @@ sem_analyze_population_bulk <- function(signal_data, sample_sheet,
   rm(signal_thresholds)
   invisible(gc(verbose = FALSE))
 
-  # AI-061+ (2026-06-09): estrarre lo schema dei sample columns DAL PIVOT RAW
+  # 2026-06-09: estrarre lo schema dei sample columns DAL PIVOT RAW
   # prima di applicare $with_columns(cast) + $join. Polars 1.x ha un picco
   # di memoria significativo su $collect_schema() invocato dopo una catena
   # complessa lazy (cast + join inner): l'optimizer materializza tutto il
@@ -223,8 +223,8 @@ sem_analyze_population_bulk <- function(signal_data, sample_sheet,
   # finestra fisica in bp, soppianta la vecchia logica row-count
   # (sliding_window_size). Il counterpart single-sample e' sem_lesions_get()
   # in R/lesions_get.R (usato dal path legacy sem_analyze_population per-sample).
-  # Storia: AI-044 (kbp arg) → AI-092 (LESIONS_BP ssEnv) merged 2026-06-10
-  # con default 5000 bp (literature-aligned, vedi AI-048).
+  # Storia: (kbp arg) → (LESIONS_BP ssEnv) merged 2026-06-10
+  # con default 5000 bp (literature-aligned, revisione metodologica in sospeso).
   lesions_bp     <- as.integer(ssEnv$LESIONS_BP)
   bonf_threshold <- as.numeric(ssEnv$bonferroni_threshold)
   CHUNK_SAMPLES  <- 200L  # gruppi di sample per limitare RAM
@@ -256,7 +256,7 @@ sem_analyze_population_bulk <- function(signal_data, sample_sheet,
       mut_df$CHR <- as.character(mut_df$CHR)
 
       # Delega LESIONS computation a sem_lesions_get_bulk (multi-sample bp window).
-      # Il counterpart single-sample (R/lesions_get.R, AI-092) e' usato dal path
+      # Il counterpart single-sample (R/lesions_get.R) e' usato dal path
       # legacy sem_analyze_population per-sample loop.
       les_mat <- sem_lesions_get_bulk(mut_df, cols_this,
                                   LESIONS_BP = lesions_bp,
@@ -298,8 +298,8 @@ sem_analyze_population_bulk <- function(signal_data, sample_sheet,
   }
 
   # ============================================================
-  # LEGACY ROW-WINDOW LESIONS CODE (AI-042 v1, soppiantata da
-  # lesions_new in AI-044 il 2026-06-08). Commentato per reference;
+  # LEGACY ROW-WINDOW LESIONS CODE (v1, soppiantata da
+  # lesions_new il 2026-06-08). Commentato per reference;
   # NON eseguito. Eliminabile in cleanup futuro.
   # ============================================================
   # Algoritmo legacy (row-count window via sliding_window_size):

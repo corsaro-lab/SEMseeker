@@ -1,4 +1,4 @@
-# AI-044 (2026-06-08): bulk path for logistic regression - family_test
+# 2026-06-08: bulk path for logistic regression - family_test
 # "binomial_bulk". Mirror of apply_stat_model_batch.R (limma path) but
 # for binomial GLM: per-probe Rfast::glm_logistic with shared design
 # matrix, parallelised via foreach %dorng%.
@@ -7,7 +7,7 @@
 #   - Per-probe stats::glm via foreach has heavy R-level overhead
 #     (~5 ms per fit × 600k  probes x 4 inference cycles ≈ hours).
 #   - Rfast::glm_logistic is a C++ Newton-Raphson implementation,
-#     ~10-20× faster than stats::glm; combined with the AI-044
+#     ~10-20× faster than stats::glm; combined with the
 #     degenerate-burden filter in io_data_preparation (~92% of LESIONS
 #     probes removed before reaching here) we get ~2-3 min total
 #     instead of ~60 min for the scheda 3a-NEW binomial dispatch.
@@ -68,7 +68,7 @@ assoc_glm_model_bulk <- function(tempDataFrame, g_start, family_test,
   }
 
   # 1. io_data_preparation: factors the IV (assoc_is_family_dicotomic branch),
-  # then runs the AI-044 universal degenerate-burden filter - so by the
+  # then runs the universal degenerate-burden filter - so by the
   # time we get back, tempDataFrame only contains informative probes.
   # inference_detail now arrives as an argument. It used to be looked up with
   # exists("inference_detail", inherits = TRUE), which from inside a function
@@ -201,7 +201,7 @@ assoc_glm_model_bulk <- function(tempDataFrame, g_start, family_test,
     z    <- est / se
     pval <- 2 * stats::pnorm(-abs(z))
 
-    # AI-044 (2026-06-09): goodness-of-fit metrics per probe. Registered
+    # 2026-06-09: goodness-of-fit metrics per probe. Registered
     # in metrics_properties.rda. Rationale: R²/R²_adj don't apply to
     # logistic - we report McFadden + Nagelkerke pseudo-R² (variance
     # explained analogs), C-statistic (= AUC, discrimination), and the
@@ -237,7 +237,7 @@ assoc_glm_model_bulk <- function(tempDataFrame, g_start, family_test,
 
   est_mat   <- fits[, seq_len(ncoef),                drop = FALSE]
   pval_mat  <- fits[, (ncoef + 1):(2 * ncoef),       drop = FALSE]
-  # AI-044 (2026-06-09): goodness-of-fit metrics block (4 columns) sits
+  # 2026-06-09: goodness-of-fit metrics block (4 columns) sits
   # after the est/pval blocks. Order MUST match the c(est, pval, metrics_vec)
   # return in fit_one above - MCFADDEN_R2, NAGELKERKE_R2, C_STATISTIC_AUC,
   # DEVIANCE_RATIO. See metrics_properties.rda for direction.
@@ -275,7 +275,7 @@ assoc_glm_model_bulk <- function(tempDataFrame, g_start, family_test,
     result[[ename]] <- est_mat[, i]
   }
 
-  # AI-044 (2026-06-09): goodness-of-fit metrics block - names canonical
+  # 2026-06-09: goodness-of-fit metrics block - names canonical
   # (uppercase, registered in metrics_properties.rda).
   result$MCFADDEN_R2     <- metrics_mat[, "MCFADDEN_R2"]
   result$NAGELKERKE_R2   <- metrics_mat[, "NAGELKERKE_R2"]
@@ -291,7 +291,7 @@ assoc_glm_model_bulk <- function(tempDataFrame, g_start, family_test,
   colnames(result) <- toupper(colnames(result))
   colnames(result) <- core_name_cleaning(colnames(result))
 
-  # AI-257: no adjustment here. This function sees the probes of one batch, and
+  # no adjustment here. This function sees the probes of one batch, and
   # a family made of whatever happened to be in a batch is a memory parameter.
   # The three levels - key, scope, file - are computed in
   # assoc_analysis_save_results(), the one place where every row of a family is

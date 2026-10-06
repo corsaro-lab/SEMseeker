@@ -1,12 +1,12 @@
-# AI-086: integration test for the per-sample burden.
+# integration test for the per-sample burden.
 #
-# AI-223 moved the burden out of SAMPLE_SHEET_RESULT.csv and into the
+# The per-sample table moved the burden out of SAMPLE_SHEET_RESULT.csv and into the
 # statistics sibling SAMPLE_STATS_RESULT.csv, where it is named
 # SAMPLE_<MARKER>_<FIGURE> (PROBES_COUNT became SAMPLE_N_PROBES). This test
 # follows it there, and additionally asserts that the sample sheet is left
 # lean.
 #
-# Canary for AI-083: the burden aggregation failed to populate per-sample
+# Canary for a past defect: the burden aggregation failed to populate per-sample
 # values on ewas_osteoporosis/GSE99624 (48 samples, 450K) — all burden columns
 # landed as NA, which then crashed every depth=1 inference downstream with
 # "data are not the same size".
@@ -28,7 +28,7 @@
 # on MUTATIONS having been computed (SOURCE column), so the full
 # (MUTATIONS + DELTA*) set exercises the whole derive-and-aggregate path.
 
-test_that("sample_sheet_result.csv has populated burden columns for all discrete + continuous markers (AI-086, canary for AI-083)", {
+test_that("sample_sheet_result.csv has populated burden columns for all discrete + continuous markers (canary for empty burden columns)", {
   tempFolder <- sem_test_folder()
   unlink(tempFolder, recursive = TRUE)
 
@@ -75,14 +75,14 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
   # by default so either spelling works; Linux ext4 is case-sensitive and
   # only the uppercase form resolves. Use uppercase here to be correct on
   # all three CI runners.
-  # AI-255: the sibling CSV is gone. The per-sample table is composed on read
+  # the sibling CSV is gone. The per-sample table is composed on read
   # from the SCOPE = SAMPLE artefacts and joined onto the sample sheet.
   sheet_csv  <- file.path(tempFolder, "Data", "SAMPLE_SHEET_RESULT.csv")
   df <- SEMseeker:::sem_study_summary_get()
   testthat::expect_true(!is.null(df) && nrow(df) > 0,
     info = sprintf("no per-sample statistics composed — tempFolder=%s", tempFolder))
 
-  # AI-223 net move: the sample sheet must NOT carry the burden any more
+  # Net move: the sample sheet must NOT carry the burden any more
   sheet <- utils::read.csv2(sheet_csv, stringsAsFactors = FALSE)
   testthat::expect_equal(
     intersect(c("MUTATIONS_HYPER", "MUTATIONS_HYPO", "PROBES_COUNT"),
@@ -96,10 +96,10 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
   required_markers <- c("MUTATIONS",
                         "DELTAP", "DELTAQ", "DELTARP", "DELTARQ",
                         "DELTAS", "DELTAR")
-  # AI-248: composed once in helper-burden.R, where the aggregation each class
+  # composed once in helper-burden.R, where the aggregation each class
   # produces by default is spelled out.
   required_burden_cols <- .burden_cols
-  # AI-255: N_PROBES describes the sample, not a scope of it — it counts the
+  # N_PROBES describes the sample, not a scope of it: it counts the
   # positions the imputation left usable — so it comes in from the sample sheet
   # under its own name.
   required_cols <- c("Sample_ID", required_burden_cols, "N_PROBES")
@@ -111,11 +111,11 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
   )
 
   # Soft: log if LESIONS_HYPER/HYPO are absent so we surface the gap
-  # without failing — see AI-088 follow-up for an explicit LESIONS canary.
+  # without failing; an explicit LESIONS canary is still to be written.
   for (lesion_col in c("SAMPLE_LESIONS_HYPER", "SAMPLE_LESIONS_HYPO")) {
     if (!(lesion_col %in% colnames(df))) {
       message(sprintf(
-        "test-8-burden-integration: %s absent — likely synthetic-data sparsity (soft warn, see AI-088)",
+        "test-8-burden-integration: %s absent, likely synthetic-data sparsity (soft warn)",
         lesion_col
       ))
     }
@@ -125,7 +125,7 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
   # required burden columns (LESIONS handled by the soft block above).
   expected_burden_cols <- required_burden_cols
 
-  # AI-083 canary (per-column): every burden column has ≥ 1 non-NA value.
+  # Canary (per-column): every burden column has ≥ 1 non-NA value.
   for (col in intersect(expected_burden_cols, colnames(df))) {
     n_non_na <- sum(!is.na(df[[col]]))
     testthat::expect_gt(
@@ -134,14 +134,14 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
     )
   }
 
-  # AI-083 canary (per-sample, relaxed): NOT every sample must have a
+  # Canary (per-sample, relaxed): NOT every sample must have a
   # populated burden — synthetic data sparsity can legitimately leave some
   # samples with zero events for ALL (marker, figure) combos, which then
   # become all-NA after the all.x=TRUE merge in study_summary_total. The
-  # AI-083 bug was 100% of samples NA (whole-population integration broken),
+  # The original bug was 100% of samples NA (whole-population integration broken),
   # not "some samples are NA". So we assert the all-NA fraction is below a
   # safety margin instead of zero. A tighter per-sample canary on real or
-  # tightly-controlled data is tracked in AI-088.
+  # tightly-controlled data is still to be written.
   present_burden <- intersect(expected_burden_cols, colnames(df))
   if (length(present_burden) > 0L) {
     per_sample_all_na <- apply(
@@ -214,7 +214,7 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
 })
 
 # ---------------------------------------------------------------------------
-# AI-083 hardening. The canary above runs on GSM-style identifiers in a clean
+# Hardening. The canary above runs on GSM-style identifiers in a clean
 # session; this block covers what it cannot see:
 #
 #   (a) identifiers that core_name_cleaning() actually rewrites — the
@@ -227,11 +227,11 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
 #   (c) the condition that DOES produce the reported symptom — a burden table
 #       sharing no Sample_ID with the sample sheet, which used to yield 100% NA
 #       burden columns and killed every depth=1 inference downstream with
-#       "data are not the same size". Since AI-223 the aggregation lives in
+#       "data are not the same size". Since the per-sample table the aggregation lives in
 #       sem_sample_stats_build(), which must refuse to write that file.
 # ---------------------------------------------------------------------------
 
-test_that("burden survives mixed-case Sample_IDs and a polluted global temp_result (AI-083)", {
+test_that("burden survives mixed-case Sample_IDs and a polluted global temp_result", {
   tempFolder <- sem_test_folder()
   unlink(tempFolder, recursive = TRUE)
   on.exit({
@@ -288,7 +288,7 @@ test_that("burden survives mixed-case Sample_IDs and a polluted global temp_resu
                                         "DELTAS", "DELTAR"),
                             start_fresh = FALSE)
 
-  # AI-255: composed on read, no sibling file.
+  # composed on read, no sibling file.
   df <- SEMseeker:::sem_study_summary_get()
   testthat::expect_true(!is.null(df) && nrow(df) > 0)
 
@@ -298,7 +298,7 @@ test_that("burden survives mixed-case Sample_IDs and a polluted global temp_resu
   present <- intersect(.burden_cols, colnames(df))
   testthat::expect_gt(length(present), 0L)
 
-  # the AI-083 signature is 100% NA on every burden column at once
+  # the original defect's signature is 100% NA on every burden column at once
   na_fraction <- vapply(df[present], function(x) mean(is.na(x)), numeric(1))
   testthat::expect_false(
     all(na_fraction == 1),
@@ -312,7 +312,7 @@ test_that("burden survives mixed-case Sample_IDs and a polluted global temp_resu
   )
   testthat::expect_true(all(df$SAMPLE_N_PROBES > 0L, na.rm = TRUE))
 
-  # (c) the actual AI-083 signature: rewrite the SAMPLE SHEET with identifiers
+  # (c) the actual signature of the original defect: rewrite the SAMPLE SHEET with identifiers
   # that exist in no pivot, then re-run the aggregation. The producer recomputes
   # the burden from the pivots (which still carry the real identifiers) and
   # compares it against the sheet, so corrupting the sheet is what reproduces
@@ -334,7 +334,7 @@ test_that("burden survives mixed-case Sample_IDs and a polluted global temp_resu
     showprogress      = FALSE,
     verbosity         = 1
   )
-  # AI-255: the check moved with the join. sem_sample_stats_build() now only
+  # the check moved with the join. sem_sample_stats_build() now only
   # materialises artefacts; it is sem_study_summary_get() that puts the sample
   # sheet and the artefact columns side by side, so that is where a total
   # identifier mismatch has to be caught rather than joined into a table of NAs.

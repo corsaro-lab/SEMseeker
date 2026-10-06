@@ -1,4 +1,4 @@
-# AI-096 Phase 2 (2026-06-09): KNN memory gate.
+# 2026-06-09: KNN memory gate.
 #
 # What this file pins down:
 #   1. .sem_knn_memory_gate() does NOT block when the estimated memory fits

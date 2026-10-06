@@ -29,14 +29,14 @@
   opencl                 = list(value = FALSE),
   bonferroni_threshold   = list(value = 0.05),
   iqrTimes               = list(value = 3),
-  LESIONS_BP             = list(value = 5000L),  # AI-092 + AI-044 merged: bp-based window radius. Default 5000 bp = 5 kbp (literature-aligned; AI-048 review pending - Bock 2012, Jaffe 2012 bumphunter, Aryee 2014 minfi DMR).
+  LESIONS_BP             = list(value = 5000L),  # bp-based window radius. Default 5000 bp = 5 kbp (literature-aligned; review pending - Bock 2012, Jaffe 2012 bumphunter, Aryee 2014 minfi DMR).
   tech                   = list(value = ""),
   genome_build           = list(value = "hg19", choices = c("hg19","hg38","mm10","legacy")),
   showprogress           = list(value = FALSE),
   openai_api_key         = list(value = ""),
   multiple_test_adj      = list(value = "q", choices = c("BY","fdr","BH","bonferroni","q")),
-  coverage_minimum       = list(value = 80),      # AI-074: minimum % of input positions that must be present in the reference annotation; below it sem_coverage_gate() stops the run.
-  bulk_population        = list(value = TRUE)    # AI-042: vectorized population is the default (no per-sample bed dump). Set FALSE only to core_recover the legacy per-sample loop.
+  coverage_minimum       = list(value = 80),      # minimum % of input positions that must be present in the reference annotation; below it sem_coverage_gate() stops the run.
+  bulk_population        = list(value = TRUE)    # vectorized population is the default (no per-sample bed dump). Set FALSE only to core_recover the legacy per-sample loop.
 )
 
 .SS_FOLDERS <- c(
@@ -303,8 +303,8 @@ core_init_env <- function(result_folder, maxResources = 90, ...) {
 
   .core_init_env_log_focus(ssEnv)
   .core_init_env_validate_args(arguments)
-  # AI-060: one-line WARNING when R is linked against a single-thread BLAS.
-  # Hot for the AI-040 batch families (limma_/voom_) - solve()/crossprod()
+  # one-line WARNING when R is linked against a single-thread BLAS.
+  # Hot for the batch families (limma_/voom_) - solve()/crossprod()
   # inside lmFit scale ~linearly with cores on Accelerate/OpenBLAS/MKL.
   .core_warn_blas_single_thread()
   if (dry_run) .core_init_env_handle_dry_run(ssEnv)
