@@ -16,7 +16,7 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
     return()
   }
 
-  # AI-224: normalise both sides and fail with the offending identifiers rather
+  # normalise both sides and fail with the offending identifiers rather
   # than with R's "undefined columns selected" on the subset below.
   .normalized <- core_normalize_sample_ids(sample_sheet, signal_data,
                                            require_all_ids = TRUE)
@@ -82,7 +82,7 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
   gc()
   core_log_event("DEBUG_MEM_SS: ", format(Sys.time(), "%a %b %d %X %Y"), " post-probe-write+gc  mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
 
-  # AI-027: read via unified dispatcher. The PROBE pivot was just
+  # read via unified dispatcher. The PROBE pivot was just
   # written above (line 62), so CASE 1 (cached parquet) is always taken.
   # Per-chromosome sort+sink (era sort+sink globale → Jetsam OOM kill silenzioso
   # su 64GB Mac quando la lazy chain join+sort+collect superava soglie macOS

@@ -1,4 +1,4 @@
-# AI-061+ (2026-06-09): chunked-per-chromosome lmFit path for the
+# 2026-06-09: chunked-per-chromosome lmFit path for the
 # batch-lazy dispatcher. Activated when the bulk_model memory gate
 # decides the monolithic y_mat would exceed the RAM budget.
 #
@@ -73,7 +73,7 @@ assoc_lmfit_chunked_by_chr <- function(pivot_lazy,
   if (engine == "voom") {
     core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
               " assoc_lmfit_chunked_by_chr: voom chunking requires a global ",
-              "mean-variance trend pass (not implemented yet, AI-099). ",
+              "mean-variance trend pass (not implemented yet). ",
               "Falling back to monolithic - caller must ensure the y_mat ",
               "fits within budget.")
     return(assoc_lmfit_monolithic_lazy(pivot_lazy, sample_cols_kept, design,

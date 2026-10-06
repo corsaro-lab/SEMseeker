@@ -274,7 +274,7 @@ test_that("association_analysis at scope INSTANCE reads area pivots and writes i
                            full.names = TRUE)
   testthat::expect_true(length(csv_files) > 0)
 
-  # AI-308: this block used to assert `any(result_df$DEPTH > 1)` behind a
+  # this block used to assert `any(result_df$DEPTH > 1)` behind a
   # skip() that reported a regression of 53310c1. It could not have detected
   # either: `DEPTH` was removed with depth_analysis, so the guard
   # `"DEPTH" %in% colnames(result_df)` was never true, the skip never fired and

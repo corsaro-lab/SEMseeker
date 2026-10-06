@@ -1,4 +1,4 @@
-# AI-061+ (2026-06-09): parity test — limma chunked-per-chr produces
+# 2026-06-09: parity test: limma chunked-per-chr produces
 # numerically identical results to a monolithic limma fit + eBayes
 # on the same input.
 #
@@ -36,7 +36,7 @@ test_that("limma chunked per chr is bit-equal to monolithic (+ global eBayes)", 
     stringsAsFactors = FALSE
   )
 
-  # Lazy pivot in the AI-061 schema: AREA + sample cols.
+  # Lazy pivot in the schema: AREA + sample cols.
   df <- data.frame(AREA = probe_ids, Y, check.names = FALSE,
                     stringsAsFactors = FALSE)
   pivot_lazy <- polars::as_polars_df(df)$lazy()

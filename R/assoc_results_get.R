@@ -3,7 +3,7 @@
 # High-level public functions (e.g. enrichment_analysis()) use `adjustment_methods`
 # (plural) because they accept a vector to iterate over multiple corrections.
 #
-# AI-257: `area` and `scope` have no defaults. `area = "GENE"` used to be one,
+# `area` and `scope` have no defaults. `area = "GENE"` used to be one,
 # and a default is the wrong shape for this: which region class a caller wants is
 # never obvious from the outside, and a caller that forgot to say got the genes
 # and no indication that it had chosen anything. Every call site now declares
@@ -11,7 +11,7 @@
 # through enrich_gene_set_get(), where GENE and INSTANCE are invariants rather
 # than arguments.
 #
-# AI-257: `adjust_per_area` and `adjust_globally` are gone. They re-ran
+# `adjust_per_area` and `adjust_globally` are gone. They re-ran
 # p.adjust() at READ time, on top of a column that is already adjusted -
 # `pvalue_column` defaults to PVALUE_ADJ_ALL_BH, so switching one on meant BH
 # over BH. No call site in the package ever passed TRUE. `adjust_per_area`
@@ -50,7 +50,7 @@ assoc_results_get <- function (inference_detail, marker,
   colnames(results_inference) <- core_name_cleaning(colnames(results_inference))
   pvalue_column <- core_name_cleaning(pvalue_column)
 
-  # AI-063: pvalue_columns in the user setup is a single vector applied to
+  # pvalue_columns in the user setup is a single vector applied to
   # every (inference_detail × marker) combination, but inference CSVs are
   # per-IV: a setup with IVs {TUMOUR_STAGE_N, BIOLOGICAL_RANK} writes
   # 'I_TUMOUR_STAGE_N_..._PVALUE_ADJ_ALL_FDR' to one CSV and
@@ -71,12 +71,12 @@ assoc_results_get <- function (inference_detail, marker,
   # remove rows ehere pvalue_column is inf or -inf
   results_inference <- results_inference[!is.infinite(results_inference[,pvalue_column]),]
 
-  # AI-257: sem_metrics_name_collect() removed from here. Its body is commented
+  # sem_metrics_name_collect() removed from here. Its body is commented
   # out in full, so the call did nothing - but what it used to do is the reason
   # it does not belong on a read path: it wrote a metrics registry to disk while
   # a consumer was reading. A reader reads.
   multiple_test_adj <- core_name_cleaning(ssEnv$multiple_test_adj)
-  # AI-255: this reader is free - it returns the artefacts the caller asks for.
+  # this reader is free - it returns the artefacts the caller asks for.
   # It replaces `subset(DEPTH == 3)`, which said "per instance" through a number
   # whose meaning had to be remembered, with the coordinates that say it.
   #
@@ -91,7 +91,7 @@ assoc_results_get <- function (inference_detail, marker,
   results_inference <- results_inference[which(results_inference$AREA == area), , drop = FALSE]
   if (!is.null(scope) && "SCOPE" %in% colnames(results_inference))
     results_inference <- results_inference[which(results_inference$SCOPE == scope), , drop = FALSE]
-  # AI-257: name the level instead of matching the method string. `grepl("BH",
+  # name the level instead of matching the method string. `grepl("BH",
   # colnames)` caught every adjusted column at once, so the flag silently became
   # an AND across levels the moment a second one existed. SIGNIFICATIVE_ADJ
   # answers for the widest family, the same one `pvalue_column` defaults to.
@@ -108,7 +108,7 @@ assoc_results_get <- function (inference_detail, marker,
 
   results_inference[results_inference$AREA==area,"AREA_OF_TEST"] <- gsub(results_inference[results_inference$AREA==area,"AREA_OF_TEST"] , pattern="_", replacement="-")
 
-  # AI-257: the re-adjustment at read time is gone, and with it the second
+  # the re-adjustment at read time is gone, and with it the second
   # `subset(AREA == area)` that used to follow it - the first one, above, is the
   # filter, and repeating it here only mattered because the loop in between had
   # overwritten `area`.

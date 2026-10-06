@@ -1,6 +1,6 @@
 #' Read the study sample sheet, optionally joined with the per-sample statistics
 #'
-#' AI-255. The statistics used to live in a sibling CSV produced during the SEM
+#' The statistics used to live in a sibling CSV produced during the SEM
 #' run, which meant the region classes had to be **foreseen six hours earlier**:
 #' asking for one that had not been produced raised *"produce it with
 #' semseeker(sample_stats_scopes = ...) and rerun the analysis"*. They are now
@@ -57,7 +57,7 @@ sem_study_summary_get <- function(sql_sample_selection = "", regions = NULL,
 
 #' Compose the per-sample statistics from the SAMPLE-scope artefacts
 #'
-#' AI-255. Each artefact is one row wide as the study; transposing it gives one
+#' Each artefact is one row wide as the study; transposing it gives one
 #' column per `(region, marker, figure, aggregation)`, which is exactly what a
 #' model wants. Missing artefacts are built by [io_read_pivot()] on the way in.
 #'
@@ -104,7 +104,8 @@ sem_study_summary_get <- function(sql_sample_selection = "", regions = NULL,
   if (is.null(stats) || nrow(stats) == 0)
     return(study_summary)
 
-  # AI-083, moved here by AI-255 with the join. The sample sheet identifiers are
+  # Moved here together with the join, from the fix for burden columns
+  # that were left empty in the per-sample result. The sample sheet identifiers are
   # the reference; the artefacts name their columns after the pivot columns. If
   # the two sets do not intersect at all, the join would silently produce a table
   # of NAs that looks like "this study has no burden" rather than like the
@@ -169,7 +170,7 @@ sem_study_summary_get <- function(sql_sample_selection = "", regions = NULL,
 
 #' Resolve requested region classes against the registry of the run
 #'
-#' AI-255. `"SAMPLE"` means no restriction - every position of the sample, which
+#' `"SAMPLE"` means no restriction - every position of the sample, which
 #' in the taxonomy is the region class `PROBE_WHOLE`. It stays spelled `SAMPLE`
 #' in the column prefixes because that is what a reader of the table expects to
 #' see, and because the depth-1 consumer looks its columns up by that name.

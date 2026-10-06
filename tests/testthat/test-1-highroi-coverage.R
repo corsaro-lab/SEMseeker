@@ -56,7 +56,7 @@ test_that("io_plot_file_name builds a marker/figure plot path", {
   path <- SEMseeker:::io_plot_file_name(detail, folder = tf, key = key)
 
   expect_type(path, "character")
-  # AI-255: DEPTH left the path with the concept it named.
+  # DEPTH left the path with the concept it named.
   expect_false(grepl("DEPTH", path, ignore.case = TRUE))
   expect_match(path, "MUTATIONS", ignore.case = TRUE)
   expect_match(path, "\\.png$", ignore.case = TRUE)

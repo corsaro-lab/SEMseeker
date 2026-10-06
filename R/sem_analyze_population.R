@@ -28,7 +28,7 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
   }
 
   ### get signal_values ########################################################
-  # AI-224: idempotent normalisation of both sides - the per-sample subset
+  # idempotent normalisation of both sides - the per-sample subset
   # below is name-based and must not depend on the caller having cleaned them.
   .normalized <- core_normalize_sample_ids(sample_sheet, signal_data)
   sample_sheet <- .normalized$sample_sheet
@@ -56,7 +56,7 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
   if(ssEnv$showprogress)
     progress_bar <- progressr::progressor(along = seq_len(nrow(sample_sheet)))
 
-  # AI-075: precompute the set of bed/bedgraph files already on disk for each
+  # precompute the set of bed/bedgraph files already on disk for each
   # (marker, figure) combo USED in this population, in ONE list.files() scan
   # per combo. Replaces the per-sample file.exists() (4-5 stat syscalls per
   # iteration x N samples = up to ~20k stat calls per population on big SCs)
@@ -78,7 +78,7 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
   existing_deltas_hypo <- .existing_bed_set("DELTAS", "HYPO")
   existing_deltar_hypo <- .existing_bed_set("DELTAR", "HYPO")
 
-  # AI-075b: pass skip_dir_create=TRUE to io_bed_file_name ONLY when the
+  # pass skip_dir_create=TRUE to io_bed_file_name ONLY when the
   # existing_set for that (marker, figure) is non-empty (= prova certa che
   # la dir esiste). Empty set => skip_dir_create=FALSE => io_dir_check_and_create
   # corre normalmente per creare la dir. No assunzioni cieche.
@@ -178,13 +178,13 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
     # .pkgglobalenv - NOT from the exported `ssEnv` variable. Without this
     # call, multisession workers fail with "core_get_session_info called without
     # result folder". See engineering-decisions.md §1.3.
-    # AI-041: in-memory only; saveRDS would happen N_samples × N_workers
+    # in-memory only; saveRDS would happen N_samples × N_workers
     # times per SEM step otherwise (15 MB per write → catastrophic I/O).
     core_update_session_info(ssEnv, save_to_disk = FALSE)
 
     local_sample_detail <- sample_sheet[i,]
 
-    # AI-075: precomputed existing-bed sets => O(1) %in% lookups instead of
+    # precomputed existing-bed sets => O(1) %in% lookups instead of
     # 4 stat syscalls per sample (~16k saved on a 4000-sample population).
     # skip_dir_create=TRUE because all destination dirs were ensured ONCE at
     # the top of sem_analyze_population - no per-sample dir_check_and_create.
@@ -202,7 +202,7 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
       # Every call inside the worker has to be namespace-qualified: the foreach
       # expression is evaluated in an environment that does not have the package
       # namespace on its search path. io_signal_figure() was left unqualified
-      # when AI-248 introduced it, which resolves under an attached package but
+      # when it was introduced with the explicit aggregation, which resolves under an attached package but
       # not in a parallel worker.
       bed_filename <- io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "SIGNAL", io_signal_figure())
       signal_values <- utils::read.delim(bed_filename, header = FALSE, sep = "\t")
@@ -228,7 +228,7 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
   if (exists("signal_data", envir = environment(), inherits = FALSE))
     rm("signal_data", envir = environment())
 
-  # AI-041: end-of-batch disk snapshot (workers used save_to_disk=FALSE
+  # end-of-batch disk snapshot (workers used save_to_disk=FALSE
   # inside the foreach; here we persist the session exactly once).
   core_update_session_info(ssEnv, save_to_disk = TRUE)
 

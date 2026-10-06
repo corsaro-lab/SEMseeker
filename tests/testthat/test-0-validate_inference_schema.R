@@ -1,6 +1,6 @@
 # Tests for assoc_validate_inference_schema()
 #
-# AI-035: strict schema validation of inference_details with fuzzy-match
+# strict schema validation of inference_details with fuzzy-match
 # suggestions on typos. These tests pin the user-facing diagnostic so
 # regressions on the error message are caught.
 

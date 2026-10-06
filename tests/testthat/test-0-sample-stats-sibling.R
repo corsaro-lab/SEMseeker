@@ -1,4 +1,4 @@
-## AI-223 slice 1 — per-sample statistics sibling (scope SAMPLE).
+## per-sample statistics sibling (scope SAMPLE).
 ##
 ## Contracts:
 ##   1. column names come from ONE helper, used by producer and consumer alike;
@@ -16,7 +16,7 @@
 # ---------------------------------------------------------------------------
 
 test_that("io_scope_name derives the scope from (area, subarea) alone", {
-  # AI-223 slice 2a: the producer writes every scope
+  # the producer writes every scope
   # once, so it names them from the pair alone.
   expect_equal(SEMseeker:::io_scope_name(area = "GENE", subarea = "TSS1500"),
                "GENE_TSS1500")
@@ -110,7 +110,7 @@ test_that("semseeker() writes the statistics sibling and leaves the sample sheet
                             markers = c("MUTATIONS", "DELTAP", "DELTAS"),
                             start_fresh = FALSE)
 
-  # AI-255: the statistics are SCOPE = SAMPLE artefacts, composed on read.
+  # the statistics are SCOPE = SAMPLE artefacts, composed on read.
   sheet_csv <- file.path(tempFolder, "Data", "SAMPLE_SHEET_RESULT.csv")
   expect_true(file.exists(sheet_csv))
 
@@ -122,10 +122,10 @@ test_that("semseeker() writes the statistics sibling and leaves the sample sheet
   # one row per sample of the signal matrix
   expect_equal(nrow(stats), ncol(syn$signal))
 
-  # AI-248: `markers` means one thing for every marker, SIGNAL included — this
+  # `markers` means one thing for every marker, SIGNAL included: this
   # run did not ask for it, so its descriptors must NOT be there.
   #
-  # AI-255: N_PROBES is no longer among them. It is not an aggregation of a
+  # N_PROBES is no longer among them. It is not an aggregation of a
   # marker over a region class but a property of the imputation — how many
   # positions of that sample survived the treatment of missing values — so it
   # travels with the sample sheet. Nothing is lost for the density: the MEAN of
@@ -149,7 +149,7 @@ test_that("semseeker() writes the statistics sibling and leaves the sample sheet
   # a marker that was not asked for produces no column
   expect_equal(intersect(signal_cols, colnames(stats)), character(0))
 
-  # AI-223 net move: the burden left the sample sheet
+  # Net move: the burden left the sample sheet
   moved_away <- c("MUTATIONS_HYPER", "MUTATIONS_HYPO", "DELTAS_HYPER",
                   "DELTAP_HYPER", "PROBES_COUNT")
   expect_equal(intersect(moved_away, colnames(sheet)), character(0))
@@ -164,14 +164,14 @@ test_that("semseeker() writes the statistics sibling and leaves the sample sheet
                             start_fresh = FALSE, showprogress = FALSE, verbosity = 1)
   joined <- SEMseeker:::sem_study_summary_get()
   expect_true(all(burden_cols %in% colnames(joined)))
-  # AI-255: N_PROBES comes in from the sample sheet, under its own name — it
+  # N_PROBES comes in from the sample sheet, under its own name: it
   # describes the sample, not a scope of it.
   expect_true("N_PROBES" %in% colnames(joined))
   expect_false("SAMPLE_N_PROBES" %in% colnames(joined))
 })
 
 # ---------------------------------------------------------------------------
-# AI-223 slice 2a - region scope, produced and consumed at SCOPE = SAMPLE
+# region scope, produced and consumed at SCOPE = SAMPLE
 # ---------------------------------------------------------------------------
 
 test_that("a region scope reaches the sibling and the collapsed inference", {
@@ -223,7 +223,7 @@ test_that("a region scope reaches the sibling and the collapsed inference", {
                             markers = c("MUTATIONS", "SIGNAL"),
                             start_fresh = FALSE)
 
-  # AI-255: the region class is asked for at read time, not declared before the
+  # the region class is asked for at read time, not declared before the
   # run. This is the whole point — no rerun to change your mind.
   cls     <- function(subarea) SEMseeker:::io_scope_name(area = "GENE", subarea = subarea)
   classes <- vapply(declared, cls, character(1), USE.NAMES = FALSE)
@@ -243,7 +243,7 @@ test_that("a region scope reaches the sibling and the collapsed inference", {
   for (i in seq_along(scope_cols))
     expect_true(all(stats[[scope_cols[i]]] <= stats[[whole_cols[i]]]))
 
-  # AI-248: asking for SIGNAL gives its descriptors on the scope too — this is
+  # asking for SIGNAL gives its descriptors on the scope too: this is
   # the per-sample median restricted to a region class
   scope_median <- SEMseeker:::io_feature_colname(scope, "SIGNAL", "BETA", "MEDIAN")
   expect_true(scope_median %in% colnames(stats),
@@ -251,7 +251,7 @@ test_that("a region scope reaches the sibling and the collapsed inference", {
   expect_true(all(stats[[scope_median]] >= 0 & stats[[scope_median]] <= 1, na.rm = TRUE))
 
   # ── the mask counts every position once ──────────────────────────────────
-  # AI-255: the mask is no longer a helper of its own — io_pivot_build() derives
+  # the mask is no longer a helper of its own: io_pivot_build() derives
   # every artefact from the position pivot, and at SCOPE = SAMPLE it selects
   # positions rather than partitioning them. The invariant this block guards is
   # unchanged and is the important one: a probe the annotation maps onto three
@@ -263,7 +263,7 @@ test_that("a region scope reaches the sibling and the collapsed inference", {
                             start_fresh = FALSE, showprogress = FALSE, verbosity = 1)
 
   pf <- SEMseeker:::anno_probe_features_get("GENE_TSS1500")
-  # AI-308: keep only the probes that ARE annotated to the class. On the Illumina
+  # keep only the probes that ARE annotated to the class. On the Illumina
   # path anno_probe_features_get() returns the whole annotation table, with NA in
   # the column of the class asked for: for K450, GENE_TSS1500 carries 84,808
   # annotated probes against 401,394 NA. This block used to select the
@@ -376,7 +376,7 @@ test_that("a region scope reaches the sibling and the collapsed inference", {
     family_test          = "spearman",
     transformation_y     = "",
     transformation_x     = "",
-    # AI-308: the request names the aggregation branch, not the region classes.
+    # the request names the aggregation branch, not the region classes.
     # The classes are the (AREA, SUBAREA) pairs declared below in areas/subareas
     # and built at runtime; SCOPE = SAMPLE collapses each of them to one number
     # per sample. The single-position class is normalised to the technology's
@@ -394,7 +394,7 @@ test_that("a region scope reaches the sibling and the collapsed inference", {
       result_folder     = tempFolder,
       parallel_strategy = "sequential",
       markers           = c("MUTATIONS"),
-      # AI-255: the artefact is built here, on the way in, so this call has to
+      # the artefact is built here, on the way in, so this call has to
       # know the region class it is being asked for. The cost did not vanish, it
       # moved: no SEM rerun, but the analysis names its areas. The registry is
       # also what lets a class be resolved without parsing "GENE_TSS1500" back
@@ -416,7 +416,7 @@ test_that("a region scope reaches the sibling and the collapsed inference", {
 
   result_df <- do.call(plyr::rbind.fill,
                        lapply(csv_files, function(f) utils::read.csv2(f, stringsAsFactors = FALSE)))
-  # AI-255: a collapsed row carries the coordinates of the taxonomy, not a
+  # a collapsed row carries the coordinates of the taxonomy, not a
   # made-up AREA. It used to be AREA = "GENE_TSS1500" (the scope name squashed
   # into a coordinate) and AREA = "SAMPLE_GROUP" for the unrestricted one —
   # values invented for the occasion, exactly as "TOTAL" was invented for
@@ -467,7 +467,7 @@ test_that("a retired column stops the analysis instead of testing nothing", {
     verbosity         = verbosity
   )
 
-  # AI-308: this used to name a region class the run had not produced and expect
+  # this used to name a region class the run had not produced and expect
   # the run to stop rather than write a CSV that tested nothing. The request can
   # no longer name a class at all: the classes are the (AREA, SUBAREA) pairs
   # declared with areas/subareas, so the surviving guarantee is the one on the
@@ -504,7 +504,7 @@ test_that("an unknown region class is refused at the door, not silently ignored"
   on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE)
             unlink(tempFolder, recursive = TRUE) }, add = TRUE)
 
-  # AI-255: the region classes are no longer declared at SEM time — semseeker()
+  # the region classes are no longer declared at SEM time: semseeker()
   # lost sample_stats_scopes — so the refusal moved to where they are asked for.
   # A run that quietly dropped an unknown class would look identical to one that
   # honoured it, and the researcher would find out only at analysis time.

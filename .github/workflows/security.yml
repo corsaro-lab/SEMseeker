@@ -1,7 +1,8 @@
-# Security CI — three checks:
-#   1. gitleaks   — scan for hardcoded secrets / API keys in the repository
-#   2. oysteR     — audit R package dependencies against OSS Index CVE database
-#   3. dependency-review — flag vulnerable deps introduced by a PR (PRs only)
+# Security CI - four checks:
+#   1. gitleaks   - scan for hardcoded secrets / API keys in the repository
+#   2. oysteR     - audit R package dependencies against OSS Index CVE database
+#   3. dependency-review - flag vulnerable deps introduced by a PR (PRs only)
+#   4. internal-references - refuse private project-management references
 on:
   push:
     branches-ignore: [main, master]
@@ -119,3 +120,16 @@ jobs:
         with:
           fail-on-severity: high   # block PRs that add HIGH or CRITICAL vulns
           # allow-licenses: MIT, Apache-2.0, GPL-2.0, GPL-3.0, LGPL-2.1
+
+  # ── 4. Internal references ────────────────────────────────────────────────
+  # The repository is public; backlog identifiers and the paths of the private
+  # tooling are pointers nobody outside the project can follow. The whole
+  # tracked tree is checked, so a reference cannot come back by any route.
+  # The same script runs locally as a pre-commit hook (.githooks/).
+  internal-references:
+    name: internal-references
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check the tracked tree
+        run: .github/scripts/check-internal-references.sh

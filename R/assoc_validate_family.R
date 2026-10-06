@@ -74,11 +74,11 @@ assoc_validate_family_test <- function(family_test){
   if(grepl("polynomial_",family_test))
     return(TRUE)
 
-  # AI-040: limma_<degree>[_<partition>] and voom_<degree>[_<partition>].
+  # limma_<degree>[_<partition>] and voom_<degree>[_<partition>].
   # Same parser shape as polynomial; the actual guard against missing
   # limma installation lives at the dispatch point (assoc_apply_stat_model
   # for the batch path, assoc_execute_model for the per-area path) following
-  # the AI-038 dispatch=guard convention.
+  # the dispatch=guard convention.
   if (grepl("^(limma|voom)_", family_test))
     return(TRUE)
 
@@ -100,7 +100,7 @@ assoc_validate_family_test <- function(family_test){
 
 #' Refuse a request whose family test cannot be run
 #'
-#' AI-309. `assoc_validate_family_test()` answers a question: is this string a
+#' `assoc_validate_family_test()` answers a question: is this string a
 #' family this package knows how to fit, and answers it for one value. This is
 #' the *consequence* of that answer at the door of `association_analysis()`,
 #' alongside [assoc_validate_scope()] and [assoc_validate_aggregation()].

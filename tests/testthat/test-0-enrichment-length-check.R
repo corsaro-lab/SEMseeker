@@ -1,11 +1,11 @@
 # Tests for the parameter array length-consistency check at the start of
-# enrichment_analysis() (AI-035).
+# enrichment_analysis().
 #
 # enrichment_analysis iterates over 4 parallel arrays:
 #   pvalue_columns, adjustment_methods, adjust_per_area_s, adjust_globally_s
 # all must have the same length (each index i defines one tuple).
-# Pre-AI-035 the error message said only "must have the same length";
-# post-AI-035 it lists each array with its actual length and tells the
+# Pre-the error message said only "must have the same length";
+# post-it lists each array with its actual length and tells the
 # user where to fix it.
 
 # Minimal inference_details: enough to get past the first subset() filter of

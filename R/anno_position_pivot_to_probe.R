@@ -38,7 +38,7 @@ anno_position_pivot_to_probe <- function(signal_data)
     else                                                  polars::as_polars_df(signal_data)$lazy()
 
   # Single lazy chain: join on coords, dedupe preserving input order
-  # (sort gate is io_signal_save per AI-096 §single-sort-gate-at-pivot-save),
+  # (the single sort gate is io_signal_save, at pivot save),
   # filter probes matching the detected technology, drop annotation columns.
   # NO collect() - caller takes a LazyFrame. Materialisation, if needed,
   # is the caller's explicit decision.

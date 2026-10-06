@@ -1,4 +1,4 @@
-# AI-107 (2026-06-09): smart split of slash-separated AREA names with
+# 2026-06-09: smart split of slash-separated AREA names with
 # prefix recovery. See R/smart_split_area_name.R for the heuristics.
 
 test_that(".anno_smart_split_area_name returns name unchanged when no '/'", {

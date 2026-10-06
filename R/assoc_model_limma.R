@@ -11,10 +11,10 @@
 #' \code{assoc_apply_stat_model()}, so lmFit gets a 1-row response matrix and
 #' eBayes shrinkage degenerates to ordinary OLS t-stat. The full
 #' cross-area shrinkage advantage of limma only materialises in batch
-#' mode (planned in a later phase of AI-040).
+#' mode (planned for a later phase).
 #'
 #' Dispatcher in \code{execute_model.R} checks
-#' \code{requireNamespace("limma")} before calling this - see AI-038's
+#' \code{requireNamespace("limma")} before calling this - see the dispatch = guard point
 #' dispatch=guard pattern.
 #'
 #' @keywords internal

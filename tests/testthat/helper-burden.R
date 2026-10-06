@@ -2,7 +2,7 @@
 # Lives in a helper because testthat isolates each test file's environment:
 # test-8-burden-integration.R and test-0-sample-stats-sibling.R both use it.
 #
-# AI-254 — why every fixture is a PARAMETER and nothing is read from the
+# why every fixture is a PARAMETER and nothing is read from the
 # surrounding scope.
 #
 # This function used to read `nsamples`, `probe_features`, `mySampleSheet` and
@@ -67,10 +67,10 @@
 .burden_required_markers <- c("MUTATIONS",
                               "DELTAP", "DELTAQ", "DELTARP", "DELTARQ",
                               "DELTAS", "DELTAR")
-# AI-223: the burden lives in the statistics sibling under the SAMPLE scope,
+# the burden lives in the statistics sibling under the SAMPLE scope,
 # so the column names carry the scope prefix. Composed here the same way
 # io_burden_colname() composes them on the package side.
-# AI-248: the name carries the aggregation, and which one is produced by
+# the name carries the aggregation, and which one is produced by
 # default depends on the class of the marker — a count is summed, a continuous
 # deviation carries the descriptor set (of which MEAN is the historical value).
 .burden_discrete_markers   <- c("MUTATIONS", "DELTAP", "DELTAQ", "DELTARP", "DELTARQ")

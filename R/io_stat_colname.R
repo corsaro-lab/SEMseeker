@@ -2,11 +2,12 @@
 #'
 #' `<SCOPE>_<STAT>`, e.g. `SAMPLE_MEDIAN` or `GENE_BODY_IQR`.
 #'
-#' **Superseded twice over, and kept only until it is removed (AI-259).**
-#' AI-248 replaced the two rules of AI-223 - this one for descriptors and
+#' **Superseded twice over, and kept only until it is removed.**
+#' Making the aggregation explicit replaced the two rules of the per-sample
+#' table - this one for descriptors and
 #' [io_burden_colname()] for burdens - with the single four-segment compositor
 #' [io_feature_colname()], where the statistic became the `AGGREGATION` segment:
-#' `SAMPLE_MEDIAN` is `SAMPLE_SIGNAL_BETA_MEDIAN` under that rule. AI-255 then
+#' `SAMPLE_MEDIAN` is `SAMPLE_SIGNAL_BETA_MEDIAN` under that rule. The taxonomy unification then
 #' removed the artefact these names described, `SAMPLE_STATS_RESULT.csv`.
 #' Nothing in `R/` calls this function.
 #'

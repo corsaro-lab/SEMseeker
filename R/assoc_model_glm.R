@@ -26,7 +26,7 @@ assoc_glm_model <- function(family_test, tempDataFrame, sig.formula, transformat
 
   result_glm  <- stats::glm( sig.formula, family = as.character(family_test), data = as.data.frame(tempDataFrame))
 
-  # AI-044 (2026-06-09): emit AIC_VALUE + BIC_VALUE in metrics_properties.rda
+  # 2026-06-09: emit AIC_VALUE + BIC_VALUE in metrics_properties.rda
   # canonical uppercase form. Legacy lowercase aic_value retained for
   # backward-compat with downstream consumers that read it by exact name.
   res <- data.frame(

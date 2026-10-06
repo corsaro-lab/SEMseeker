@@ -274,7 +274,7 @@ test_that("enrich_ctdR runs without error on synthetic association results", {
     )
   )
 
-  # AI-308: the skip here used to blame a "depth_analysis = 3 regression"
+  # the skip here used to blame a "depth_analysis = 3 regression"
   # producing only DEPTH = 1 rows. That diagnosis outlived the column it named:
   # depth was retired, and the run above now asks for SCOPE = INSTANCE
   # explicitly, which is what enrichment reads. The conditional stays because

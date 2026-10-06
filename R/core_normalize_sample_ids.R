@@ -4,7 +4,7 @@
 #' that receives a user-supplied sample sheet together with a signal matrix must
 #' route both through this helper BEFORE any column subsetting.
 #'
-#' Background (AI-224): the pipeline cleans `colnames(signal_data)` with
+#' Background: the pipeline cleans `colnames(signal_data)` with
 #' [core_name_cleaning()] (uppercase, non-alphanumeric -> "_") but historically
 #' compared/subset those columns with the RAW `Sample_ID` values coming from the
 #' sample sheet. With identifiers containing "-", "." or spaces the match is

@@ -1,4 +1,4 @@
-# AI-096 Phase 2 (2026-06-09): meta-test — every package referenced by
+# 2026-06-09: meta-test: every package referenced by
 # `skip_if_not_installed("...")` (or `testthat::skip_if_not_installed`)
 # MUST actually be installed in the test environment.
 #
@@ -114,12 +114,12 @@ test_that("every package in skip_if_not_installed(...) is actually installed", {
 
 test_that("known-required CI packages are explicitly checked", {
   # Belt-and-suspenders: even if a test file is removed or refactored,
-  # these packages remain required by AI-044 / AI-040 feature paths. If
+  # these packages remain required by the binomial_bulk and limma feature paths. If
   # one regresses out of CI install, this test fails fast with the
   # specific package name (rather than relying on the scan above).
   required_for_features <- c(
-    "Rfast"   ,   # AI-044 binomial_bulk
-    "limma"       # AI-040 limma_2 / voom_2 batch path
+    "Rfast"   ,   # binomial_bulk
+    "limma"       # limma_2 / voom_2 batch path
   )
   missing <- required_for_features[
     !vapply(required_for_features, requireNamespace,
@@ -130,8 +130,8 @@ test_that("known-required CI packages are explicitly checked", {
       "Required feature packages NOT installed: ",
       paste(missing, collapse = ", "),
       ". These are needed to exercise:\n",
-      "  Rfast → tests/testthat/test-0-glm_model_bulk.R (AI-044)\n",
-      "  limma → tests/testthat/test-apply_stat_model_batch.R (AI-040)\n",
+      "  Rfast → tests/testthat/test-0-glm_model_bulk.R\n",
+      "  limma → tests/testthat/test-apply_stat_model_batch.R\n",
       "Add them to both CI workflows install lists."
     ))
   }

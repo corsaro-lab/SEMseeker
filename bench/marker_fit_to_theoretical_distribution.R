@@ -30,7 +30,7 @@ marker_fit_to_theoretical_distribution <- function()
     result_temp <- foreach::foreach(k = 1:nkeys, .combine =  plyr::rbind.fill, .export = to_export) %dorng%
       # for (k in 1:nkeys)
       {
-        # AI-041: in-memory only (workers need .pkgglobalenv populated,
+        # in-memory only (workers need .pkgglobalenv populated,
         # but no need to hit disk per key).
         update_session_info(ssEnv, save_to_disk = FALSE)
         # k <- 1
@@ -190,7 +190,7 @@ marker_fit_to_theoretical_distribution <- function()
         res_temp
       }
   }
-  # AI-041: end-of-foreach disk snapshot.
+  # end-of-foreach disk snapshot.
   update_session_info(ssEnv, save_to_disk = TRUE)
 
   # res <- plyr::rbind.fill(res, res_temp)

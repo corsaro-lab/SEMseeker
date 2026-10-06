@@ -47,14 +47,14 @@ assoc_validate_inference_schema <- function(inference_details, strict = TRUE) {
     # consecutive, the sign of a difference between them, and levels()[1], which
     # is the reference category of every regression fitted on the variable.
     "independent_variable_order",
-    # AI-308: which of the two aggregation branches the request wants. SAMPLE
+    # which of the two aggregation branches the request wants. SAMPLE
     # reduces the positions to one number per sample, INSTANCE to one number per
     # instance of the region class. They are alternatives, not addends, so the
     # request has to name one. The region classes are NOT named here: they are
     # the (AREA, SUBAREA) pairs of the run, declared with
     # association_analysis(areas =, subareas =) and built at runtime.
     "scope",
-    # AI-248: which aggregation of the feature is tested (SUM, MEAN, MEDIAN,
+    # which aggregation of the feature is tested (SUM, MEAN, MEDIAN,
     # VARIANCE, IQR, MODELOW, MODEHIGH). Mandatory: with several aggregations
     # over the same scope, a request that does not name one does not identify
     # what it wants tested.
@@ -76,7 +76,7 @@ assoc_validate_inference_schema <- function(inference_details, strict = TRUE) {
   # ---- (a) Reject unknown columns with helpful diagnostic ----
   unknown_cols <- setdiff(colnames(inference_details), allowed_columns)
 
-  # AI-255: a column that was REMOVED is not a typo, and telling the user to
+  # a column that was REMOVED is not a typo, and telling the user to
   # register it as legal would send them the wrong way. Name it, say it is gone,
   # and say what replaced it.
   retired <- c(

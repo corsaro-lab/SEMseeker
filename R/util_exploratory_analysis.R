@@ -322,7 +322,7 @@ util_exploratory_analysis <- function(categorical_variables,numerical_variables,
   }
 
   signal_data <- io_source_data_get(signal_data, TRUE)
-  # AI-224: normalise BOTH sides. Cleaning only the signal columns and then
+  # normalise BOTH sides. Cleaning only the signal columns and then
   # comparing them with the raw sample sheet identifiers is what produced the
   # empty intersections below (and an all-but-PROBE "cleaned" parquet) for
   # identifiers such as "C3L-00001-06".
@@ -378,7 +378,7 @@ util_exploratory_analysis <- function(categorical_variables,numerical_variables,
   rm(signal_data)
   gc()
   signal_data <- io_source_data_get(signal_data_original)
-  # AI-224: same normalisation as above - sample_sheet identifiers were already
+  # same normalisation as above - sample_sheet identifiers were already
   # normalised, so only the freshly reloaded matrix needs it here.
   signal_data <- core_normalize_sample_ids(sample_sheet = NULL,
                                            signal_data = signal_data,

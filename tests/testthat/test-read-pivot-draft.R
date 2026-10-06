@@ -1,4 +1,4 @@
-# DRAFT 2026-06-01 (AI-027). Minimal smoke tests for io_read_pivot() dispatch.
+# DRAFT 2026-06-01. Minimal smoke tests for io_read_pivot() dispatch.
 # Not wired into production yet; runs in CI to make sure the new code parses
 # and dispatches correctly on tiny fixtures.
 

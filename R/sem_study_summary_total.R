@@ -1,6 +1,6 @@
 #' Write the study sample sheet of the run (internal)
 #'
-#' AI-223: this function used to append the per-sample burden
+#' this function used to append the per-sample burden
 #' (`MUTATIONS_HYPER`, `DELTAS_HYPO`, ...) and `PROBES_COUNT` to the sample
 #' sheet. Those columns were aggregated over the `AREA == "POSITION"` keys -
 #' i.e. over every probe, with no genomic filter - which is exactly the
@@ -9,7 +9,7 @@
 #' [sem_study_summary_get()], so the sample sheet stays the description of the
 #' study.
 #'
-#' AI-255 brought **one** of them back here: `N_PROBES`. It is a property of the
+#' The taxonomy unification brought **one** of them back here: `N_PROBES`. It is a property of the
 #' imputation - how many positions of that sample survived the treatment of
 #' missing values - not an aggregation of a marker over a region class, so it
 #' belongs with the descriptive properties of the sample rather than in the
@@ -29,7 +29,7 @@ sem_study_summary_total <- function()
     return(invisible(NULL))
   }
 
-  # AI-255: N_PROBES is an imputation property of the sample, so it travels with
+  # N_PROBES is an imputation property of the sample, so it travels with
   # the sample sheet. Absent when the position pivot has not been produced yet,
   # which is not an error: the sheet is usable without it.
   n_probes <- .sem_sample_n_probes()

@@ -1,4 +1,4 @@
-# AI-096 Phase 1 (2026-06-09): anno_position_pivot_to_probe returns LazyFrame.
+# 2026-06-09: anno_position_pivot_to_probe returns LazyFrame.
 #
 # Contract change: returns polars_lazy_frame (was R data.frame in the
 # legacy implementation). Caller is responsible for any materialization,
@@ -50,7 +50,7 @@ test_that("anno_position_pivot_to_probe accepts a polars LazyFrame and returns a
 
   out <- SEMseeker:::anno_position_pivot_to_probe(pivot_lazy)
 
-  # NEW CONTRACT (AI-096): lazy passthrough — return type is LazyFrame.
+  # NEW CONTRACT: lazy passthrough: return type is LazyFrame.
   testthat::expect_s3_class(out, "polars_lazy_frame")
   testthat::expect_false(inherits(out, "data.frame"))
 

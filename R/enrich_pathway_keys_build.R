@@ -1,6 +1,6 @@
 #' The pathway keys of a run, built from the hypothesis it was given (internal)
 #'
-#' AI-261. `util_keys_create()` used to build `keys_for_pathway` at session init
+#' `util_keys_create()` used to build `keys_for_pathway` at session init
 #' by rewriting the registry: every `HYPER` or `HYPO` figure became `HYPER_HYPO`
 #' and every window other than `WHOLE` became `ALL_SUBAREAS`. Two consequences,
 #' neither of them written anywhere. The enrichment restricted to

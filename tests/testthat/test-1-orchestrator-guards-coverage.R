@@ -38,7 +38,7 @@ test_that("assoc_results_get returns an empty frame when the inference file is a
 })
 
 test_that("assoc_results_get refuses to guess which region class and which extent", {
-  # AI-257. `area` used to default to "GENE" and `scope` to NULL, meaning no
+  # `area` used to default to "GENE" and `scope` to NULL, meaning no
   # filter at all: a caller that said neither read the genes of every extent,
   # collapsed rows included, and had nothing to tell it so. Both are required,
   # and the refusal names what it wants.

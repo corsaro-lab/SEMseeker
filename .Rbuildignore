@@ -6,6 +6,7 @@
 ^\.Rprofile$
 ^LICENSE\.md$
 ^\.github$
+^\.githooks$
 ^codecov\.yml$
 ^\.covrignore$
 ^README.Rmd

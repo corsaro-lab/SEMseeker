@@ -14,7 +14,7 @@
 ## Why GSE133774:
 ##   - EPIC 850k → full overlap with test_master_features (20k EPIC probe IDs)
 ##   - Contains real BWS + MLID epimutations (L1 = Beckwith-Wiedemann syndrome)
-##   - Same dataset selected for the getting-started vignette (AI-112)
+##   - Same dataset selected for the getting-started vignette
 ##   - Single consistent source for automated tests AND vignette
 ##
 ## Sample design (3-class SEMseeker pattern, Reference reuse):

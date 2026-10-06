@@ -4,7 +4,7 @@ enrich_WebGestalt <- function(study,
   inference_detail,significance)
 {
 
-  # AI-311: what an enrichment can be about is declared once, not written
+  # what an enrichment can be about is declared once, not written
   # out again here. A pathway is a set of genes, so the input is one row
   # per gene (SCOPE = INSTANCE) of the GENE region class.
   .enrich_in <- enrich_input_invariant()
@@ -63,7 +63,7 @@ enrich_WebGestalt <- function(study,
 
         results_inference <- assoc_results_get(
           inference_detail =  inference_detail,
-          # AI-257: enrichment happens for genes and nothing else - a pathway is a set
+          # enrichment happens for genes and nothing else - a pathway is a set
           # of genes. And it needs a p-value PER gene, so a collapsed artefact (one
           # number per sample) has nothing to list. Two coordinates, both invariant.
           area  = .enrich_in$area,

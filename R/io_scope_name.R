@@ -1,14 +1,14 @@
 #' Column names of the per-sample features (internal)
 #'
-#' AI-223. These names are the contract between the `SCOPE = SAMPLE` artefacts
+#' These names are the contract between the `SCOPE = SAMPLE` artefacts
 #' and the models fitted on them: [sem_study_summary_get()] composes a column per
 #' artefact, `association_analysis()` looks its features up by name.
 #'
-#' AI-255 removed the file they used to live in (`SAMPLE_STATS_RESULT.csv`); the
+#' The taxonomy unification removed the file they used to live in (`SAMPLE_STATS_RESULT.csv`); the
 #' names outlived it because they name a *feature*, not a file.
 #'
 #' **The rule stated here is no longer the only place the string is built.**
-#' Since AI-255 the region classes of a run come from the registry
+#' The region classes of a run now come from the registry
 #' `ssEnv$keys_areas_subareas`, and `.sem_regions_resolve()` takes the scope
 #' string from its `COMBINED` column rather than calling this function, which is
 #' left with no caller in `R/` (the tests still exercise it). On a region class
@@ -17,7 +17,7 @@
 #' `SAMPLE` case they do *not* share - `COMBINED` gives `""` for an empty pair
 #' and `.sem_regions_resolve()` intercepts `"SAMPLE"` before it reaches the
 #' registry. So the agreement holds by construction, not by contract, which is
-#' the arrangement this helper was written to prevent. Tracked in AI-259.
+#' the arrangement this helper was written to prevent. Still to be cleaned up.
 #'
 #' The name of a scope is the region class it covers - `GENE_TSS1500` - or
 #' `SAMPLE` when there is no restriction at all. It used to be derived from

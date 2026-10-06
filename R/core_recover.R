@@ -20,6 +20,6 @@ core_recover <- function(result_folder, maxResources = 90,
   sem_study_summary_total()
   anno_annotate_position_pivots()
 
-  # Single point of sidecar materialisation (AI-027).
+  # Single point of sidecar materialisation.
   core_ensure_sidecars(ssEnv$result_folderData)
 }

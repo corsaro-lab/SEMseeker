@@ -1,10 +1,10 @@
-# AI-185. The function is internal (@keywords internal @noRd), so it is NOT on
+# The function is internal (@keywords internal @noRd), so it is NOT on
 # the search path of the installed package: every call needs the ::: form.
 # devtools::load_all() puts internals in scope and hides this, which is why
 # these tests passed locally and every one of them errored in CI with
 # "could not find function". The original commit had the same defect, so this
 # file had never once run against an installed package.
-# AI-185 (2026-06-26): unit tests for SEMseeker:::assoc_statistical_power().
+# 2026-06-26: unit tests for SEMseeker:::assoc_statistical_power().
 #
 # This exercises the STATISTICAL MACHINERY (per-probe partial f^2 + non-central
 # F power + prospective design-power verdict), so it deliberately uses a small

@@ -1,13 +1,13 @@
-# AI-044 / AI-061 (2026-06-09): polars-native equivalent of
-# `io_data_preparation()` for the AI-061 lazy batch path. Pins down:
+# 2026-06-09: polars-native equivalent of
+# `io_data_preparation()` for the lazy batch path. Pins down:
 #
 #   1. transformation_y (none/log/log2/log10/exp/scale) produces values
 #      bit-equal (tol 1e-7) to R-side log() / log10() / etc.
-#   2. AI-044 universal degenerate-burden filter drops rows where every
+#   2. universal degenerate-burden filter drops rows where every
 #      sample column carries the same value.
 #   3. Unsupported transformation_y (factor, quantile_<N>) emits a
 #      warning, falls back to "none", and continues — the lazy batch
-#      path keeps running (no hard stop, per AI-097 spec).
+#      path keeps running (no hard stop, by design).
 #   4. The function ALWAYS returns a polars_lazy_frame (never materialises).
 
 test_that("io_data_preparation_lazy passes 'none' through unchanged when no degenerate rows", {
@@ -31,7 +31,7 @@ test_that("io_data_preparation_lazy passes 'none' through unchanged when no dege
   expect_equal(collected[, -1L], df[, -1L], tolerance = 1e-12)
 })
 
-test_that("AI-044 degenerate-burden filter drops rows with var(Y)==0", {
+test_that("degenerate-burden filter drops rows with var(Y)==0", {
   skip_if_not_installed("polars")
   set.seed(12L)
   n <- 30L

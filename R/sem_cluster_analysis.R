@@ -1,7 +1,7 @@
 sem_cluster_analysis <- function(cluster_variables,ellipsis=TRUE, sql_sample_selection="", result_folder, maxResources = 90,
   parallel_strategy  = "multisession",start_fresh = FALSE, ...)
 {
-  # AI-061+ (2026-06-09): propagate start_fresh to core_init_env (was previously
+  # 2026-06-09: propagate start_fresh to core_init_env (was previously
   # hardcoded to FALSE). Same name → same semantics: TRUE wipes the whole
   # result_folder (Chart, Enrichment, Phenotype, Pivots, Data, Log, Inference);
   # FALSE preserves everything. The redundant unlink of result_folderInference
@@ -51,7 +51,7 @@ sem_cluster_analysis <- function(cluster_variables,ellipsis=TRUE, sql_sample_sel
       if(file.exists(plot_filename))
         next
 
-      # AI-027: read via unified dispatcher.
+      # read via unified dispatcher.
       pivot_lazy <- io_read_pivot(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
       if (is.null(pivot_lazy))
         next

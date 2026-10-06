@@ -1,6 +1,6 @@
 #' Validate the requested aggregations against the markers of the run
 #'
-#' AI-248. Semantic validation of `inference_details$aggregation`, run **at the
+#' Semantic validation of `inference_details$aggregation`, run **at the
 #' door** of `association_analysis()` - before the session does any work, before
 #' a single result row is written. Checking it deeper, inside the per-marker
 #' loop, would mean discovering the mistake after part of the output already
@@ -35,7 +35,7 @@
 #' combinations that cannot be computed are named in a warning and skipped
 #' downstream.
 #'
-#' AI-308: it runs **after** [assoc_validate_scope()], and needs to. Which
+#' it runs **after** [assoc_validate_scope()], and needs to. Which
 #' aggregations a marker admits depends on the scope: the two peaks of a
 #' bimodal density need one big group, so they exist at `SCOPE = SAMPLE` and
 #' nowhere else, so a request whose scope has not been validated yet cannot be
@@ -66,7 +66,7 @@ assoc_validate_aggregation <- function(inference_details, keys = NULL) {
   for (z in seq_len(nrow(inference_details))) {
     detail <- inference_details[z, ]
 
-    # AI-255: every artefact, whatever its scope. A per-area value is an
+    # every artefact, whatever its scope. A per-area value is an
     # aggregate of the positions of that area exactly as a per-sample value is
     # an aggregate of the positions it masks. If the request does not name the
     # operator, it does not identify what it is asking for.
@@ -85,7 +85,7 @@ assoc_validate_aggregation <- function(inference_details, keys = NULL) {
            "' is not an aggregation of the taxonomy. Legal names: ",
            paste(legal, collapse = ", "), ".", call. = FALSE)
 
-    # AI-308: the scope of the request reaches the registry. Which aggregations
+    # the scope of the request reaches the registry. Which aggregations
     # a marker admits is not a property of the marker alone: MODELOW/MODEHIGH
     # estimate two peaks of a density and need the whole distribution, so they
     # exist at SCOPE = SAMPLE and nowhere else. Without the scope this check

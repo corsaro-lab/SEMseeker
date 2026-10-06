@@ -55,6 +55,26 @@ re-enabled once macOS CI was confirmed green (run `23841500938`, 18m42s).
 
 ---
 
+## Internal references check
+
+The repository is public, and references to the private project-management
+tooling (backlog item identifiers, the paths of the files that hold them) are
+refused everywhere in the tracked tree. One script holds the rule,
+`.github/scripts/check-internal-references.sh`, and runs in two places:
+
+- in CI, job `internal-references` of `security.yml`, on the whole tree;
+- locally, as a pre-commit hook on the lines a commit adds. Enable it once per
+  clone:
+
+  ```bash
+  git config core.hooksPath .githooks
+  ```
+
+`.gitignore` and `.Rbuildignore` are exempt: they name the agent working
+folder precisely to keep it out.
+
+---
+
 ## Non-CRAN dependencies
 
 ### polars

@@ -111,7 +111,7 @@ utils::data("test_master_features", package = "SEMseeker", envir = environment()
 
 # ── Beta matrix: real GSE133774 (EPIC 850k, BWS + MLID, 10 samples) ───────
 # Built once by data-raw/build_test_signal_fixture.R; ships in data/.
-# Single source of truth for both automated tests and vignette (AI-123).
+# Single source of truth for both automated tests and vignette.
 .trace_step("loading bundled test_signal_gse133774 fixture")
 utils::data("test_signal_gse133774",      package = "SEMseeker", envir = environment())
 utils::data("test_samplesheet_gse133774", package = "SEMseeker", envir = environment())
@@ -179,7 +179,7 @@ nprobes                    <<- nprobes
 
 
 
-LESIONS_BP <<- 5000L  # AI-092 + AI-044 merged: bp-based window, literature-aligned default 5 kbp (see AI-048).
+LESIONS_BP <<- 5000L  # bp-based window, literature-aligned default 5 kbp.
 bonferroni_threshold <<- 0.1
 batch_id <<- 1
 iqrTimes <<- 3

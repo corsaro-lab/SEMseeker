@@ -1,4 +1,4 @@
-# AI-268. `filter_p_value` defaults to TRUE (assoc_analysis.R), and until AI-257
+# `filter_p_value` defaults to TRUE (assoc_analysis.R), and until the key defined the family
 # the default path could not complete: assoc_analysis_save_results() subset on
 # SIGNIFICATIVE_ADJ, a column it never creates — assoc_results_get() builds that
 # one on the way out, not on the way in. Every fixture in the suite sets the flag
@@ -88,7 +88,7 @@ test_that("filter_p_value = FALSE keeps the rows that did not reach significance
 })
 
 test_that("a filtered file tells the resume that the dropped instances were never tested", {
-  # AI-268, the part that is a trade-off and not a fix. The inference CSV is
+  # The part that is a trade-off and not a fix. The inference CSV is
   # also what .assoc_resume_done() reads to decide what not to compute again.
   # Filtering it means the instances that failed to reach significance are no
   # longer on disk, so a resumed run cannot tell them apart from instances that

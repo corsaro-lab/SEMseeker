@@ -1,6 +1,6 @@
 #' Build an artefact from the position pivot, on demand (internal)
 #'
-#' AI-255. The single derivation path of the taxonomy:
+#' The single derivation path of the taxonomy:
 #'
 #' \preformatted{
 #' POSITION/PROBE  ->  mask (AREA, SUBAREA)  ->  group  ->  aggregate
@@ -20,7 +20,7 @@
 #'
 #' * `INSTANCE` **explodes** the multi-gene areas, because a probe belonging to
 #'   three genes must contribute to all three - they are three different
-#'   questions (AI-050);
+#'   questions;
 #' * `SAMPLE` **de-duplicates positions** instead: the mask says which positions
 #'   belong to the region class, each position enters the single group once.
 #'
@@ -110,7 +110,7 @@ io_pivot_build <- function(marker, figure, scope, area, subarea,
 
 #' The key value of a collapsed artefact (internal)
 #'
-#' AI-255. A `SCOPE = SAMPLE` artefact has exactly one row, and the key of that
+#' A `SCOPE = SAMPLE` artefact has exactly one row, and the key of that
 #' row becomes `AREA_OF_TEST` downstream - the answer to "what was tested".
 #'
 #' For a collapsed artefact that answer is **which aggregate**, not which region
@@ -127,7 +127,7 @@ key_col_value <- function(aggregation) {
 
 #' Polars expression for one aggregation on one column (internal)
 #'
-#' AI-255. `IQR` has no direct polars reduction and is the difference of two
+#' `IQR` has no direct polars reduction and is the difference of two
 #' quantiles - which is its definition, not a workaround.
 #'
 #' @keywords internal
@@ -206,7 +206,7 @@ key_col_value <- function(aggregation) {
     # SELECT ONLY. The positions of the class, each one once: a probe annotated
     # to three genes is one position of the sample, not three.
     #
-    # AI-308: `drop_nulls("AREA")` first, and it is not decoration. On the
+    # `drop_nulls("AREA")` first, and it is not decoration. On the
     # Illumina path anno_probe_features_get() returns the WHOLE annotation table
     # (every probe of the array) with NA in the column of the class asked for:
     # for K450, GENE_TSS1500 carries 84,808 annotated probes against 401,394 NA.
@@ -238,7 +238,7 @@ key_col_value <- function(aggregation) {
 
 #' The two modes, column by column (internal)
 #'
-#' AI-255. They have no lazy form: the estimate needs the whole distribution of
+#' They have no lazy form: the estimate needs the whole distribution of
 #' the group. Admissible only at `SCOPE = SAMPLE` - see
 #' [util_aggregations_allowed()] - where a group is one sample, so this walks one
 #' column at a time and never materialises the matrix.

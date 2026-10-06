@@ -1,6 +1,7 @@
 #' Reduce a set of values to one number, by aggregation name (internal)
 #'
-#' AI-248, revised by AI-255. The other half of the AGGREGATION axis:
+#' Written when the aggregation became explicit, revised by the taxonomy
+#' unification. The other half of the AGGREGATION axis:
 #' [util_aggregations_allowed()] declares which names are legal for an artefact,
 #' this one is the only place that says what each name *computes*. Keeping the
 #' two together in one vocabulary is what stops a column called `MEDIAN` from
@@ -15,7 +16,7 @@
 #' distribution rather than a streaming reduce, and enough of it - they delegate
 #' to [util_signal_descriptors()], which refuses below a minimum numerosity.
 #'
-#' AI-255 removed the `N_PROBES` branch that used to live here. The number of
+#' The taxonomy unification removed the `N_PROBES` branch that used to live here. The number of
 #' usable positions is a property of the **imputation** - how many probes of that
 #' sample survived the treatment of missing values - not an aggregation of a
 #' marker, and it belongs in `SAMPLE_SHEET_RESULT` with the other descriptive

@@ -1,6 +1,6 @@
-# AI-060: BLAS detection + one-line WARNING at core_init_env() time.
+# BLAS detection + one-line WARNING at core_init_env() time.
 #
-# R ships with the single-thread reference BLAS by default. AI-040
+# R ships with the single-thread reference BLAS by default. The limma/voom batch families
 # limma/voom families spend most of their wall-clock in BLAS calls
 # (solve / crossprod inside lmFit + eBayes) - they lose ~5-10x against
 # a multi-threaded BLAS (Accelerate on macOS, OpenBLAS or MKL on Linux,

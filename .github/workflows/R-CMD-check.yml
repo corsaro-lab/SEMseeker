@@ -79,7 +79,7 @@ jobs:
       # XQuartz is installed only on macOS to provide /opt/X11/lib/libX11.6.dylib,
       # which R 4.6's tcltk was linked against at install time. Without XQuartz,
       # loading tcltk segfaults at first use (the cause of the test_check crash
-      # tracked in backlog AI-017). This is the test that confirms whether the
+      # root cause not yet found). This is the test that confirms whether the
       # segfault is actually in tcltk/X11 or somewhere else.
       - name: Install system libraries (macOS)
         if: runner.os == 'macOS'
@@ -151,7 +151,7 @@ jobs:
           # if a test would silently skip due to a missing install here.
           #
           #   IlluminaHumanMethylation*anno  array tech detection
-          #   limma                          AI-040 lmFit+eBayes batch path
+          #   limma                          lmFit+eBayes batch path
           #                                  (test-apply_stat_model_batch.R)
           #   AnnotationHub                  test-5-area-granges-build.R
           #   TxDb.Hsapiens.UCSC.hg19.knownGene
@@ -212,7 +212,7 @@ jobs:
           # dependencies = "Suggests") because the full Suggests set pulls
           # in heavy chains (pathfindR → ggkegg, ctdR, etc.) that are not
           # needed for R CMD check and that have repeatedly broken CI.
-          #   Rfast     test-0-glm_model_bulk.R (AI-044 binomial_bulk)
+          #   Rfast     test-0-glm_model_bulk.R (binomial_bulk)
           #   mockery   test-association_model_limma.R (mocked bindings)
           #   ggpubr    test-2-box-plot.R (box plot rendering)
           #   circlize  test-0-enrich-circos.R (the circos drawing itself).

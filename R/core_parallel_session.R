@@ -127,7 +127,7 @@ core_parallel_session <- function()
   future_plan <- future::plan()
   core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Future Plan: ", future_plan)
 
-  # AI-184: multisession/cluster workers are fresh R processes spawned via
+  # multisession/cluster workers are fresh R processes spawned via
   # parallelly::makeClusterPSOCK. When the parent runs under `renv`, those
   # workers start with the SYSTEM .libPaths() (or have renv reset them on
   # startup) and therefore cannot see SEMseeker or its dependencies, which

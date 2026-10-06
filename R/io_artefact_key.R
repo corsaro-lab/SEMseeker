@@ -1,6 +1,6 @@
 #' Compose the identity key of a computed artefact (internal)
 #'
-#' AI-255. **The** single compositor of the six-coordinate key. Everything that
+#' **The** single compositor of the six-coordinate key. Everything that
 #' names an artefact - a pivot file, a row of an inference result, an entry in a
 #' resume or overlap comparison - goes through here, so two artefacts are the
 #' same thing exactly when their keys are equal.
@@ -14,9 +14,9 @@
 #' SIGNAL_BETA_INSTANCE_PROBE_WHOLE_VALUE_HG19      the beta value per probe
 #' }
 #'
-#' Before AI-255 identity was the *combination* of columns, checked separately in
+#' Before the taxonomy unification identity was the *combination* of columns, checked separately in
 #' deduplication, in the resume match and in the cross-study overlaps. Every new
-#' coordinate had to be remembered in each of those places - the work AI-248 did
+#' coordinate had to be remembered in each of those places - the work making the aggregation explicit did
 #' by hand across three files - and forgetting one is exactly how a silent defect
 #' is born. One composed string means the seventh coordinate will change one
 #' function instead of five call sites.
@@ -71,7 +71,7 @@ io_artefact_key <- function(marker, figure, scope, area, subarea, aggregation,
 
 #' The two legal values of the SCOPE coordinate (internal)
 #'
-#' AI-255. `SAMPLE` is the partition with one block - the whole sample reduced to
+#' `SAMPLE` is the partition with one block - the whole sample reduced to
 #' one number - and `INSTANCE` is the partition induced by the region class, one
 #' number per gene, island, cytoband or probe. There is no third value: the
 #' historical 1/2/3 depth scale tried to order a lattice on a line and lost the
@@ -99,7 +99,7 @@ io_scope_validate <- function(scope) {
 
 #' Is this region class a single position? (internal)
 #'
-#' AI-255. `PROBE` and `POSITION` are the bottom of the refinement lattice: one
+#' `PROBE` and `POSITION` are the bottom of the refinement lattice: one
 #' block per position. It is the only place where `VALUE` - the identity, "I do
 #' not aggregate" - is a meaningful aggregation, and the only place where an
 #' omitted aggregation can be resolved without guessing.
@@ -112,11 +112,11 @@ io_area_is_single_position <- function(area) {
 
 #' Which single-position area this technology speaks (internal)
 #'
-#' AI-308. `PROBE` and `POSITION` are two names for the same bottom of the
+#' `PROBE` and `POSITION` are two names for the same bottom of the
 #' lattice, and each technology has exactly one that means anything: Illumina
 #' reports probe ids (`cg00000029`), long reads have no probe concept and are
 #' keyed by coordinate. `assoc_run_marker()` already skips the other one, the
-#' symmetric guard added by AI-098, so the two never both reach a result.
+#' symmetric tech-aware guard, so the two never both reach a result.
 #'
 #' At `SCOPE = SAMPLE` that guard is not enough on its own. The registry always
 #' carries `POSITION` (`util_keys_create()` forces it in), so an Illumina run

@@ -43,7 +43,7 @@ sem_core <- function(sample_sheet,
     ssEnv$running_batch_id <- batch_id
     ssEnv <- core_update_session_info(ssEnv)
     sample_sheet_local <- io_source_data_get(sample_sheet[[batch_id]])
-    # AI-224: single normalisation point for the sheet side. The signal side is
+    # single normalisation point for the sheet side. The signal side is
     # normalised inside sem_analyze_batch(), where the matrix is materialised
     # (keeping it there avoids holding a second reference to a multi-GB object
     # alive in this frame for the whole batch).
@@ -56,13 +56,13 @@ sem_core <- function(sample_sheet,
 
   sem_deltaX_get()
   sem_study_summary_total()
-  # AI-223: per-sample statistics sibling (burden + signal descriptors),
+  # per-sample statistics sibling (burden + signal descriptors),
   # written next to the sample sheet and joined back on Sample_ID by
   # sem_study_summary_get().
   sem_sample_stats_build()
   anno_annotate_position_pivots()
 
-  # Single point of sidecar materialisation (AI-027).
+  # Single point of sidecar materialisation.
   core_ensure_sidecars(ssEnv$result_folderData)
 
   core_log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " Saving Sample Sheet with Results! ")

@@ -1,7 +1,7 @@
-# AI-109 (2026-06-09): contract-level E2E tests for the WGBS / LONGREAD
+# 2026-06-09: contract-level E2E tests for the WGBS / LONGREAD
 # code path. The bulk of SEMseeker's runtime testing has been against
 # Illumina (K27/K450/K850); long-reads exercise a different set of
-# helpers (io_coord_probe_features, AI-098 tech-aware AREA skip, chunked
+# helpers (io_coord_probe_features, tech-aware AREA skip, chunked
 # per-chr lmFit). These tests build SYNTHETIC long-read data and assert
 # the contracts that those helpers must satisfy.
 #
@@ -36,18 +36,18 @@ test_that(".anno_smart_split_area_name is a no-op on coord-encoded AREA (no slas
   }
 })
 
-# ---- AI-106 sanitize regex is a no-op on coord-encoded AREA names ------
+# ---- sanitize regex is a no-op on coord-encoded AREA names ------
 
-test_that("AI-106 sanitize regex preserves coord AREA names verbatim", {
+test_that("sanitize regex preserves coord AREA names verbatim", {
   coord_areas <- c("1_10000", "X_5000", "22_99999999")
   safe <- gsub("[^A-Za-z0-9_.]", "_", coord_areas)
   # Synthetic coords are already in the R-safe set [A-Za-z0-9_.] → no change.
   expect_equal(safe, coord_areas)
 })
 
-# ---- AI-098 tech-aware AREA skip semantics ----------------------------
+# ---- tech-aware AREA skip semantics ----------------------------
 
-test_that("AI-098 AREA skip: PROBE is no-op on long-reads", {
+test_that("AREA skip: PROBE is no-op on long-reads", {
   # The condition lives in run_depth_n_marker.R:
   #   if (key$AREA == "PROBE" && tech_is_longread) next
   for (tech in c("WGBS", "LONGREAD")) {
@@ -60,7 +60,7 @@ test_that("AI-098 AREA skip: PROBE is no-op on long-reads", {
   }
 })
 
-test_that("AI-098 AREA skip: POSITION is no-op on Illumina", {
+test_that("AREA skip: POSITION is no-op on Illumina", {
   for (tech in c("K27", "K450", "K850")) {
     tech_is_longread <- tech %in% c("WGBS", "LONGREAD")
     expect_false(tech_is_longread)
@@ -71,15 +71,15 @@ test_that("AI-098 AREA skip: POSITION is no-op on Illumina", {
   }
 })
 
-test_that("AI-098 source-level: skip predicates live in assoc_run_marker", {
+test_that("source-level: skip predicates live in assoc_run_marker", {
   src <- paste(deparse(SEMseeker:::assoc_run_marker), collapse = "\n")
   expect_true(
     grepl('key\\$AREA\\s*==\\s*"POSITION"\\s*&&\\s*!tech_is_longread', src),
-    info = "AI-098 POSITION skip on Illumina must be present"
+    info = "POSITION skip on Illumina must be present"
   )
   expect_true(
     grepl('key\\$AREA\\s*==\\s*"PROBE"\\s*&&\\s*tech_is_longread', src),
-    info = "AI-098 PROBE skip on long-reads must be present"
+    info = "PROBE skip on long-reads must be present"
   )
 })
 

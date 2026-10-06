@@ -142,7 +142,7 @@ message("\nSetup done. The loop from here on is:\n\n",
         "Use load_package = 'installed' and not devtools::test(): under load_all\n",
         "a helper's closure is package:SEMseeker, whose environment chain reaches\n",
         "neither the global environment nor setup.R's, so the two harnesses do not\n",
-        "measure the same thing (see AI-254).\n")
+        "measure the same thing.\n")
 
 ## 5. Verify, and say so in a file -------------------------------------------
 ## A setup that half-worked is worse than one that failed: the suite still runs,

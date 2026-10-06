@@ -1,4 +1,4 @@
-# AI-096 (2026-06-09): lazy passthrough for the resume path. The legacy
+# 2026-06-09: lazy passthrough for the resume path. The legacy
 # behaviour materialised the SIGNAL pivot into a ~12 GB R data.frame even
 # in resume mode (where io_signal_save would just early-return), then doubled
 # that with an R-side match+sort to align signal_data with probe_features.
@@ -30,11 +30,11 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
  
   ssEnv <- core_get_session_info()
   batch_id <- ssEnv$running_batch_id
-  # AI-224: idempotent - sem_core() already normalised the sheet, but
+  # idempotent - sem_core() already normalised the sheet, but
   # sem_analyze_batch() is also called directly (tests, resume tooling).
   sample_sheet <- core_normalize_sample_ids(sample_sheet)$sample_sheet
 
-  # AI-027: read via unified dispatcher. CASE 2 (streaming merge) lets
+  # read via unified dispatcher. CASE 2 (streaming merge) lets
   # the SEM step pick up raw bed/bedgraph files when the SIGNAL
   # pivot has not been materialised yet.
   signal_pivot <- io_read_pivot("SIGNAL", io_signal_figure(), "POSITION", "WHOLE")
@@ -44,7 +44,7 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
     # ----------------------------------------------------------------
     # RESUME PATH - lazy passthrough
     # ----------------------------------------------------------------
-    # AI-061+ (2026-06-09): extract schema + row count from the RAW
+    # 2026-06-09: extract schema + row count from the RAW
     # POSITION pivot (signal_pivot) BEFORE the anno_position_pivot_to_probe
     # join. Reason: signal_pivot is a direct scan_parquet LazyFrame, so
     # collect_schema() and select(pl$len())$collect() resolve from the
@@ -66,7 +66,7 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
     sample_cols <- setdiff(schema_cols_position,
                            c("CHR", "START", "END", "PROBE"))
 
-    # anno_position_pivot_to_probe returns a LazyFrame post AI-096; the PROBE
+    # anno_position_pivot_to_probe returns a LazyFrame since the lazy passthrough; the PROBE
     # column is the probe identifier, sample columns follow.
     if ("CHR" %in% schema_cols_position) {
       signal_lazy <- anno_position_pivot_to_probe(signal_pivot)
@@ -120,7 +120,7 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
               " post-probe_ids_collect mem_MB=", round(sum(gc()[, "(Mb)"]), 1),
               " n_probe_ids=", length(probe_ids_vec))
 
-    # AI-074: the gate applies to the resume path too - resuming from a SIGNAL
+    # the gate applies to the resume path too - resuming from a SIGNAL
     # pivot still runs the SEM detection downstream.
     sem_coverage_gate(probe_ids_vec)
 
@@ -204,7 +204,7 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
         signal_thresholds = populationControlRangeBetaValues,
         probe_features    = probe_features
       )
-      # AI-061+ (2026-06-09): release the thresholds R data.frame after
+      # 2026-06-09: release the thresholds R data.frame after
       # the bulk pass - sem_analyze_population_bulk copied the data into
       # polars (Rust heap) and rm()'d its own local binding, but R
       # would otherwise keep this parent-frame reference alive for the
@@ -260,7 +260,7 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
   core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
             " working on batch:", batch_id, " of ", nrow(signal_data),
             " rows and ", ncol(signal_data), " samples (fresh mode).")
-  # AI-224: normalise the signal columns with the SAME function used on the
+  # normalise the signal columns with the SAME function used on the
   # sheet identifiers, so the name-based subsetting below cannot silently miss.
   signal_data <- core_normalize_sample_ids(sample_sheet = NULL,
                                            signal_data = signal_data)$signal_data
@@ -276,11 +276,11 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
   core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
             " I will work on:", nrow(signal_data), " PROBES.")
 
-  # AI-074: mandatory coverage gate - charts are produced on every run and the
+  # mandatory coverage gate - charts are produced on every run and the
   # run stops when the input barely overlaps the reference annotation.
   sem_coverage_gate(rownames(signal_data))
 
-  # AI-106+ (2026-06-09): single source of truth for input → annotation
+  # 2026-06-09: single source of truth for input → annotation
   # alignment. sem_prepare_batch_signal() centralises:
   #   - tech-specific probe_features build (manifest for Illumina,
   #     io_coord_probe_features for WGBS / LONGREAD)
@@ -308,7 +308,7 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
     stop(sample_group_checkResult)
   }
 
-  # AI-224: last gate before every name-based column subset below
+  # last gate before every name-based column subset below
   # (io_signal_save, reference matrix, per-population matrices). Fails with the
   # offending identifiers instead of R's opaque "undefined columns selected".
   core_normalize_sample_ids(sample_sheet, signal_data, require_all_ids = TRUE)
@@ -351,7 +351,7 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
   referenceSamples <- referenceSamples[!(referenceSamples$Sample_ID %in% otherSamples$Sample_ID), ]
   sample_sheet     <- rbind(otherSamples, referenceSamples)
 
-  # AI-042: bulk_population path skips the per-sample loop entirely.
+  # bulk_population path skips the per-sample loop entirely.
   if (isTRUE(ssEnv$bulk_population)) {
     sem_analyze_population_bulk(
       signal_data       = signal_data,

@@ -1,6 +1,6 @@
 #' Validate the scope of each request against the run
 #'
-#' AI-308. `SCOPE` is the coordinate that says over what extent one number is
+#' `SCOPE` is the coordinate that says over what extent one number is
 #' valid: `SAMPLE` reduces the positions of a region class to one number per
 #' sample, `INSTANCE` to one number per instance of that class: one per gene,
 #' island, cytoband or probe. They are **two branches of aggregation**, and
@@ -14,7 +14,7 @@
 #' of the output has been written.
 #'
 #' **Why `scope` is required and has no default.** It is the same argument that
-#' made `aggregation` required in AI-248. Any default would silently give a
+#' made `aggregation` required when the aggregation became explicit. Any default would silently give a
 #' request half of what the previous release gave it: an inference CSV that
 #' looks complete and simply never tested one of the two branches. A missing
 #' coordinate is a request that does not identify what it wants.

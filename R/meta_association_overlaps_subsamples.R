@@ -107,7 +107,7 @@ meta_association_overlaps_subsamples <- function(inference_details,alpha = 0.05,
     for (marker in unique(aggregated_results$MARKER))
     {
       tt <- aggregated_results[which(aggregated_results$MARKER == marker), , drop = FALSE]
-      # AI-255: per-instance artefacts, said by the taxonomy
+      # per-instance artefacts, said by the taxonomy
       tt <- tt[which(tt$SCOPE == "INSTANCE"), , drop = FALSE]
 
       tt$KEY <- paste0(tt$AREA,"_",tt$SUBAREA,"_",tt$MARKER,"_",tt$FIGURE,"_",tt$AREA_OF_TEST)
@@ -210,8 +210,8 @@ meta_association_overlaps_subsamples <- function(inference_details,alpha = 0.05,
       aggregated_results_table <- merge(aggregated_results_table, aggregated_results_table_statistic_parameter, by = c("AREA", "SUBAREA", "MARKER", "FIGURE", "AREA_OF_TEST"))
     }
 
-    # AI-106 (2026-06-09): removed legacy gsub round-trip (same fix as
-    # inter_study_association_overlaps.R). Post-AI-106 all CSVs preserve
+    # 2026-06-09: removed legacy gsub round-trip (same fix as
+    # inter_study_association_overlaps.R). Post-all CSVs preserve
     # raw names from upstream annotation; no transformation needed.
     markers <- unique(aggregated_results_table[, c("MARKER")])
     # for (i in seq_along(markers))
@@ -272,7 +272,7 @@ meta_association_overlaps_subsamples <- function(inference_details,alpha = 0.05,
           categories <- ifelse(categories == "", "ALL", categories)
           if(length(categories)<2)
             next
-          # AI-044 (2026-06-09): use shared `util_pretty_label()` helper.
+          # 2026-06-09: use shared `util_pretty_label()` helper.
           categories <- util_pretty_label(categories)
           dest_folder <- io_dir_check_and_create(ssEnv$result_folderChart,c("ASSOCIATION_CROSS_SAMPLE_ANALYSIS",core_name_cleaning(unique(inference_details$association_results_sql_condition),"ALL"), core_name_cleaning(paste(family_test, pvalue_column, run_prefix))))
           filename <-
@@ -332,7 +332,7 @@ meta_association_overlaps_subsamples <- function(inference_details,alpha = 0.05,
             next
           # remove from column name _PVALUE_ADJ
           to_remove <- paste0("_",pvalue_column)
-          # AI-044 (2026-06-09): use shared `util_pretty_label()` helper.
+          # 2026-06-09: use shared `util_pretty_label()` helper.
           categories <- util_pretty_label(categories)
           colnames(area_set) <- gsub(to_remove, "", colnames(area_set))
           colnames(area_set) <- gsub("_", " ", colnames(area_set))

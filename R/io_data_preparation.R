@@ -94,7 +94,7 @@ io_data_preparation <- function(family_test,transformation_y,tempDataFrame, inde
 
   df_colnames <- colnames(tempDataFrame)
 
-  # AI-255: the TOTAL column is gone, and with it the last use of depth.
+  # the TOTAL column is gone, and with it the last use of depth.
   #
   # It was `apply(burden_values, 1, sum)` - the sum of the per-area aggregates -
   # and `depth_analysis == 2` meant "test only that". But the partition into
@@ -134,7 +134,7 @@ io_data_preparation <- function(family_test,transformation_y,tempDataFrame, inde
   if(setequal(burden_values,df_values_orig) & transformation_y !="none")
     transformation_y <- paste0("NA_", transformation_y, sep="")
 
-  # AI-044 (2026-06-08): universal degenerate-burden filter.
+  # 2026-06-08: universal degenerate-burden filter.
   # Burden columns where the response Y is constant (variance == 0) across
   # samples carry no signal - they produce NaN/garbage stats in every model:
   #   - binomial GLM: MLE diverges (intercept-only fit, NaN coeffs/p-values)
@@ -178,7 +178,7 @@ io_data_preparation <- function(family_test,transformation_y,tempDataFrame, inde
     suppressWarnings(
       try(
         {
-          # AI-044 (2026-06-08): questo switch ora usa `transformation_x`
+          # 2026-06-08: questo switch ora usa `transformation_x`
           # (era `transformation_y` per legacy reuse) -> separazione semantica
           # Y vs X. Aggiunto case "factor" per encode l'IV come categorical
           # (utile per glm binomial: OR per livello vs reference).
@@ -204,7 +204,7 @@ io_data_preparation <- function(family_test,transformation_y,tempDataFrame, inde
   }
 
 
-  # AI-044 (2026-06-08): rebuild df_colnames after the degenerate-burden
+  # 2026-06-08: rebuild df_colnames after the degenerate-burden
   # filter above. df_head columns are unchanged (sample-level: IV +
   # covariates); burden_values may now have fewer columns. This replaces
   # the prior strict length check, which fired any time we dropped probes.
@@ -228,7 +228,7 @@ io_data_preparation <- function(family_test,transformation_y,tempDataFrame, inde
   # # remove rows with all NA
   # tempDataFrame <- tempDataFrame[,colSums(is.na(tempDataFrame)) != nrow(tempDataFrame)]
 
-  # AI-106 (2026-06-09): no more colname sanitisation here. Names stay
+  # 2026-06-09: no more colname sanitisation here. Names stay
   # pass-through from the upstream annotation (HLA-A, chr10:...-..., etc).
   # The per-gene foreach in assoc_apply_stat_model() applies its own LOCAL
   # safe<->real memoised mapping ONLY for the duration of the formula

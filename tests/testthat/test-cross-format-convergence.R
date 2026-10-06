@@ -22,7 +22,7 @@ test_that("array, WGBS bedmethyl and LONGREAD bedmethyl produce convergent SEM c
     source(testthat::test_path("helper-bedmethyl.R"))
 
   ## ── 1. Real GSE133774 fixture filtered to KCNQ1OT1 + H19/IGF2 probes ─────
-  ## Same fixture used by setup.R and the getting-started vignette (AI-123).
+  ## Same fixture used by setup.R and the getting-started vignette.
   utils::data("test_signal_gse133774",      package = "SEMseeker", envir = environment())
   utils::data("test_samplesheet_gse133774", package = "SEMseeker", envir = environment())
   utils::data("test_master_features",       package = "SEMseeker", envir = environment())
@@ -130,7 +130,7 @@ test_that("array, WGBS bedmethyl and LONGREAD bedmethyl produce convergent SEM c
   })
 
   ## ── 6. Assert convergence on output existence (smoke level) ──────────────
-  ## A full convergence assertion on the SEM call sets is left to AI-117
+  ## A full convergence assertion on the SEM call sets is left to a regression test on real data
   ## (BWS regression test) — at the smoke level we verify that all three paths
   ## produce non-empty MUTATIONS BED output and that lesion counts are within
   ## ±20 % of each other (quantization tolerance with depth=30 → ~3 % beta).
@@ -138,11 +138,11 @@ test_that("array, WGBS bedmethyl and LONGREAD bedmethyl produce convergent SEM c
   expect_true(wgbs_ok)
   expect_true(lr_ok)
 
-  ## AI-096 lazy-passthrough writes pivot parquets directly — no per-sample
+  ## lazy-passthrough writes pivot parquets directly, no per-sample
   ## BED intermediates. Assert convergence via MUTATIONS_HYPO pivot existence
   ## and row-count parity across the three input formats.
-  ## Full biological convergence (real GSE95486 beta values) is AI-117 + AI-123.
-  # AI-255: the name carries the scope and the aggregation. At POSITION the
+  ## Full biological convergence (real GSE95486 beta values) is still to be written.
+  # the name carries the scope and the aggregation. At POSITION the
   # block is a single position, so the aggregation is VALUE — the identity.
   mut_pivot_rel <- file.path("Data","Pivots","MUTATIONS",
                               "MUTATIONS_HYPO_INSTANCE_POSITION_WHOLE_VALUE_HG19.parquet")

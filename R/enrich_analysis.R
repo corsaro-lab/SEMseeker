@@ -101,12 +101,12 @@ enrichment_analysis <- function(inference_details, adjust_per_area_s, adjust_glo
   }
 
 
-  # AI-311: the invariant is declared in one place and refused here, at the
+  # the invariant is declared in one place and refused here, at the
   # door, instead of being applied as a subset() five call sites downstream. A
   # folder with no per-instance gene row used to yield no enrichment at all,
   # silently, which reads as "nothing was significant" when it means "the input
   # was never computed". Since the two aggregation branches stopped being
-  # additive (AI-308) that folder is easy to produce by accident: a run at
+  # additive that folder is easy to produce by accident: a run at
   # scope = "SAMPLE" is complete, legitimate, and feeds no pathway analysis.
   enrich_input_assert(inference_details)
 

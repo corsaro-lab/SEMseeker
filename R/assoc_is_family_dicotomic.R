@@ -5,7 +5,7 @@ assoc_is_family_dicotomic <- function(family_test) {
     | family_test=="poisson"  | grepl("mean-permutation", family_test)  |
       grepl("polynomial", family_test) | grepl("exp", family_test)  | grepl("pow10", family_test) | grepl("log10", family_test) | grepl("log", family_test) | family_test=="spearman-permutation" | family_test=="quantile-permutation"
     | grepl("mediation-quantreg", family_test) | grepl("mediation-linear", family_test) | grepl("mediation-ridge", family_test)
-    | grepl("^(limma|voom)_", family_test))  # AI-040: regression families
+    | grepl("^(limma|voom)_", family_test))  # regression families
     return(FALSE)
 
   if(family_test=="wilcoxon" | family_test=="t.test" | grepl("wilcoxon.paired",family_test) | grepl("t.test.paired",family_test) |  family_test =="jsd"

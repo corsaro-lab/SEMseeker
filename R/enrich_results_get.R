@@ -1,11 +1,11 @@
 # Symmetric counterpart to enrich_result_save(): reads a single
 # pathway result CSV from disk and applies optional row filters.
 #
-# Architectural rule (see backlog AI-020): a `*_get` helper is
+# Architectural rule: a `*_get` helper is
 # read + filter only. Transforms (p-adjust, category enrichment,
 # PHENOTYPE flag, annotation join) belong in a separate pipeline
 # step, NOT here. enrich_result_save() currently does mix transform
-# with write - that violation is tracked for cleanup in AI-020 and
+# with write - that violation is still to be cleaned up, and
 # kept as-is for now to avoid behaviour drift.
 #
 # The only label-aware read tweak is `dec = "."` for phenolyzer

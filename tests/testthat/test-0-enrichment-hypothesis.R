@@ -6,7 +6,7 @@
 # burden integration in CI.
 
 test_that("neither question has a default, and the refusal is the question", {
-  # AI-261. Until this release the package answered both on the caller's behalf
+  # Until this release the package answered both on the caller's behalf
   # in util_keys_create() and said so nowhere. A default here is the way a
   # question never gets asked, so there is none, and the error explains what the
   # answer changes rather than listing admissible strings.

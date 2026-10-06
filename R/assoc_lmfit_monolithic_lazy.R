@@ -1,4 +1,4 @@
-# AI-061+ (2026-06-09): monolithic lmFit path for the batch-lazy
+# 2026-06-09: monolithic lmFit path for the batch-lazy
 # dispatcher. Extracted from `apply_stat_model_batch_lazy.R` so the
 # dispatcher can pick this path or the chunked-per-chr variant based on
 # the memory gate decision.

@@ -7,7 +7,7 @@ io_bed_file_name <- function(sample_id, sample_group, marker, figure,
     stop("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " io_bed_file_name: sample_group is empty")
   }
 
-  # AI-075: when the caller has already ensured the destination dir exists
+  # when the caller has already ensured the destination dir exists
   # (e.g. sem_analyze_population creates all combos once at the top of the
   # function), skip the per-call file.exists+dir.create check. On a 4000-
   # sample population with 4 marker/figure combos this saves ~16k stat

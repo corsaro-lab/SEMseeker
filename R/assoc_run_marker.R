@@ -28,7 +28,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
   if (nkeys == 0)
     return(list(results = results, processed_items = processed_items))
 
-  # AI-043: Read the existing inference file ONCE before the per-key loop. The
+  # Read the existing inference file ONCE before the per-key loop. The
   # previous design re-read the file inside every iteration AND rbind.fill'd its
   # entire content into the running `results` accumulator, so on a run that
   # iterates over (HYPO, HYPER) for the same marker the file got the
@@ -37,12 +37,12 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
   # Reading once + using the pre-loaded snapshot for the area_to_remove filter
   # keeps both behaviours correct without growing `results` across iterations.
   if (file.exists(fileNameResults) && file.info(fileNameResults)$size > 10) {
-    # AI-078: polars read del CSV di resume cache, 10-30x piu' veloce di
+    # polars read del CSV di resume cache, 10-30x piu' veloce di
     # utils::read.csv2 su file da 600-880 MB. Mantiene la write con
     # write.csv2 per evitare incompatibilita' di formato (polars writes
     # boolean come 'true'/'false' minuscoli, read.csv2 poi li carica come
     # character e rompe i subset logici downstream).
-    # AI-061+ (2026-06-09): three polars 1.x quirks rolled into one read_csv:
+    # 2026-06-09: three polars 1.x quirks rolled into one read_csv:
     #   1. null_values="NA"          - utils::write.csv2 emits "NA" literal
     #      for missing, polars treats only "" as null on numeric columns,
     #      so without this it fails on "NA" in an f64-locked column.
@@ -69,7 +69,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
 
   for (k in seq_len(nkeys)) {
     key <- keys[k, ]
-    # AI-098 (2026-06-09): symmetric tech-aware skip. Each technology has
+    # 2026-06-09: symmetric tech-aware skip. Each technology has
     # exactly one canonical AREA representation; the other is no-op:
     #   - Illumina (K27/K450/K850): PROBE is canonical - literature reports
     #     probe IDs (cg00000029). POSITION would produce a duplicate
@@ -83,7 +83,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
     if (key$AREA == "POSITION" && !tech_is_longread) next
     if (key$AREA == "PROBE"    &&  tech_is_longread) next
 
-    # AI-255: the requested aggregation reaches the read. Until now it was
+    # the requested aggregation reaches the read. Until now it was
     # validated at the door and then dropped here, so a request for MEDIAN on
     # GENE_TSS1500 was answered with the mean - silently, because the file
     # existed and its name said nothing about which operator had produced it.
@@ -99,7 +99,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
                                                  aggregation = aggregation,
                                                  scope = scope)
 
-    # AI-027 + AI-255: read via unified dispatcher, which builds the artefact
+    # read via unified dispatcher, which builds the artefact
     # from the position pivot when it is not on disk. Returns NULL only when the
     # source itself is unavailable. A collapsed artefact is one row tall, so the
     # transpose below yields one feature column - the same shape the fitting
@@ -119,11 +119,11 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
 
     selected_areas_temp <- selected_areas
 
-    # AI-061: low-memory lazy path for limma_/voom_ families. Bypass the
+    # low-memory lazy path for limma_/voom_ families. Bypass the
     # full pivot materialisation + transpose + sample_sheet merge that
     # the legacy chunked loop runs below, all of which together peak at
     # ~30× the raw matrix on a 366k-probe pivot. assoc_apply_stat_model_batch_lazy()
-    # consumes the LazyFrame directly, applies the AI-043 resume filter
+    # consumes the LazyFrame directly, applies the resume filter
     # in polars, and materialises ONE R matrix only.
     is_batch_family <- grepl("^(limma|voom)_", family_test)
     if (is_batch_family) {
@@ -133,7 +133,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
       }
       core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
                 " Batch family '", family_test,
-                "': lazy polars path (AI-061). area_to_remove=",
+                "': lazy polars path. area_to_remove=",
                 length(area_to_remove))
 
       result_temp_local_batch <- assoc_apply_stat_model_batch_lazy(
@@ -146,7 +146,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
         independent_variable = prep$independent_variable,
         area_to_remove       = area_to_remove
       )
-      # AI-077: skip the save when the batch returned NULL/0 rows (resume-skip
+      # skip the save when the batch returned NULL/0 rows (resume-skip
       # case: "nothing left after resume filter"). Without this guard we
       # rewrite the entire 600-880 MB CSV identical to what's already on disk,
       # 4x per round x N round = several minutes of pure I/O waste per family.
@@ -179,13 +179,13 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
       " Starting to read pivot:", pivot_filename, ".")
     tempDataFrame <- as.data.frame(pivot_lazy$collect())
 
-    # AI-043: use the pre-loaded snapshot (old_results_global) for the
+    # use the pre-loaded snapshot (old_results_global) for the
     # area_to_remove filter, NOT a fresh re-read of the file. Don't rbind.fill
     # old_results into the running 'results' accumulator either - that was the
     # source of cross-iteration row doubling. The file's content was already
     # folded into 'results' once, before the for-k loop opened.
     #
-    # AI-062: gene names with '-' (e.g. 'HLA-A', 'ANKHD1-EIF4EBP3') are
+    # gene names with '-' (e.g. 'HLA-A', 'ANKHD1-EIF4EBP3') are
     # rewritten to '_' by io_data_preparation()'s colname sanitisation, so the
     # AREA_OF_TEST that lands in the CSV uses underscores while the AREA
     # column inside the freshly-read pivot still has the dash. Without
@@ -226,7 +226,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
       " Starting to execute required test for:",
       key$MARKER, key$FIGURE, key$AREA, key$SUBAREA, ".")
 
-    # AI-040 Fase 3: limma_<N> and voom_<N> need the WHOLE pivot at once
+    # limma_<N> and voom_<N> need the WHOLE pivot at once
     # for eBayes shrinkage to be statistically meaningful. Per-chunk
     # limma estimates the prior variance from a chunk-specific subset,
     # so p-values become dependent on chunk boundaries - leaky for the
@@ -284,7 +284,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
           ...)
         results <- plyr::rbind.fill(results, result_temp_local_batch)
         results <- results[, !grepl("SAMPLES_SQL_CONDITION", colnames(results)), drop = FALSE]
-        # AI-061+ (2026-06-09): mirror the AI-077 save-guard from the
+        # 2026-06-09: mirror the save-guard from the
         # batch-family branch above. Only rewrite the (potentially
         # hundreds-of-MB) CSV when this chunk actually appended new
         # rows - full resume case (nothing new) should be a no-op.
@@ -315,7 +315,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
 
 #' The aggregation this key is tested on (internal)
 #'
-#' AI-255. `inference_details$aggregation` names the reduction the request wants.
+#' `inference_details$aggregation` names the reduction the request wants.
 #' It was already required and already validated at the door
 #' ([assoc_validate_aggregation()]); what was missing is that it never reached
 #' the read, so the artefact consumed was whichever one the producer happened to
@@ -369,7 +369,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
 
 #' Every artefact this marker is tested on (internal)
 #'
-#' AI-255 unified the two consumers into one. `sem_run_depth1_marker()` read
+#' The taxonomy unification merged the two consumers into one. `sem_run_depth1_marker()` read
 #' columns out of the joined per-sample table, `assoc_run_marker()` read a pivot,
 #' and `depth_analysis` chose between them; the two existed because the two
 #' artefacts had different *shapes*: a table with samples down the rows, a pivot
@@ -379,7 +379,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
 #' does with a pivot of many rows. A model handed a row does not know, and has no
 #' reason to ask, whether the key of that row is a gene symbol or `PROBE_WHOLE`.
 #'
-#' AI-308 gave the *choice* back a home. Unifying the code paths removed the
+#' Making scope pilot a single branch gave the *choice* back a home. Unifying the code paths removed the
 #' second consumer, but it also removed the last thing that selected between the
 #' two aggregations, and nothing inherited that job: this function built both
 #' tables and stacked them, so every request produced the per-sample burden **and**
@@ -401,7 +401,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
 #' @section The single-position class at SCOPE = SAMPLE:
 #' `PROBE_WHOLE` and `POSITION_WHOLE` are one class under two names, and
 #' collapsed they are the same number: the whole sample, no mask. The caller
-#' skips whichever of the two the technology does not speak (AI-098), and
+#' skips whichever of the two the technology does not speak, and
 #' `util_keys_create()` always forces `POSITION` into the registry, so an
 #' Illumina run that did not declare `PROBE` would have its whole-sample burden
 #' built on `POSITION_WHOLE` and then skipped, losing a row without an error.
@@ -411,7 +411,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
 #' @param prep list from sem_prepare_study_for_analysis().
 #' @param marker the marker being tested.
 #' @param ssEnv session environment.
-#' @param family_test unused here since AI-308: `SCOPE = SAMPLE` with a
+#' @param family_test unused here since scope pilots a single branch: `SCOPE = SAMPLE` with a
 #'   `limma_`/`voom_` family is refused at the door by
 #'   [assoc_validate_scope()], where the request can still be rejected instead
 #'   of quietly yielding an empty file. Kept in the signature because the caller
@@ -469,11 +469,12 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
 
 #' Instances already tested for THIS key (internal)
 #'
-#' AI-255. The resume filter decides what not to compute again, so it is an
+#' The resume filter decides what not to compute again, so it is an
 #' identity check - and it was missing two coordinates.
 #'
-#' It matched on `MARKER`, `FIGURE`, `AREA` and `SUBAREA` only. Since AI-248 the
-#' same area appears once per aggregation, and since AI-255 once per scope, so a
+#' It matched on `MARKER`, `FIGURE`, `AREA` and `SUBAREA` only. Since the
+#' aggregation became explicit the same area appears once per aggregation,
+#' and since the taxonomy unification once per scope, so a
 #' run that had already tested `MEAN` on `GENE_WHOLE` left rows that a later run
 #' asking for `MEDIAN` read as "these genes are done" - and skipped every one of
 #' them, writing an empty `MEDIAN` result that looks like a completed job.

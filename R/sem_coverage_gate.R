@@ -1,6 +1,6 @@
 #' Mandatory coverage check run before every SEM analysis (internal)
 #'
-#' AI-074. Coverage used to be an opt-in report: any pipeline path could go
+#' Coverage used to be an opt-in report: any pipeline path could go
 #' straight to the SEM rebuild on signal data that has little or no overlap
 #' with the reference annotation (Nanopore input against an Illumina manifest,
 #' a batch with a probe mismatch, the wrong genome build). The run then

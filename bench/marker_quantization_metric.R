@@ -42,7 +42,7 @@ marker_quantization_metric <- function(result_folder, maxResources = 90, paralle
   result_temp <- foreach::foreach(k = 1:nkeys, .combine =  plyr::rbind.fill, .export = to_export) %dorng%
     # for (k in 1:nkeys)
     {
-      # AI-056: workers must NOT saveRDS on every iteration.
+      # workers must NOT saveRDS on every iteration.
       update_session_info(ssEnv, save_to_disk = FALSE)
 
       # k <- 1
@@ -136,7 +136,7 @@ marker_quantization_metric <- function(result_folder, maxResources = 90, paralle
 
     }
 
-  # AI-056: post-foreach end-of-batch snapshot (matches AI-041 pattern).
+  # post-foreach end-of-batch snapshot (matches pattern).
   update_session_info(ssEnv, save_to_disk = TRUE)
 
   colnames(result_temp) <- toupper(colnames(result_temp))
