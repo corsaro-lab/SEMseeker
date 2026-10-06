@@ -1,12 +1,10 @@
 # ---------------------------------------------------------------------------
 # io_read_pivot() - unified dispatcher for marker pivot access
 #
-# DRAFT 2026-06-01 (AI-027 in semseeker/sestante/backlog.json). Parallel
-# implementation: nothing in the package calls this yet, the existing pivot
-# scan/aggregate paths are untouched. The intent is to converge callers onto
-# io_read_pivot() once validated; existing helpers (anno_create_position_pivots, the
-# inline polars::pl$scan_parquet(...) calls in io_get_pivot_both / coverage /
-# manhattan_plot) remain functional during the transition.
+# The single read path for marker pivots: every reader of a HYPER / HYPO /
+# BOTH pivot goes through here. The writers that build pivots
+# (anno_create_position_pivots, the population bulk step) scan the files they
+# are building directly: they extend a file, they do not consume a pivot.
 #
 # Two-branch dispatch:
 #   (1) parquet pivot already materialised on disk -> scan_parquet (fast path)

@@ -125,7 +125,8 @@
 - **Choosing a representative probe is no longer part of drawing a chart.**
   Asking the old function for one chart was not possible: it scanned every
   marker, computed five probe statistics, wrote them to `PROBES_STAT.csv` and
-  drew ten charts. The statistics are now their own step, which returns the probe
+  drew ten charts. The statistics are now their own exported step,
+  `sem_probe_select_by_statistic()`, which returns the probe
   at the minimum, first quartile, median, third quartile or maximum of the cohort
   burden distribution, together with the total it sits at - so a caller can see
   how near the nearest probe was before reading a chart as representative.

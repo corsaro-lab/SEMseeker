@@ -33,8 +33,22 @@
 #' @return A data.frame with `STATISTIC`, `PROBE` and `VALUE`, one row per
 #'   statistic asked for, or `NULL` when the pivot does not exist.
 #'
-#' @keywords internal
-#' @noRd
+#' @seealso [sem_marker_value_per_sample_plot()], which draws the probe chosen
+#'   here.
+#'
+#' @examples
+#' # Reads the probe pivots written by a previous semseeker() run; sample_sheet
+#' # is the one that run was given.
+#' \dontrun{
+#' picked <- sem_probe_select_by_statistic("DELTAS", "BOTH", c("MEDIAN", "MAX"))
+#' picked
+#' sem_marker_value_per_sample_plot(
+#'   marker = "DELTAS", figure = "BOTH",
+#'   probe = picked$PROBE[picked$STATISTIC == "MAX"],
+#'   sample_sheet = sample_sheet
+#' )
+#' }
+#' @export
 sem_probe_select_by_statistic <- function(marker, figure,
                                          statistics = c("MIN", "Q1", "MEDIAN",
                                                         "Q3", "MAX")) {
