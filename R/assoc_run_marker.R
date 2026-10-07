@@ -199,7 +199,20 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
 
     core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
       " Read pivot:", pivot_filename, " with ", nrow(tempDataFrame), " rows.")
-    tempDataFrame[is.na(tempDataFrame)] <- 0
+
+    # The area is found by NAME. A SAMPLE pivot carries AREA as its last
+    # column; taking the first column instead dropped the first sample and
+    # the merge below brought it back as a zero.
+    if (!("AREA" %in% colnames(tempDataFrame)))
+      stop("ERROR: I'm stopping here, the pivot ", pivot_filename,
+           " has no AREA column.", call. = FALSE)
+    value_cols <- setdiff(colnames(tempDataFrame), "AREA")
+    not_numeric <- value_cols[!vapply(tempDataFrame[value_cols], is.numeric, logical(1))]
+    if (length(not_numeric) > 0)
+      stop("ERROR: I'm stopping here, the pivot ", pivot_filename,
+           " has non-numeric columns besides AREA: ",
+           paste(not_numeric, collapse = ", "), ".", call. = FALSE)
+    tempDataFrame[value_cols] <- util_absent_as_zero(tempDataFrame[value_cols], key$MARKER)
 
     # filter by selected_areas (range or list)
     if (length(selected_areas_temp) > 0) {
@@ -243,13 +256,34 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
     }
     for (i in seq(1, nrow(tempDataFrame), by = chunk_size)) {
       chunk_indices <- i:min(i + chunk_size - 1, nrow(tempDataFrame))
-      batch_df <- as.data.frame(tempDataFrame)[chunk_indices, ]
-      rownames(batch_df) <- batch_df[, 1]
-      batch_df <- batch_df[, -1]
+      batch_df <- as.data.frame(tempDataFrame)[chunk_indices, , drop = FALSE]
+      rownames(batch_df) <- batch_df$AREA
+      batch_df <- batch_df[, value_cols, drop = FALSE]
       batch_df <- as.data.frame(t(batch_df))
       batch_df$Sample_ID <- rownames(batch_df)
       core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
         " Transposed pivot:", pivot_filename, " with ", ncol(batch_df) - 1, " columns.")
+
+      # Every sample of the request must have its column in the pivot. A
+      # missing one is a lost sample, not a zero.
+      lost_samples <- setdiff(prep$sample_names$Sample_ID, batch_df$Sample_ID)
+      if (length(lost_samples) > 0)
+        stop("ERROR: I'm stopping here, ", length(lost_samples),
+             " sample(s) of the request have no column in ", pivot_filename,
+             ": ", paste(utils::head(lost_samples, 10), collapse = ", "),
+             if (length(lost_samples) > 10) ", ..." else "", ".", call. = FALSE)
+
+      # The models read the table by position: the independent variable,
+      # then the covariates, then the areas from g_start on. The table is
+      # therefore laid out here by NAME, so that the positions hold by
+      # construction rather than by the order merge() happens to return.
+      lead_cols <- c(prep$independent_variable, prep$covariates)
+      clash <- intersect(c("Sample_ID", lead_cols),
+                         setdiff(colnames(batch_df), "Sample_ID"))
+      if (length(clash) > 0)
+        stop("ERROR: I'm stopping here, area name(s) in ", pivot_filename,
+             " collide with sample-sheet columns: ",
+             paste(clash, collapse = ", "), ".", call. = FALSE)
 
       if (nrow(batch_df) > 1) {
         batch_df <- merge(x = prep$sample_names, y = batch_df,
@@ -257,14 +291,9 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
         core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
           " Merged pivot:", pivot_filename, " with ", ncol(batch_df), " columns.")
         batch_df <- as.data.frame(batch_df)
-        batch_df[is.na(batch_df)] <- 0
-        batch_df <- batch_df[, -1]
-        cols <- colnames(batch_df)
-        batch_df <- as.data.frame(batch_df)
-        if (length(colnames(batch_df)) != length(cols))
-          stop("ERROR: I'm stopping here data to associate are not correct, file a bug!")
-        colnames(batch_df) <- cols
-        g_start <- 2 + length(prep$covariates)
+        area_cols <- setdiff(colnames(batch_df), c("Sample_ID", lead_cols))
+        batch_df <- batch_df[, c(lead_cols, area_cols), drop = FALSE]
+        g_start <- length(lead_cols) + 1L
         processed_items <- processed_items + ncol(batch_df) - g_start
         if (any(is.na(batch_df))) {
           core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),

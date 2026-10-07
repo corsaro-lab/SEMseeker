@@ -66,7 +66,7 @@ assoc_lmfit_monolithic_lazy <- function(pivot_lazy,
   }
   rm(pivot_vals)
   gc(verbose = FALSE)
-  y_mat[is.na(y_mat)] <- 0
+  y_mat <- util_absent_as_zero(y_mat, key$MARKER)
 
   core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
             " assoc_lmfit_monolithic_lazy [", key$MARKER, "/", key$FIGURE, "/",
