@@ -77,8 +77,12 @@
                           independent_variable, g_start, g_end,
                           covariates, key,
                           transformation_x = "none", ...) {
+    # The burden columns are found by name, as the real function does: every
+    # column but the service ones and the predictors.
     list(tempDataFrame = tempDataFrame,
-         independent_variableLevels = c(NA, NA))
+         independent_variableLevels = c(NA, NA),
+         burden_columns = SEMseeker:::core_data_columns(
+           tempDataFrame, also = c(independent_variable, covariates)))
   }
   unlockBinding("io_data_preparation", asNamespace("SEMseeker"))
   assign("io_data_preparation", passthrough, envir = asNamespace("SEMseeker"))

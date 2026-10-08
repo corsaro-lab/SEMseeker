@@ -60,6 +60,27 @@ assoc_validate_transformation <- function(inference_details) {
       if (!io_transform_known(value)) refuse(z, field, value)
     }
 
+    # transformation_x = "factor" asks for a categorical independent variable.
+    # The two-group and k-group families already take it as one; the regression
+    # families fit one slope and report one p-value per coefficient, with no
+    # overall test for a k-level factor, so they would answer a question the
+    # request did not ask. It used to be accepted there and ignored.
+    tx <- inference_details[["transformation_x"]]
+    family <- inference_details[["family_test"]]
+    if (!is.null(tx) && !is.null(family) &&
+        identical(trimws(as.character(tx[z])), "factor") &&
+        !isTRUE(tryCatch(assoc_is_family_dicotomic(as.character(family[z])),
+                         error = function(e) FALSE)))
+      stop("inference_details row ", z, ": transformation_x is \"factor\" and ",
+           "family_test is \"", family[z], "\", which fits the independent ",
+           "variable as a number.\n",
+           "  A categorical independent variable is taken as such by the ",
+           "two-group and k-group families (t.test, wilcoxon, kruskal.test, ",
+           "binomial, ...); for a regression family declare its order with ",
+           "independent_variable_order, or use one of those families.\n",
+           "  It used to be accepted and ignored, so the model ran on the ",
+           "variable as a number under the name of a factor.", call. = FALSE)
+
     value <- inference_details[["covariates_transformation"]]
     if (is.null(value)) next
     # Positional against covariates, so duplicates are kept: "exp + exp" is two

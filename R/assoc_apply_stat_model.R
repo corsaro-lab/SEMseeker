@@ -114,11 +114,13 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
   colnames(tempDataFrame) <- safe_cols
 
   cols <- colnames(tempDataFrame)
-  g_end <- length(cols)
-  g <- 0
+  # The burden columns by name, as io_data_preparation() found and checked them,
+  # carried over to their R-safe form.
+  burden_cols <- unname(safe_cols[match(prepared_data$burden_columns, real_cols)])
+  n_burden <- length(burden_cols)
 
   if(ssEnv$showprogress)
-    progress_bar <- progressr::progressor(along = g_start:g_end)
+    progress_bar <- progressr::progressor(along = burden_cols)
   else
     progress_bar <- ""
 
@@ -133,9 +135,9 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
     "safe_to_real")
 
   result_columns <- c("MARKER", "FIGURE", "AREA", "SUBAREA", "AREA_OF_TEST", "CI.LOWER", "CI.UPPER", "PVALUE", "STATISTIC_PARAMETER", "AIC_VALUE", "RESIDUALS", "SHAPIRO_PVALUE", "R_MODEL", "STD.ERROR", "N_PERMUTATIONS", "N_PERMUTATIONS_TEST")
-  core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),  " Starting foreach with: ", g_end - g_start, " items")
+  core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),  " Starting foreach with: ", n_burden, " items")
 
-  core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " I'll perform:",g_end - g_start," tests." )
+  core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " I'll perform:", n_burden," tests." )
   result_temp <- data.frame()
   # How the internal helpers reach a worker. .packages attaches SEMseeker there,
   # and an attach exposes the EXPORTED functions only, so it is not what carries
@@ -148,12 +150,11 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
   # same names were already in the list above. The prefix was doing nothing, and
   # R CMD check was reporting it.
   result_temp <- foreach::foreach(
-    g = g_start:g_end,
+    burdenValue = burden_cols,
     .combine = plyr::rbind.fill,
     .export = to_export,
     .packages = "SEMseeker"
   ) %dorng%
-  # for(g in g_start:g_end)
   tryCatch({
     # NOTE: this tryCatch is intentional. doFuture internally wraps the foreach
     # body in tryCatch(error = identity), which returns the error *condition*
@@ -167,7 +168,6 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
     core_update_session_info(ssEnv, save_to_disk = FALSE)
     ssEnv <- core_get_session_info()
 
-    burdenValue <- cols[g]
     if(ssEnv$showprogress)
       progress_bar(sprintf("doing genomic area: %s", stringr::str_pad(burdenValue, 10, pad = " ")))
 
@@ -176,7 +176,7 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
 
       #
       sig.formula <- assoc_apply_stat_model_sig_formula(family_test, burdenValue, independent_variable, covariates)
-      model_result <- assoc_execute_model(family_test, tempDataFrame, sig.formula, burdenValue, independent_variable, transformation_y, (g_end - g_start < 10), samples_sql_condition, key)
+      model_result <- assoc_execute_model(family_test, tempDataFrame, sig.formula, burdenValue, independent_variable, transformation_y, (n_burden <= 10), samples_sql_condition, key)
 
       #
       local_result <- data.frame("INDIPENDENT_VARIABLE" = independent_variable)
