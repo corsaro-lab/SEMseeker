@@ -144,7 +144,8 @@ assoc_glm_model_bulk <- function(tempDataFrame, g_start, family_test,
   y_mat <- as.matrix(vapply(td[, probe_cols, drop = FALSE], as.integer, integer(nrow(td))))
   if (!is.matrix(y_mat)) y_mat <- matrix(y_mat, ncol = length(probe_cols))
   colnames(y_mat) <- probe_cols
-  y_mat[is.na(y_mat)] <- 0L
+  y_mat <- util_absent_as_zero(y_mat, key$MARKER)
+  storage.mode(y_mat) <- "integer"
 
   n_probes <- length(probe_cols)
   ncoef <- ncol(design_no_int) + 1L  # +1 = (Intercept)

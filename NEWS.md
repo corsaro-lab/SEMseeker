@@ -385,6 +385,34 @@
 
 ## Bug fixes
 
+- **At scope SAMPLE, `association_analysis()` lost the first sample of every
+  test.** A SAMPLE pivot carries `AREA` as its last column; the association loop
+  took the first column as the area name and dropped it. The first sample's
+  column vanished, came back from the merge with the sample sheet as `NA`, and
+  the `NA` was turned into 0. Nothing failed: every statistic at scope SAMPLE was
+  computed with that sample's burden set to zero. On the bundled GSE133774
+  fixture, LESIONS HYPO against a phenotype gave a Spearman rho of 0.335 where the
+  data give 0.175.
+
+  Affected: every SAMPLE-scope result of 0.99.5, for every family except the
+  limma/voom ones, which select the area by name. INSTANCE-scope results are not
+  affected (there `AREA` is the first column). **SAMPLE-scope inference produced
+  with 0.99.5 must be run again.**
+
+  The area is now found by name, and the loop refuses a pivot without `AREA` or
+  with any other non-numeric column. A sample of the request with no column in
+  the pivot now stops the run: a missing column is a lost sample, not a zero.
+
+- **An empty cell is read as 0 by one rule, and only in pivot values.** For the
+  counted and derived markers an empty cell means nothing was found and is read
+  as 0; for SIGNAL it is a missing measurement and the run stops instead of
+  reading a beta of 0. The rule is applied to the pivot values only, before the
+  merge with the sample sheet, instead of to the merged table.
+
+- **The per-sample path writes a column for every sample.** A sample that found
+  nothing for a marker writes no bed file, so its column was missing from the
+  POSITION pivot instead of being all zeros. The pivot builder now adds it.
+
 - **Both circos charts drew the wrong genome whenever a study was not hg19.**
   They called `circlize::read.cytoband()` with no species, which defaults to
   hg19, while the session has recorded `genome_build` all along: every gene was

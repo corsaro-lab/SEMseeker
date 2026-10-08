@@ -129,10 +129,10 @@ assoc_apply_stat_model_batch <- function(tempDataFrame, g_start, family_test,
     design <- cbind(`(Intercept)` = 1, poly_mat)
   }
 
-  # Response matrix: M areas x N samples. NAs in burden -> 0 (matches
-  # the implicit handling in the per-area path).
+  # Response matrix: M areas x N samples. An empty burden cell follows the
+  # one rule for pivot values (util_absent_as_zero).
   y_mat <- t(as.matrix(td[, area_cols, drop = FALSE]))
-  y_mat[is.na(y_mat)] <- 0
+  y_mat <- util_absent_as_zero(y_mat, key$MARKER)
   rownames(y_mat) <- area_cols
   mode(y_mat) <- "numeric"
 

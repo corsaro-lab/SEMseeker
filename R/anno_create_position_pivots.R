@@ -73,50 +73,61 @@ anno_create_position_pivots <- function(population, keys) {
                                 marker, figure)
     }, character(1))
     bed_paths <- bed_paths[file.exists(bed_paths)]
-    if (length(bed_paths) == 0L) next
-
-    core_log_event("INFO: ", Sys.time(),
-              " anno_create_position_pivots[", marker, "_", figure,
-              "] stream-merging ", length(bed_paths), " bed file(s)")
-
-    # One-shot lazy pivot built by polars Rust runtime (no R-side loop).
-    new_lazy <- io_stream_merge_bed(bed_paths, marker, figure)
+    if (length(bed_paths) == 0L && !file.exists(pivot_filename)) next
 
     dir.create(dirname(pivot_filename), recursive = TRUE, showWarnings = FALSE)
     tmp_filename <- paste0(pivot_filename, ".tmp")
 
-    if (file.exists(pivot_filename)) {
+    if (length(bed_paths) == 0L) {
 
-      # Merge new sample columns into the existing pivot via one full-outer
-      # join on the genomic key. Coalesce CHR/START/END to avoid the
-      # _right duplicate columns polars emits on a full join.
-      old_lazy <- polars::pl$scan_parquet(pivot_filename)
-      merged <- old_lazy$join(
-        new_lazy,
-        on  = c("CHR", "START", "END"),
-        how = "full"
-      )$with_columns(
-        polars::pl$when(polars::pl$col("CHR")$is_not_null())$
-          then(polars::pl$col("CHR"))$
-          otherwise(polars::pl$col("CHR_right"))$alias("CHR"),
-        polars::pl$when(polars::pl$col("START")$is_not_null())$
-          then(polars::pl$col("START"))$
-          otherwise(polars::pl$col("START_right"))$alias("START"),
-        polars::pl$when(polars::pl$col("END")$is_not_null())$
-          then(polars::pl$col("END"))$
-          otherwise(polars::pl$col("END_right"))$alias("END")
-      )$drop(c("CHR_right", "START_right", "END_right"))
-
-      merged$collect()$
-        sort(c("CHR", "START"), descending = FALSE)$
-        write_parquet(tmp_filename)
+      # No new bed file, only samples that found nothing: the existing pivot
+      # gets their zero columns below.
+      out <- polars::pl$scan_parquet(pivot_filename)
 
     } else {
 
-      new_lazy$collect()$
-        sort(c("CHR", "START"), descending = FALSE)$
-        write_parquet(tmp_filename)
+      core_log_event("INFO: ", Sys.time(),
+                " anno_create_position_pivots[", marker, "_", figure,
+                "] stream-merging ", length(bed_paths), " bed file(s)")
+
+      # One-shot lazy pivot built by polars Rust runtime (no R-side loop).
+      new_lazy <- io_stream_merge_bed(bed_paths, marker, figure)
+
+      out <- if (file.exists(pivot_filename)) {
+        # Merge new sample columns into the existing pivot via one full-outer
+        # join on the genomic key. Coalesce CHR/START/END to avoid the
+        # _right duplicate columns polars emits on a full join.
+        polars::pl$scan_parquet(pivot_filename)$join(
+          new_lazy,
+          on  = c("CHR", "START", "END"),
+          how = "full"
+        )$with_columns(
+          polars::pl$when(polars::pl$col("CHR")$is_not_null())$
+            then(polars::pl$col("CHR"))$
+            otherwise(polars::pl$col("CHR_right"))$alias("CHR"),
+          polars::pl$when(polars::pl$col("START")$is_not_null())$
+            then(polars::pl$col("START"))$
+            otherwise(polars::pl$col("START_right"))$alias("START"),
+          polars::pl$when(polars::pl$col("END")$is_not_null())$
+            then(polars::pl$col("END"))$
+            otherwise(polars::pl$col("END_right"))$alias("END")
+        )$drop(c("CHR_right", "START_right", "END_right"))
+      } else {
+        new_lazy
+      }
     }
+
+    # Every sample of the population gets its column. A sample that found
+    # nothing writes no bed file, and without this its column would be
+    # missing, which a reader cannot tell apart from a lost sample.
+    absent <- setdiff(unique(pop_clean$Sample_ID), names(out))
+    if (length(absent) > 0L)
+      out <- do.call(out$with_columns,
+                     lapply(absent, function(id) polars::pl$lit(0)$alias(id)))
+
+    out$collect()$
+      sort(c("CHR", "START"), descending = FALSE)$
+      write_parquet(tmp_filename)
 
     file.rename(tmp_filename, pivot_filename)
     # Sidecar JSON is now materialised by core_ensure_sidecars() at the end of the
