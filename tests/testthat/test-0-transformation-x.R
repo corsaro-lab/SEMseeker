@@ -37,22 +37,22 @@ test_that("transformation_x makes a column of its own and the model is pointed a
   .x_session()
   ss <- .x_summary()
 
-  res <- SEMseeker:::assoc_covariates_model(.x_detail("log10"), ss)
+  res <- SEMseeker:::assoc_predictors_prepare(.x_detail("log10"), ss)
   expect_equal(res$inference_detail$independent_variable, "STAGE_LOG10")
   expect_equal(res$study_summary$STAGE_LOG10, log10(ss$STAGE))
 
-  res <- SEMseeker:::assoc_covariates_model(.x_detail("pow_2"), ss)
+  res <- SEMseeker:::assoc_predictors_prepare(.x_detail("pow_2"), ss)
   expect_equal(res$inference_detail$independent_variable, "STAGE_POW2")
   expect_equal(res$study_summary$STAGE_POW2, ss$STAGE^2)
 
   # scale keeps the name it always had
-  res <- SEMseeker:::assoc_covariates_model(.x_detail("scale"), ss)
+  res <- SEMseeker:::assoc_predictors_prepare(.x_detail("scale"), ss)
   expect_equal(res$inference_detail$independent_variable, "STAGE_SCALED")
   expect_equal(res$study_summary$STAGE_SCALED,
                (ss$STAGE - mean(ss$STAGE)) / stats::sd(ss$STAGE))
 
   # none leaves the request alone
-  res <- SEMseeker:::assoc_covariates_model(.x_detail("none"), ss)
+  res <- SEMseeker:::assoc_predictors_prepare(.x_detail("none"), ss)
   expect_equal(res$inference_detail$independent_variable, "STAGE")
 })
 

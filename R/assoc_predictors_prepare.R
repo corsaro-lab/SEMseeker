@@ -51,7 +51,7 @@
 #'
 #' @keywords internal
 #' @noRd
-assoc_covariates_model <- function(inference_detail, study_summary)
+assoc_predictors_prepare <- function(inference_detail, study_summary)
 {
   ssEnv <- core_get_session_info()
   collinearity_check <- util_boolean_check(inference_detail$collinearity_check)

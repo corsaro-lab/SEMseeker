@@ -338,7 +338,7 @@ test_that("association_analysis polynomial family runs without error", {
 })
 
 # ---------------------------------------------------------------------------
-# T3 — covariates: exercises assoc_covariates_model (collinearity check, sample filter)
+# T3 — covariates: exercises assoc_predictors_prepare (collinearity check, sample filter)
 # ---------------------------------------------------------------------------
 
 test_that("association_analysis with covariates runs and produces a assoc_covariates_model side-file", {

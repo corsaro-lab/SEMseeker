@@ -1,7 +1,7 @@
 #' Prepare study_summary, covariates, and sample_names for one inference job
 #'
 #' Extracted from association_analysis() (was inline at lines 143-214).
-#' Wraps assoc_covariates_model() + independent_variable validation + factor
+#' Wraps assoc_predictors_prepare() + independent_variable validation + factor
 #' conversion for dichotomous families + sample_names construction with
 #' complete_cases filtering.
 #'
@@ -17,7 +17,7 @@ sem_prepare_study_for_analysis <- function(inference_detail, study_summary, fami
   if (is.null(transformation_y) || length(transformation_y) == 0)
     transformation_y <- NULL
 
-  res_model_covariates <- assoc_covariates_model(inference_detail, study_summary)
+  res_model_covariates <- assoc_predictors_prepare(inference_detail, study_summary)
   study_summary    <- res_model_covariates$study_summary
   covariates       <- res_model_covariates$covariates
   inference_detail <- res_model_covariates$inference_detail

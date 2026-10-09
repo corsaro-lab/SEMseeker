@@ -5,7 +5,7 @@
 ##   assoc_quantreg_model          — quantile regression (lqmm), tau in result
 ##   assoc_mean_permutation        — CPU permutation test, p-value in result
 ##   assoc_test_model_paired       — wilcoxon.paired branch
-##   assoc_covariates_model        — no-op pass-through (no scaling, no PCA, no dummies)
+##   assoc_predictors_prepare        — no-op pass-through (no scaling, no PCA, no dummies)
 ##   assoc_model_polynomial — polynomial lm, degree in result  [requires caret]
 ##
 ## Each test takes its own session folder from sem_test_folder(), to avoid
@@ -234,10 +234,10 @@ test_that("assoc_test_model_paired: >2 group levels returns NA pvalue early", {
 })
 
 # ---------------------------------------------------------------------------
-# assoc_covariates_model  (no-op: no scaling, no PCA, no collinearity, no dummies)
+# assoc_predictors_prepare  (no-op: no scaling, no PCA, no collinearity, no dummies)
 # ---------------------------------------------------------------------------
 
-test_that("assoc_covariates_model: no-op returns list with covariates and study_summary", {
+test_that("assoc_predictors_prepare: no-op returns list with covariates and study_summary", {
   tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -263,7 +263,7 @@ test_that("assoc_covariates_model: no-op returns list with covariates and study_
     samples_sql_condition = NULL
   )
 
-  result <- SEMseeker:::assoc_covariates_model(inference_detail, study_summary)
+  result <- SEMseeker:::assoc_predictors_prepare(inference_detail, study_summary)
 
   expect_type(result, "list")
   expect_true("covariates" %in% names(result))

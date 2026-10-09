@@ -20,7 +20,7 @@ list(study_summary, covariates, sample_names, independent_variable,
 }
 \description{
 Extracted from association_analysis() (was inline at lines 143-214).
-Wraps assoc_covariates_model() + independent_variable validation + factor
+Wraps assoc_predictors_prepare() + independent_variable validation + factor
 conversion for dichotomous families + sample_names construction with
 complete_cases filtering.
 }

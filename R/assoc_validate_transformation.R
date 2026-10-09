@@ -26,7 +26,7 @@
 #' a covariate and the message says what to use instead: `covariates_dummy`
 #' encodes a categorical covariate, which relabelling it as a factor does not.
 #' The length of `covariates_transformation` against `covariates` is checked
-#' where the pairing happens, in [assoc_covariates_model()], because that is
+#' where the pairing happens, in [assoc_predictors_prepare()], because that is
 #' where both have been split.
 #'
 #' @param inference_details The request table.

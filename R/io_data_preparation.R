@@ -13,7 +13,7 @@
 #' @param key named list with AREA, SUBAREA, MARKER and FIGURE identifiers, used
 #'   to name the artefact in the log when degenerate columns are dropped
 #' @param transformation_x not applied here: the independent variable is
-#'   transformed upstream, in assoc_covariates_model(), into a column of its own.
+#'   transformed upstream, in assoc_predictors_prepare(), into a column of its own.
 #'   Kept so the callers' signature does not change.
 #' @param independent_variable_order optional order of the levels of an ordinal
 #'   independent variable, "+"-separated. See util_level_order().
@@ -190,7 +190,7 @@ io_data_preparation <- function(family_test,transformation_y,tempDataFrame, inde
   # The independent variable is not transformed here. It used to be, and the
   # result was written into tempDataFrame and then lost when the table was
   # rebuilt from df_head below, so transformation_x never reached a model.
-  # assoc_covariates_model() now transforms it upstream into a column of its
+  # assoc_predictors_prepare() now transforms it upstream into a column of its
   # own, the way it does for each covariate.
 
   # 2026-06-08: rebuild df_colnames after the degenerate-burden
