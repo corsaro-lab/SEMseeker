@@ -80,10 +80,9 @@ assoc_apply_stat_model_batch <- function(tempDataFrame, g_start, family_test,
                                 independent_variable_order = level_order_local)
   tempDataFrame <- prepared$tempDataFrame
 
-  cols <- colnames(tempDataFrame)
-  g_end <- length(cols)
-  if (g_start > g_end) return(NULL)
-  area_cols <- cols[g_start:g_end]
+  # The burden columns by name, as io_data_preparation() found and checked them.
+  area_cols <- prepared$burden_columns
+  if (length(area_cols) == 0L) return(NULL)
 
   # Drop areas with no variance - uninformative, would crash lmFit.
   area_keep <- vapply(area_cols, function(a) {

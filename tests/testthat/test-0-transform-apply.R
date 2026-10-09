@@ -109,13 +109,13 @@ test_that("io_transform_suffix: the name of the column says the transformation",
              stringsAsFactors = FALSE)
 }
 
-test_that("assoc_covariates_model: each covariate takes its own transformation", {
+test_that("assoc_predictors_prepare: each covariate takes its own transformation", {
   tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   ss <- .cov_summary()
-  res <- SEMseeker:::assoc_covariates_model(
+  res <- SEMseeker:::assoc_predictors_prepare(
     .cov_detail("AGE + BMI + SMOKING", "exp + pow_2 + none"), ss)
 
   # the name moves with the values, so the model's coefficient is reported under
@@ -128,7 +128,7 @@ test_that("assoc_covariates_model: each covariate takes its own transformation",
   expect_equal(res$study_summary$SMOKING, ss$SMOKING)
 })
 
-test_that("assoc_covariates_model: two lengths that disagree are refused, both named", {
+test_that("assoc_predictors_prepare: two lengths that disagree are refused, both named", {
   tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -136,18 +136,18 @@ test_that("assoc_covariates_model: two lengths that disagree are refused, both n
   # R recycles silently, which would apply exp to SMOKING and name the column
   # for the covariate it came from.
   expect_error(
-    SEMseeker:::assoc_covariates_model(
+    SEMseeker:::assoc_predictors_prepare(
       .cov_detail("AGE + BMI + SMOKING", "exp + exp"), .cov_summary()),
     "has 2 entries and covariates has 3")
 })
 
-test_that("assoc_covariates_model: transformation_x no longer reaches the covariates", {
+test_that("assoc_predictors_prepare: transformation_x no longer reaches the covariates", {
   tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   ss  <- .cov_summary()
-  res <- SEMseeker:::assoc_covariates_model(
+  res <- SEMseeker:::assoc_predictors_prepare(
     .cov_detail("AGE + BMI", transformation_x = "scale"), ss)
 
   # the independent variable is scaled and renamed, as before
@@ -158,14 +158,14 @@ test_that("assoc_covariates_model: transformation_x no longer reaches the covari
   expect_false(any(c("AGE_SCALED", "BMI_SCALED") %in% colnames(res$study_summary)))
 })
 
-test_that("assoc_covariates_model: running twice is the same as running once", {
+test_that("assoc_predictors_prepare: running twice is the same as running once", {
   tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   d <- .cov_detail("AGE + BMI", "exp + pow_2")
-  once  <- SEMseeker:::assoc_covariates_model(d, .cov_summary())
-  twice <- SEMseeker:::assoc_covariates_model(d, once$study_summary)
+  once  <- SEMseeker:::assoc_predictors_prepare(d, .cov_summary())
+  twice <- SEMseeker:::assoc_predictors_prepare(d, once$study_summary)
 
   expect_equal(twice$covariates, once$covariates)
   expect_equal(sort(colnames(twice$study_summary)), sort(colnames(once$study_summary)))

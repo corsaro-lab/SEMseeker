@@ -51,7 +51,7 @@
 #'
 #' @keywords internal
 #' @noRd
-assoc_covariates_model <- function(inference_detail, study_summary)
+assoc_predictors_prepare <- function(inference_detail, study_summary)
 {
   ssEnv <- core_get_session_info()
   collinearity_check <- util_boolean_check(inference_detail$collinearity_check)
@@ -81,11 +81,22 @@ assoc_covariates_model <- function(inference_detail, study_summary)
   # meant log10 of age and of body mass index too, which is not a request anyone
   # would write on purpose. A covariate now carries its own transformation, in
   # covariates_transformation, one per covariate.
-  if(transformation_x=="scale")
+  #
+  # It is applied here, into a column of its own, and only here. It used to be
+  # applied for scale here and for everything else in io_data_preparation(),
+  # where the result was lost when the table was rebuilt, so log, log10, pow_<n>,
+  # quantile_<n> and exp never reached a model. "factor" makes no column: the
+  # families that accept it (validated upstream) take the variable as
+  # categorical already.
+  suffix_x <- io_transform_suffix(transformation_x)
+  if (!is.na(suffix_x) && !identical(transformation_x, "factor"))
   {
-    study_summary[,paste0(independent_variable,"_SCALED")] <- scale(study_summary[,independent_variable], center = TRUE, scale = TRUE)
-    core_log_event("JOURNAL: Scaling and centering applied on independent variable: ", independent_variable)
-    inference_detail$independent_variable <- paste0(inference_detail$independent_variable,"_SCALED")
+    new_name <- paste0(independent_variable, "_", suffix_x)
+    study_summary[, new_name] <- as.numeric(
+      io_transform_apply(as.numeric(study_summary[, independent_variable]), transformation_x))
+    core_log_event("JOURNAL: ", transformation_x, " applied on independent variable ",
+                   independent_variable, " as ", new_name)
+    inference_detail$independent_variable <- new_name
   }
 
   # One transformation per covariate, positionally paired with covariates.

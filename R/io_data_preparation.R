@@ -4,20 +4,26 @@
 #' @param transformation_y transformation_y to apply to data
 #' @param tempDataFrame data frame to use for test/regression
 #' @param independent_variable regressor
-#' @param g_start index of the first burden column in tempDataFrame
+#' @param g_start index of the first burden column in tempDataFrame. Checked,
+#'   not trusted: the burden columns are found by name (every column but the
+#'   independent variable and the covariates) and the run stops if
+#'   g_start:g_end does not point at exactly those.
 #' @param g_end index of the last burden column in tempDataFrame
 #' @param covariates vector of covariates to be found in the sample sheet
 #' @param key named list with AREA, SUBAREA, MARKER and FIGURE identifiers, used
 #'   to name the artefact in the log when degenerate columns are dropped
-#' @param transformation_x transformation to apply to the independent variable
+#' @param transformation_x not applied here: the independent variable is
+#'   transformed upstream, in assoc_predictors_prepare(), into a column of its own.
+#'   Kept so the callers' signature does not change.
 #' @param independent_variable_order optional order of the levels of an ordinal
 #'   independent variable, "+"-separated. See util_level_order().
 #'   before the fit; "none" leaves it untouched
 #'
-#' @return A named list with two elements: \code{tempDataFrame} (the prepared
-#'   and optionally transformed data.frame) and \code{independent_variableLevels}
-#'   (the factor levels of the independent variable, or \code{NULL} for continuous
-#'   outcomes).
+#' @return A named list: \code{tempDataFrame} (the prepared and optionally
+#'   transformed data.frame), \code{independent_variableLevels} (the factor
+#'   levels of the independent variable, or \code{NULL} for continuous outcomes)
+#'   and \code{burden_columns} (the names of the burden columns that survived,
+#'   which is what the callers iterate over).
 #'
 io_data_preparation <- function(family_test,transformation_y,tempDataFrame, independent_variable, g_start, g_end, covariates, key, transformation_x = "none",
                                 independent_variable_order = NULL)
@@ -82,15 +88,35 @@ io_data_preparation <- function(family_test,transformation_y,tempDataFrame, inde
   if (independentVariableIsFactor)
     tempDataFrame[, independent_variable] <- independentVariableData
 
-  # drop = FALSE: when g_start == 2 (only one head column = IV) the default
-  # 1D slice returns a vector, colnames(vec) = NULL, and the length check at
-  # the bottom (`ncol(tempDataFrame) != length(df_colnames)`) fires the
-  # "data are not the same size" stop. Forcing data.frame keeps the rebuild
-  # symmetric regardless of how many sample-level columns there are.
-  df_head <- tempDataFrame[, seq_len(g_start - 1), drop = FALSE]
+  # The columns are split by NAME: the independent variable and the covariates
+  # head the table, every other column is a burden. g_start and g_end are the
+  # callers' positional description of the same split; they are checked against
+  # it, so a layout that drifted stops here instead of testing a covariate as an
+  # area or an area as a covariate.
+  lead_cols <- c(independent_variable, covariates)
+  absent <- setdiff(lead_cols, colnames(tempDataFrame))
+  if (length(absent) > 0)
+    stop("ERROR: I'm stopping here, the data to associate lack the column(s) ",
+         paste(absent, collapse = ", "), ".", call. = FALSE)
+  # Service columns (core_service_columns()) identify the row and are neither a
+  # predictor nor a burden; they travel in the head, untouched.
+  service_cols <- setdiff(intersect(core_service_columns(), colnames(tempDataFrame)),
+                          lead_cols)
+  burden_cols <- core_data_columns(tempDataFrame, also = lead_cols)
+  by_position <- if (g_end >= g_start) colnames(tempDataFrame)[g_start:g_end] else character(0)
+  if (!identical(by_position, burden_cols))
+    stop("ERROR: I'm stopping here, g_start:g_end points at ",
+         length(by_position), " column(s) but ", length(burden_cols),
+         " burden column(s) are found by name; the table is not laid out as ",
+         "independent variable, covariates, burdens.", call. = FALSE)
 
-  burden_values <- sapply(tempDataFrame[,g_start:g_end], as.numeric)
-  burden_values <- as.data.frame(burden_values)
+  df_head <- tempDataFrame[, c(service_cols, lead_cols), drop = FALSE]
+
+  # drop = FALSE and lapply: with a single burden column (always the case at
+  # scope SAMPLE) sapply on a 1-column slice returned a bare vector and the
+  # area's name became "burden_values".
+  burden_values <- as.data.frame(lapply(tempDataFrame[, burden_cols, drop = FALSE], as.numeric),
+                                 check.names = FALSE)
 
   df_colnames <- colnames(tempDataFrame)
 
@@ -161,48 +187,11 @@ io_data_preparation <- function(family_test,transformation_y,tempDataFrame, inde
   }
 
 
-  if(family_test!="binomial" & family_test!="binomial_bulk" & family_test!="wilcoxon" & family_test!="jsd" & family_test!="t.test" & family_test!="poisson" &
-      family_test!="chisq.test" & family_test!="fisher.test" & family_test!="kruskal.test")
-  {
-    variable_to_transform <- independent_variable
-    if(length(covariates)>0)
-    {
-      variable_to_transform <- c(independent_variable,covariates)
-      independent_variableValues <-as.data.frame(apply(tempDataFrame[,variable_to_transform] ,2, as.numeric))
-    }
-    else
-    {
-      independent_variableValues <-as.data.frame(as.numeric(tempDataFrame[,variable_to_transform]))
-    }
-    independent_variableValuesOrig <- independent_variableValues
-    suppressWarnings(
-      try(
-        {
-          # 2026-06-08: questo switch ora usa `transformation_x`
-          # (era `transformation_y` per legacy reuse) -> separazione semantica
-          # Y vs X. Aggiunto case "factor" per encode l'IV come categorical
-          # (utile per glm binomial: OR per livello vs reference).
-          independent_variableValues <- io_transform_apply(independent_variableValues,
-                                                           transformation_x)
-        }
-      )
-    )
-
-
-
-    # if(grepl("quantile", transformation_y))
-    # {
-    #   qq <- unlist(strsplit(transformation_y,"_")[2])
-    #   df_values_temp <- as.data.frame(apply( burden_values,2,function(x) dplyr::ntile(x, n=qq)))
-    #   colnames(df_values_temp) <- colnames(burden_values)
-    # }
-
-    if(setequal(burden_values,df_values_orig) & transformation_y !="none")
-      transformation_y <- paste0("NA_", transformation_y, sep="")
-    else
-      tempDataFrame[, variable_to_transform] <- independent_variableValues
-  }
-
+  # The independent variable is not transformed here. It used to be, and the
+  # result was written into tempDataFrame and then lost when the table was
+  # rebuilt from df_head below, so transformation_x never reached a model.
+  # assoc_predictors_prepare() now transforms it upstream into a column of its
+  # own, the way it does for each covariate.
 
   # 2026-06-08: rebuild df_colnames after the degenerate-burden
   # filter above. df_head columns are unchanged (sample-level: IV +
@@ -214,14 +203,19 @@ io_data_preparation <- function(family_test,transformation_y,tempDataFrame, inde
     stop("ERROR: I'm stopping here data are not the same size, file a bug!")
 
   colnames(tempDataFrame) <- df_colnames
-  # after the transformation_y some data could be missed
-  lost_cols <- colSums(apply(tempDataFrame,2,is.nan))!=0
-  lostDataFrame <-  colnames(tempDataFrame)[lost_cols]
-  if(sum(lost_cols)!=0)
-    utils::write.csv2(lostDataFrame, file.path(ssEnv$session_folder,paste("lost_data_",transformation_y,"_",stringi::stri_rand_strings(1, 12, pattern = "[A-Za-z0-9]"),".log", sep="")))
+  burden_cols <- colnames(burden_values)
 
-  #  we want to preserve the NA in the independent variables to be removed by the models
-  tempDataFrame[apply(tempDataFrame,2,is.nan)] <- 0
+  # After transformation_y some burden values can be NaN (log of 0, ...). They
+  # are looked for in the burden columns only and column by column: apply() over
+  # the whole table turned it into a character matrix as soon as the independent
+  # variable was a factor, and is.nan() then found nothing. The independent
+  # variable and the covariates keep their NA, for the models to drop.
+  lost_cols <- burden_cols[vapply(tempDataFrame[burden_cols],
+                                  function(x) any(is.nan(x)), logical(1))]
+  if (length(lost_cols) != 0)
+    utils::write.csv2(lost_cols, file.path(ssEnv$session_folder,paste("lost_data_",transformation_y,"_",stringi::stri_rand_strings(1, 12, pattern = "[A-Za-z0-9]"),".log", sep="")))
+  for (cl in lost_cols)
+    tempDataFrame[is.nan(tempDataFrame[[cl]]), cl] <- 0
   if(family_test=="binomial" | family_test=="binomial_bulk")
     tempDataFrame[, independent_variable] <- as.factor(tempDataFrame[, independent_variable])
 
@@ -237,8 +231,8 @@ io_data_preparation <- function(family_test,transformation_y,tempDataFrame, inde
   # CSV ends up with raw names → enrichment downstream resolves HGNC
   # correctly, resume match is exact.
 
-  result <- list(tempDataFrame, independent_variableLevels)
-  names(result) <- c("tempDataFrame", "independent_variableLevels")
+  result <- list(tempDataFrame, independent_variableLevels, burden_cols)
+  names(result) <- c("tempDataFrame", "independent_variableLevels", "burden_columns")
 
   return (result)
 }

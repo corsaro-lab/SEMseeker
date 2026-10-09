@@ -89,14 +89,13 @@ assoc_glm_model_bulk <- function(tempDataFrame, g_start, family_test,
   tempDataFrame <- prepared$tempDataFrame
   iv_levels <- prepared$independent_variableLevels
 
-  cols <- colnames(tempDataFrame)
-  g_end <- length(cols)
-  if (g_start > g_end) {
+  # The burden columns by name, as io_data_preparation() found and checked them.
+  probe_cols <- prepared$burden_columns
+  if (length(probe_cols) == 0L) {
     core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
               " assoc_glm_model_bulk: no probes survived io_data_preparation - returning NULL.")
     return(NULL)
   }
-  probe_cols <- cols[g_start:g_end]
 
   # 2. Drop samples with NA in IV or covariates (Rfast::glm_logistic
   # doesn't tolerate NAs in the design / response).

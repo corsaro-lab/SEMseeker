@@ -385,6 +385,34 @@
 
 ## Bug fixes
 
+- **`transformation_x` now reaches the model.** It was applied in
+  `io_data_preparation()`, written into the table, and lost when the table was
+  rebuilt from a copy taken before the transformation. Only `scale` worked, by
+  another road. `log`, `log2`, `log10`, `exp`, `pow_<n>` and `quantile_<n>` of the
+  independent variable never reached a model, in any released version. They are
+  now applied upstream, into a column of their own (`<IV>_LOG10`, `<IV>_POW2`,
+  ...) as each covariate already was, and the model is fitted on that column.
+  Results requested with one of these transformations must be run again.
+
+- **`transformation_x = "factor"` is refused for the families that fit the
+  independent variable as a number** (gaussian, polynomial, spearman, ...). It
+  was accepted and ignored, so the model ran on the variable as a number under
+  the name of a factor. The two-group and k-group families (t.test, wilcoxon,
+  kruskal.test, binomial, ...) take it as categorical and still accept it.
+
+- **The burden columns are found by name.** Every column but the independent
+  variable, the covariates and the service columns is a burden; the positional
+  `g_start:g_end` the callers pass is checked against that and a mismatch stops
+  the run. A model with a single burden column (always the case at scope SAMPLE)
+  no longer reports its area as `burden_values`. The service columns (`CHR`,
+  `START`, `END`, `PROBE`, `AREA`, `Sample_ID`, ...) are now declared in one place,
+  `core_service_columns()`.
+
+- **NaN produced by `transformation_y` is found also when the independent
+  variable is a factor.** The check ran over the whole table, which a factor
+  turned into a character matrix where nothing is NaN; it now runs on the burden
+  columns only.
+
 - **At scope SAMPLE, `association_analysis()` lost the first sample of every
   test.** A SAMPLE pivot carries `AREA` as its last column; the association loop
   took the first column as the area name and dropped it. The first sample's
