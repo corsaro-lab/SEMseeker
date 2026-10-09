@@ -5,7 +5,7 @@
 ##   assoc_quantreg_model          — quantile regression (lqmm), tau in result
 ##   assoc_mean_permutation        — CPU permutation test, p-value in result
 ##   assoc_test_model_paired       — wilcoxon.paired branch
-##   assoc_predictors_prepare        — no-op pass-through (no scaling, no PCA, no dummies)
+##   assoc_predictors_prepare        : no-op pass-through (no scaling, no PCA, no dummies)
 ##   assoc_model_polynomial — polynomial lm, degree in result  [requires caret]
 ##
 ## Each test takes its own session folder from sem_test_folder(), to avoid
