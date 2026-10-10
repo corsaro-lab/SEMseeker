@@ -119,6 +119,17 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
   burden_cols <- unname(safe_cols[match(prepared_data$burden_columns, real_cols)])
   n_burden <- length(burden_cols)
 
+  # Nothing left to test (every burden column was constant and dropped):
+  # foreach would be called on an empty set, which doRNG refuses. The old
+  # positional loop counted g_start:g_end backwards in this case and tested the
+  # independent variable as if it were an area.
+  if (n_burden == 0L) {
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+                   " assoc_apply_stat_model [", key$MARKER, " ", key$FIGURE, " ",
+                   key$AREA, " ", key$SUBAREA, "]: no burden column to test.")
+    return(NULL)
+  }
+
   if(ssEnv$showprogress)
     progress_bar <- progressr::progressor(along = burden_cols)
   else
