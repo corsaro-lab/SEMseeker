@@ -1,6 +1,9 @@
 # =============================================================================
-# TEMPLATE - copy this file, rename it test-<area>-<subject>.R, delete what you
-# do not need. It is not run: no file called test_template.R matches testthat's
+# TEMPLATE - copy this file, rename it after the R/ file it tests
+# (test-sem_mutations_get.R tests R/sem_mutations_get.R; a second file on the
+# same source adds an aspect, test-core_init_env-validate.R; cross-cutting files
+# are test-truth_*, test-e2e_*, test-pkg_*), delete what you do not need.
+# It is not run: no file called test_template.R matches testthat's
 # ^test-.*\.R$ pattern, so it sits here as a skeleton rather than as a test.
 #
 # The rules below are in engineering-decisions.md 5.16, with the defect that
