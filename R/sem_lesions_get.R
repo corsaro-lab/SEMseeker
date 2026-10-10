@@ -113,8 +113,13 @@ sem_lesions_get <- function(grouping_column, mutation_annotated_sorted)
   # rows, e.g. LESIONS_BP=0 or isolated probes with no neighbours within the
   # bp threshold), preserving the spirit of the legacy weighting where the
   # divisor never reached zero on a non-trivial window.
-  bp_for_weight <- pmax(tt$BASEPAIR_COUNT, 1)
-  lesionWeighted <- (tt$lesionpValue) < (as.numeric(ssEnv$bonferroni_threshold) / (length(tt$PROBES_COUNT) * log10(bp_for_weight + 9)))
+  # The same correction as sem_lesions_get_bulk(): the number of probes times
+  # log10 of the nominal window, 2 * LESIONS_BP. It used to be log10 of the span
+  # the probes of each window actually cover, which is a lighter correction on a
+  # sparse array and made this path call a few lesions the bulk path did not.
+  # Which of the two the method should use is an open question; until it is
+  # settled the two engines apply the same one.
+  lesionWeighted <- (tt$lesionpValue) < (as.numeric(ssEnv$bonferroni_threshold) / (length(tt$PROBES_COUNT) * log10(2 * lesions_bp)))
   rm(tt)
 
   lesionWeighted <- data.frame(as.data.frame(mutationAnnotatedSortedLocal), "LESIONS" = lesionWeighted)
