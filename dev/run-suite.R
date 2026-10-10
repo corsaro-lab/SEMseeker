@@ -176,6 +176,24 @@ if (nzchar(.asked)) {
   Sys.setenv(TESTTHAT_CPUS = .workers)
 }
 
+## The biological truth goes first and stops the run when it fails. It takes
+## seconds; if the method no longer finds the known epimutations, or finds them
+## where they are not, nothing the other files say about the code matters, and
+## an hour of suite is not worth waiting for.
+if (is.null(filter)) {
+  truth <- as.data.frame(testthat::test_dir("tests/testthat",
+                                            package = "SEMseeker",
+                                            load_package = "installed",
+                                            filter = "^0-biological-truth$",
+                                            reporter = "progress",
+                                            stop_on_failure = FALSE))
+  if (nrow(truth) == 0L)
+    stop("the biological truth test was not found: tests/testthat/test-0-biological-truth.R",
+         call. = FALSE)
+  if (sum(truth$failed) > 0 || any(truth$error))
+    stop("the biological truth does not hold - the suite is not run.", call. = FALSE)
+}
+
 .t0 <- Sys.time()
 res <- testthat::test_dir("tests/testthat",
                           package        = "SEMseeker",

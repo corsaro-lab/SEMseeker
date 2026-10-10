@@ -222,6 +222,17 @@ jobs:
           install.packages(c("Rfast", "mockery", "ggpubr", "circlize"))
         shell: Rscript {0}
 
+      # The biological truth goes first: seconds, and if it fails the hour of
+      # R CMD check below is not worth running. The package is installed from
+      # the checkout so the test reads the code of this commit.
+      - name: Biological truth (stops the job when it fails)
+        run: |
+          R CMD INSTALL --no-docs --no-multiarch .
+          Rscript -e 'res <- as.data.frame(testthat::test_dir("tests/testthat", package = "SEMseeker", load_package = "installed", filter = "^0-biological-truth$", reporter = "progress", stop_on_failure = FALSE)); if (nrow(res) == 0L || sum(res$failed) > 0 || any(res$error)) quit(status = 1)'
+        shell: bash
+        env:
+          NOT_CRAN: "true"
+
       - uses: r-lib/actions/check-r-package@v2
         with:
           upload-snapshots: true
