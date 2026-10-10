@@ -1,5 +1,5 @@
 ## ============================================================================
-## test-cross-format-convergence.R
+## test-e2e_cross_format_convergence.R
 ##
 ## Same biological signal injected via three different input modalities
 ## (Illumina array matrix / WGBS bedmethyl / ONT long-read bedmethyl) must

@@ -39,7 +39,7 @@ test_that("<what is true when this passes>", {
 #
 # skip_if_not_installed() is a promise, not an escape hatch. Whatever is named
 # here MUST also be in .github/workflows/R-CMD-check.yml, in test-coverage.yml
-# and in Dockerfile.ci. test-0-suggests-installed.R scans every call of this
+# and in Dockerfile.ci. test-pkg_suggests_installed.R scans every call of this
 # kind and fails on purpose when one of them would skip: a test that skips is a
 # test that does not exist, and it still counts as green. Five defects lived
 # behind silent skips for months.

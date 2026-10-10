@@ -1,6 +1,6 @@
 # Shared fixture for the burden / per-sample statistics tests.
 # Lives in a helper because testthat isolates each test file's environment:
-# test-8-burden-integration.R and test-0-sample-stats-sibling.R both use it.
+# test-e2e_burden_integration.R and test-sem_sample_stats.R both use it.
 #
 # why every fixture is a PARAMETER and nothing is read from the
 # surrounding scope.

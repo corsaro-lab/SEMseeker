@@ -1,4 +1,4 @@
-## test-0-math-stats.R
+## test-sem_misc.R
 ## Unit tests for pure mathematical / statistical utility functions:
 ##   sem_ssim, sem_variation_of_information, io_convertTextToNumeric,
 ##   util_split_and_clean, sem_metrics_filter, sem_normalize_minimize, sem_normalize_maximize,

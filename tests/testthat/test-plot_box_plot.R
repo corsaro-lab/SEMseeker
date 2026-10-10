@@ -1,4 +1,4 @@
-## test-2-box-plot.R
+## test-plot_box_plot.R
 ## Tests for plot_box_plot(): assert PNG files are created for the box-plot
 ## and violin-plot variants. Requires ggpubr (in Suggests).
 ##

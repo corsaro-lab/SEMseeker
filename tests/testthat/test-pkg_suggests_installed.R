@@ -31,7 +31,7 @@ test_that("every package in skip_if_not_installed(...) is actually installed", {
   # Exclude the meta-test file itself from the scan: it documents the
   # skip_if_not_installed pattern in its comments, and the regex would
   # falsely match placeholder strings like "pkg" inside that documentation.
-  test_files <- test_files[basename(test_files) != "test-0-suggests-installed.R"]
+  test_files <- test_files[basename(test_files) != "test-pkg_suggests_installed.R"]
   expect_true(length(test_files) > 0L)
 
   # Scan each test file for skip_if_not_installed("pkg") patterns.
@@ -130,8 +130,8 @@ test_that("known-required CI packages are explicitly checked", {
       "Required feature packages NOT installed: ",
       paste(missing, collapse = ", "),
       ". These are needed to exercise:\n",
-      "  Rfast → tests/testthat/test-0-glm_model_bulk.R\n",
-      "  limma → tests/testthat/test-apply_stat_model_batch.R\n",
+      "  Rfast → tests/testthat/test-assoc_glm_model_bulk.R\n",
+      "  limma → tests/testthat/test-assoc_apply_stat_model_batch.R\n",
       "Add them to both CI workflows install lists."
     ))
   }

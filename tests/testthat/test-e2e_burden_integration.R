@@ -11,7 +11,7 @@
 # landed as NA, which then crashed every depth=1 inference downstream with
 # "data are not the same size".
 #
-# test-7-association_analysis.R only verifies this indirectly (depth=1 would
+# test-e2e_association_analysis.R only verifies this indirectly (depth=1 would
 # fail on all-NA burden vectors); this test asserts the contract directly:
 #
 #   1. sample_sheet_result.csv exists after semseeker().
@@ -115,7 +115,7 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
   for (lesion_col in c("SAMPLE_LESIONS_HYPER", "SAMPLE_LESIONS_HYPO")) {
     if (!(lesion_col %in% colnames(df))) {
       message(sprintf(
-        "test-8-burden-integration: %s absent, likely synthetic-data sparsity (soft warn)",
+        "test-e2e_burden_integration: %s absent, likely synthetic-data sparsity (soft warn)",
         lesion_col
       ))
     }

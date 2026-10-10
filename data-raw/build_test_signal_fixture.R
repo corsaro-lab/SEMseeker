@@ -119,6 +119,6 @@ sz2 <- file.info("data/test_samplesheet_gse133774.rda")$size / 1024
 cat(sprintf("[fixture] test_signal_gse133774.rda      saved (%.1f KB)\n", sz1))
 cat(sprintf("[fixture] test_samplesheet_gse133774.rda saved (%.1f KB)\n", sz2))
 cat("[fixture] DONE\n")
-cat("[fixture] Next: update setup.R + test-cross-format-convergence.R\n")
+cat("[fixture] Next: update setup.R + test-e2e_cross_format_convergence.R\n")
 cat("[fixture]        + vignettes/getting-started.Rmd to load these fixtures\n")
 cat("[fixture]        + add roxygen docs in R/data.R for both datasets\n")

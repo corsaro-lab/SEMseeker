@@ -8,7 +8,7 @@
 #   159 -> ~40 LOC orchestrator; every helper is under the 50-LOC threshold.
 #
 # Behaviour is preserved end-to-end; only the shape changes. Existing
-# tests in test-0-init_env.R, test-0-set-env_variable.R, test-0-log-event.R
+# tests in test-core_init_env.R, test-core_set_env_variable.R, test-core_log_event.R
 # pass without modification.
 # ---------------------------------------------------------------------------
 

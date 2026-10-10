@@ -1,5 +1,5 @@
 # =============================================================================
-# test-0-normalize_chr.R
+# test-anno_normalize_chr.R
 #
 # Tests for SEMseeker:::anno_normalize_chr() — the single entry point for chromosome name
 # normalization between internal (bare: "1", "X") and output (UCSC: "chr1",
