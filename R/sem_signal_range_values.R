@@ -10,7 +10,6 @@
 
 sem_signal_range_values <- function(populationMatrix, batch_id, probe_features) {
 
-
   ssEnv <- core_get_session_info()
   core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Starting signal thresholds calculation.")
   thresholds_file_name <- io_file_path_build(ssEnv$result_folderData ,c(batch_id, "signal_thresholds"),"parquet")
@@ -42,12 +41,22 @@ sem_signal_range_values <- function(populationMatrix, batch_id, probe_features) 
   med <- matrixStats::rowMedians(mat, na.rm = TRUE)
   q3  <- matrixStats::rowQuantiles(mat, probs = 0.75, na.rm = TRUE)
   iqr <- q3 - q1
-  rmins <- matrixStats::rowMins(mat, na.rm = TRUE)
-  rmaxs <- matrixStats::rowMaxs(mat, na.rm = TRUE)
 
-  # Thresholds clamped to observed min/max
-  signal_inferior <- pmax(q1 - iqr_times * iqr, rmins)
-  signal_superior <- pmin(q3 + iqr_times * iqr, rmaxs)
+  # Tukey's fences, and nothing tighter. They used to be clamped to the minimum
+  # and maximum the Reference observed: with a small Reference that extreme is
+  # tighter than the fence on nearly every probe (all 25 KCNQ1OT1 probes with
+  # six controls), so a sample barely below every control was an epimutation.
+  # The clamp kept the thresholds inside [0, 1] only as a side effect.
+  signal_inferior <- q1 - iqr_times * iqr
+  signal_superior <- q3 + iqr_times * iqr
+
+  # A beta value is a proportion: a fence outside [0, 1] is outside what can be
+  # measured, and would inflate the high - low width DELTAR divides by. M-values
+  # are not bounded and are left as they are.
+  if (identical(io_signal_figure(), "BETA")) {
+    signal_inferior <- pmax(signal_inferior, 0)
+    signal_superior <- pmin(signal_superior, 1)
+  }
 
   result <- data.frame(
     signal_inferior_thresholds = signal_inferior,
@@ -57,7 +66,7 @@ sem_signal_range_values <- function(populationMatrix, batch_id, probe_features) 
     q1                         = q1,
     q3                         = q3
   )
-  rm(mat, q1, med, q3, iqr, rmins, rmaxs, signal_inferior, signal_superior)
+  rm(mat, q1, med, q3, iqr, signal_inferior, signal_superior)
   gc()
 
   #
