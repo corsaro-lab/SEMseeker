@@ -145,18 +145,18 @@ jobs:
             )
           )
           # Install Bioconductor packages used by the test suite. The set is
-          # explicitly enumerated and kept in sync by `test-0-suggests-installed.R`,
+          # explicitly enumerated and kept in sync by `test-pkg_suggests_installed.R`,
           # the meta-test that scans every `skip_if_not_installed("pkg")` call in
           # the test files and asserts the named pkg is available. CI fails fast
           # if a test would silently skip due to a missing install here.
           #
           #   IlluminaHumanMethylation*anno  array tech detection
           #   limma                          lmFit+eBayes batch path
-          #                                  (test-apply_stat_model_batch.R)
-          #   AnnotationHub                  test-5-area-granges-build.R
+          #                                  (test-assoc_apply_stat_model_batch.R)
+          #   AnnotationHub                  test-anno_area_granges_build.R
           #   TxDb.Hsapiens.UCSC.hg19.knownGene
-          #                                  test-5-annotation-concordance.R,
-          #                                  test-5-area-granges-build.R (genomic
+          #                                  test-anno_concordance_report.R,
+          #                                  test-anno_area_granges_build.R (genomic
           #                                  feature joins)
           # limma FIRST, and on its own. The three Illumina annotation packages
           # load minfi while they install, minfi needs limma, and asking for all
@@ -197,11 +197,11 @@ jobs:
               #          gene region stays an Entrez id, and that label becomes
               #          AREA in the results. The Illumina path labels with
               #          symbols, so the two backends would key the same gene two
-              #          ways and nothing would join. test-5-area-granges-build.R
+              #          ways and nothing would join. test-anno_area_granges_build.R
               "org.Hs.eg.db",
-              # qvalue   test-0-taxonomy.R — the `q` estimator of
+              # qvalue   test-io_misc_2.R: the `q` estimator of
               #          .assoc_adjust_vector(). Without it the test skips, and
-              #          test-0-suggests-installed.R fails on purpose: a silent
+              #          test-pkg_suggests_installed.R fails on purpose: a silent
               #          skip hides a coverage gap instead of reporting one.
               "qvalue"
             ),
@@ -212,10 +212,10 @@ jobs:
           # dependencies = "Suggests") because the full Suggests set pulls
           # in heavy chains (pathfindR → ggkegg, ctdR, etc.) that are not
           # needed for R CMD check and that have repeatedly broken CI.
-          #   Rfast     test-0-glm_model_bulk.R (binomial_bulk)
-          #   mockery   test-association_model_limma.R (mocked bindings)
-          #   ggpubr    test-2-box-plot.R (box plot rendering)
-          #   circlize  test-0-enrich-circos.R (the circos drawing itself).
+          #   Rfast     test-assoc_glm_model_bulk.R (binomial_bulk)
+          #   mockery   test-assoc_model_limma.R (mocked bindings)
+          #   ggpubr    test-plot_box_plot.R (box plot rendering)
+          #   circlize  test-enrich_circos_data.R (the circos drawing itself).
           #             test-coverage.yml already listed it; this file did not,
           #             so the three drawing tests skipped here and the
           #             suggests-installed meta-test failed the run.
@@ -228,7 +228,7 @@ jobs:
       - name: Biological truth (stops the job when it fails)
         run: |
           R CMD INSTALL --no-docs --no-multiarch .
-          Rscript -e 'res <- as.data.frame(testthat::test_dir("tests/testthat", package = "SEMseeker", load_package = "installed", filter = "^0-biological-truth$", reporter = "progress", stop_on_failure = FALSE)); if (nrow(res) == 0L || sum(res$failed) > 0 || any(res$error)) quit(status = 1)'
+          Rscript -e 'res <- as.data.frame(testthat::test_dir("tests/testthat", package = "SEMseeker", load_package = "installed", filter = "^truth_", reporter = "progress", stop_on_failure = FALSE)); if (nrow(res) == 0L || sum(res$failed) > 0 || any(res$error)) quit(status = 1)'
         shell: bash
         env:
           NOT_CRAN: "true"

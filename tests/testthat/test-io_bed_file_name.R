@@ -1,11 +1,11 @@
-# test-2-bed-file.R
+# test-io_bed_file_name.R
 # Tests for BED / bedgraph file generation functions
 #
 # Covered:
 #   - io_dump_sample_as_bed_file()  writes a tab-separated BED file;
 #                                prepends "chr" if absent; sorts by CHR/START/END
 #
-# The companion chart test (test-2-box-plot.R) already covers plot_box_plot() PNG
+# The companion chart test (test-plot_box_plot.R) already covers plot_box_plot() PNG
 # generation. The claim that used to stand here, that plot_manhattan_plot_per_area()
 # was tested end to end by test-6 and test-7, was false: nothing in the package
 # called it, so no pipeline reached it, and it could not have drawn anything if one

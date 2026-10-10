@@ -9,7 +9,7 @@ test_that("semeeker", {
   # "multisession" strategy from setup.R only resolves SEMseeker::: against
   # the INSTALLED package, which makes load_all-time test runs fail on
   # post-merge signature changes (e.g. io_bed_file_name(skip_dir_create)).
-  # Same rationale as test-7-association_analysis.R.
+  # Same rationale as test-e2e_association_analysis.R.
   SEMseeker::semseeker(
     input         = signal_data,
     sample_sheet  = mySampleSheet,

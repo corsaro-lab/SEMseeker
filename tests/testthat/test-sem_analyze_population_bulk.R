@@ -1,10 +1,10 @@
-# test-0-analyze_population_bulk.R
+# test-sem_analyze_population_bulk.R
 #
 # Unit test per sem_analyze_population_bulk (2026-06-08): verifica che
 # DELTAS, MUTATIONS, DELTAR pivots siano bit-identici alla formula attesa
 # (rank-invariante per MUTATIONS, magnitude per DELTAS/DELTAR) usando un
 # input sintetico piccolo. LESIONS pivot si verifica solo a livello shape +
-# presenza (la logica binomial è esercitata in test-0-lesions_get.R).
+# presenza (la logica binomial è esercitata in test-sem_lesions_get.R).
 
 test_that("sem_analyze_population_bulk - synthetic 10x5 produces correct pivots", {
 

@@ -2,9 +2,9 @@
 ## The plot RENDERERS themselves read pipeline pivots / inference files, so they
 ## need full-pipeline fixtures and are not exercised here. The marker-value and
 ## threshold charts are the exception: their drawings take their data as
-## arguments and are covered in test-0-lollipop-build.R,
-## test-0-marker-value-per-probe.R, test-0-marker-value-per-sample.R and
-## test-0-signal-threshold-plot.R. These two internal helpers are pure and
+## arguments and are covered in test-plot_lollipop_build.R,
+## test-sem_marker_value_per_probe_plot.R, test-sem_marker_value_per_sample_plot.R and
+## test-sem_signal_threshold_per_sample_plot.R. These two internal helpers are pure and
 ## deterministic.
 ##
 ## Covered:

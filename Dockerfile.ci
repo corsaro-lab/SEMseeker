@@ -114,10 +114,10 @@ RUN Rscript -e "\
 
 # ── Install the Bioconductor packages the GRanges annotation backend needs.
 #    Without these the whole GENE/ISLAND coordinate path skips: every test in
-#    test-5-area-granges-build.R and test-5-annotation-concordance.R is guarded
+#    test-anno_area_granges_build.R and test-anno_concordance_report.R is guarded
 #    by skip_if_not_installed(), so a local run goes green without exercising a
 #    single line of it - the same silent-skip failure the meta-test
-#    test-0-suggests-installed.R exists to prevent on GitHub.
+#    test-pkg_suggests_installed.R exists to prevent on GitHub.
 #
 #    org.Hs.eg.db is here for a reason of meaning, not of coverage: TxDb keys
 #    genes by Entrez id, and without the symbol database the label of a gene
@@ -142,8 +142,8 @@ RUN Rscript -e "\
 #    build but not for running the suite: several tests reach a Suggests package
 #    and a missing one does not skip, it errors. Measured on the full run before
 #    this layer existed: 'car' absent took out three tests of
-#    test-0-math-stats.R and the covariates path of
-#    test-7-association_analysis.R, and test-0-suggests-installed.R reported
+#    test-sem_misc.R and the covariates path of
+#    test-e2e_association_analysis.R, and test-pkg_suggests_installed.R reported
 #    Rfast missing, which is exactly the job that meta-test exists to do.
 #    The set mirrors what the GitHub workflows install, and the meta-test keeps
 #    the two in step: if a test starts depending on something else, it fails

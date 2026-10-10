@@ -2,7 +2,7 @@
 # Run the test suite against the INSTALLED package and print explicit totals.
 #
 #   Rscript dev/run-suite.R                       # whole suite
-#   Rscript dev/run-suite.R 7-association_analysis  # one file, to iterate
+#   Rscript dev/run-suite.R e2e_association_analysis  # one file, to iterate
 #
 # Why a file and not a -e one-liner: in PowerShell a double-quoted string
 # interpolates $passed, $failed, $error, so `sum(df$passed)` reaches R as
@@ -184,11 +184,11 @@ if (is.null(filter)) {
   truth <- as.data.frame(testthat::test_dir("tests/testthat",
                                             package = "SEMseeker",
                                             load_package = "installed",
-                                            filter = "^0-biological-truth$",
+                                            filter = "^truth_",
                                             reporter = "progress",
                                             stop_on_failure = FALSE))
   if (nrow(truth) == 0L)
-    stop("the biological truth test was not found: tests/testthat/test-0-biological-truth.R",
+    stop("the biological truth test was not found: tests/testthat/test-truth_gse133774.R",
          call. = FALSE)
   if (sum(truth$failed) > 0 || any(truth$error))
     stop("the biological truth does not hold - the suite is not run.", call. = FALSE)

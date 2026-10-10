@@ -1,6 +1,9 @@
 # =============================================================================
-# TEMPLATE - copy this file, rename it test-<area>-<subject>.R, delete what you
-# do not need. It is not run: no file called test_template.R matches testthat's
+# TEMPLATE - copy this file, rename it after the R/ file it tests
+# (test-sem_mutations_get.R tests R/sem_mutations_get.R; a second file on the
+# same source adds an aspect, test-core_init_env-validate.R; cross-cutting files
+# are test-truth_*, test-e2e_*, test-pkg_*), delete what you do not need.
+# It is not run: no file called test_template.R matches testthat's
 # ^test-.*\.R$ pattern, so it sits here as a skeleton rather than as a test.
 #
 # The rules below are in engineering-decisions.md 5.16, with the defect that
@@ -39,7 +42,7 @@ test_that("<what is true when this passes>", {
 #
 # skip_if_not_installed() is a promise, not an escape hatch. Whatever is named
 # here MUST also be in .github/workflows/R-CMD-check.yml, in test-coverage.yml
-# and in Dockerfile.ci. test-0-suggests-installed.R scans every call of this
+# and in Dockerfile.ci. test-pkg_suggests_installed.R scans every call of this
 # kind and fails on purpose when one of them would skip: a test that skips is a
 # test that does not exist, and it still counts as green. Five defects lived
 # behind silent skips for months.
