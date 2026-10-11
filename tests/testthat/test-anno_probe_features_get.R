@@ -1,5 +1,5 @@
 # Unit tests for the pure per-area column helpers used by anno_probe_annotation_build():
-# .anno_gene_columns / .anno_chr_columns (ISLAND lives in test-0-island-opensea.R). These
+# .anno_gene_columns / .anno_chr_columns (ISLAND lives in test-anno_island_opensea.R). These
 # exercise the annotation recoding without an Illumina annotation package, so the
 # glue is covered in CI.
 #

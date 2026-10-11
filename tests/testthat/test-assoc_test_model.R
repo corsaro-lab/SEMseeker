@@ -1,4 +1,4 @@
-## test-1-test_model.R
+## test-assoc_test_model.R
 ## Regression tests for assoc_test_model() — the statistical-test dispatcher.
 ##
 ## Before the fixes these tests document, three branches crashed immediately:

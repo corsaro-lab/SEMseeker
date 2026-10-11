@@ -51,6 +51,6 @@ io_convertTextToNumeric <- function(text) {
 
 
 
-# Examples (see unit tests test-0-math-stats.R):
+# Examples (see unit tests test-sem_misc.R):
 # io_convertTextToNumeric("1,200,000.34") == 1200000.34
 # io_convertTextToNumeric("1.200.000,34") == 1200000.34

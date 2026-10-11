@@ -24,7 +24,7 @@
 #   ./ci-local.sh native test_check → full testthat::test_check("SEMseeker")
 #                                     (slow, mirrors what R CMD check tests does)
 #   ./ci-local.sh native <test-file>  → load_all + source setup.R + test_file
-#                                     Example: ./ci-local.sh native tests/testthat/test-5-annotation-concordance.R
+#                                     Example: ./ci-local.sh native tests/testthat/test-anno_concordance_report.R
 #   All native modes set NOT_CRAN=true so skip_on_cran() does not fire,
 #   matching the GitHub Actions matrix.
 #   Requires: devtools, testthat, polars, and the package's Imports
@@ -68,7 +68,7 @@ case "$MODE" in
     echo "==> Starting interactive shell in /pkg ..."
     echo "    Useful commands inside:"
     echo "      R CMD check --no-manual --as-cran /pkg"
-    echo "      Rscript -e 'devtools::load_all(); testthat::test_file(\"tests/testthat/test-7-association_analysis.R\")'"
+    echo "      Rscript -e 'devtools::load_all(); testthat::test_file(\"tests/testthat/test-e2e_association_analysis.R\")'"
     docker run --rm -it -w /pkg "$IMAGE" bash
     ;;
 
@@ -243,7 +243,7 @@ REOF
     # Three benches that differ from each other is how a defect stays hidden.
     #
     #   ./ci-local.sh suite                       whole suite
-    #   ./ci-local.sh suite 7-association_analysis one file, to iterate
+    #   ./ci-local.sh suite e2e_association_analysis one file, to iterate
     echo "==> Building $IMAGE (if needed) ..."
     _build -q
     echo ""

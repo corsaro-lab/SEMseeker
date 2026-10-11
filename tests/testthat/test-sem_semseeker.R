@@ -1,6 +1,6 @@
 # Tests for the public semseeker() dispatcher and its helpers.
 # The dispatcher is covered by unit tests; the full end-to-end pipeline is
-# exercised by test-6-semseeker.R.
+# exercised by test-e2e_semseeker.R.
 
 # ---- .sem_detect_input_type -------------------------------------------------
 

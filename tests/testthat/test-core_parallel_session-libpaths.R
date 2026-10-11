@@ -19,6 +19,14 @@ test_that("multisession workers inherit the parent .libPaths()", {
   dir.create(session_folder, recursive = TRUE, showWarnings = FALSE)
   on.exit(unlink(session_folder, recursive = TRUE), add = TRUE)
 
+  # The minimal session below replaces whatever session this process holds,
+  # and session options survive between runs. Left in place, its
+  # maxResources = 50 reached the next file: on a 3-core runner that is one
+  # worker, and the backend test that followed ran sequentially. The session
+  # found here is put back when the test ends.
+  previous_session <- get0("ssEnv", envir = SEMseeker:::.pkgglobalenv, inherits = FALSE)
+  on.exit(assign("ssEnv", previous_session, envir = SEMseeker:::.pkgglobalenv), add = TRUE)
+
   ssEnv <- list(
     parallel_strategy = "multisession",
     maxResources      = 50,

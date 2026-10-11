@@ -1,4 +1,4 @@
-# test-1-signal-coord.R
+# test-io_coord_input-signal_input.R
 # Integration tests for SEMseeker pipeline with non-Illumina coordinate input
 # (CHR / START / END format — WGBS, Nanopore ONT bedmethyl, RRBS)
 #
@@ -231,7 +231,7 @@ test_that("sem_delta_single_sample: coord input runs without error and returns N
   # Note: sem_delta_single_sample() writes files only when DELTA > 0.  When thresholds
   # are built from the same samples as the test sample, no outlier is detected and
   # no file is written (correct behaviour — this test verifies no crash).
-  # For a test with expected file output, see test-2-bed-file.R and test-2-delta_single_sample.R.
+  # For a test with expected file output, see test-io_bed_file_name.R and test-sem_delta_single_sample.R.
   tf <- sem_test_folder()
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)

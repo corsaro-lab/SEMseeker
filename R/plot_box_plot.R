@@ -5,7 +5,7 @@
 # ggpubr::stat_compare_means(label = "p.format"), whose internal
 # after_stat(create_p_label()) expression fails under ggplot2 >= 4.0 when
 # ggpubr is loaded via :: but not attached - the CI ERROR observed in
-# test-2-box-plot.R ("could not find function 'create_p_label'").
+# test-plot_box_plot.R ("could not find function 'create_p_label'").
 #
 # The p-value is computed directly from the stats package, so the result no
 # longer depends on ggpubr/ggplot2 internal evaluation scoping. Returns

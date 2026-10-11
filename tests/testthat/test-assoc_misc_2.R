@@ -1,4 +1,4 @@
-## test-1-model-functions.R
+## test-assoc_misc_2.R
 ## Session-based tests for model functions that require an active SEMseeker session.
 ##
 ## Covered:

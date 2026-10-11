@@ -59,7 +59,7 @@ jobs:
           )
           # Install Bioconductor packages used by the test suite. The set
           # mirrors R-CMD-check.yml and is kept in sync by the
-          # `test-0-suggests-installed.R` meta-test which fails CI if any
+          # `test-pkg_suggests_installed.R` meta-test which fails CI if any
           # named pkg is missing.
           # limma FIRST, and on its own. The three Illumina annotation packages
           # load minfi while they install, minfi needs limma, and asking for all
@@ -74,7 +74,7 @@ jobs:
           # qvalue is a Bioconductor package. It used to sit in suggests_cran and
           # was therefore handed to install.packages(), which does not raise on
           # failure — so it was listed, never installed, and nothing noticed until
-          # test-0-taxonomy.R started reaching the `q` estimator behind
+          # test-io_misc_2.R started reaching the `q` estimator behind
           # skip_if_not_installed().
           BiocManager::install("qvalue", ask = FALSE, update = FALSE)
           BiocManager::install(
@@ -86,7 +86,7 @@ jobs:
               "TxDb.Hsapiens.UCSC.hg19.knownGene",
               # Not optional: it is what turns the Entrez keys of TxDb into the
               # gene symbols the Illumina path uses, so both backends name a gene
-              # the same way. test-5-area-granges-build.R
+              # the same way. test-anno_area_granges_build.R
               "org.Hs.eg.db"
             ),
             ask = FALSE, update = FALSE
@@ -95,8 +95,8 @@ jobs:
           # Excluded: pathfindR, ctdR, GEOquery, STRINGdb, AnnotationDbi,
           #           OpenCL, openai, WebGestaltR (require Bioc or non-CRAN sources)
           #
-          #   Rfast    test-0-glm_model_bulk.R (binomial_bulk)
-          #   mockery  test-association_model_limma.R (mocked bindings)
+          #   Rfast    test-assoc_glm_model_bulk.R (binomial_bulk)
+          #   mockery  test-assoc_model_limma.R (mocked bindings)
           suggests_cran <- c(
             "boot", "car", "circlize", "fastDummies", "fitdistrplus",
             "ggpubr", "M3C", "mediation", "meta", "nnet",
@@ -108,7 +108,7 @@ jobs:
           # lags behind fresh R releases on PPM (e.g. R 4.6.0 in 2026-04),
           # forcing source build. install.packages() does NOT raise an R
           # error on install failure, so quiet=TRUE used to hide it and the
-          # test-0-suggests-installed meta-test only saw the symptom.
+          # test-pkg_suggests_installed meta-test only saw the symptom.
           # Diagnostic kept verbose until install is stably reproducible.
           for (pkg in suggests_cran) {
             is_diagnostic <- pkg %in% c("Rfast")

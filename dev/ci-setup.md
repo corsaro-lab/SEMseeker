@@ -187,7 +187,7 @@ Remotes: drake69/ctdR
 | `annotate_position_pivots.R` | `$cast(list(...))` API changed in polars 0.23 | Replaced with `$with_columns(...$cast(...))` | 0.11.x |
 | `create_position_pivots.R` | `$rename(list(...))` API changed | Replaced with `$select(...$alias(...))` | 0.11.x |
 | Multiple test files | Internal functions called without `semseeker:::` — works under `devtools::load_all()` but fails in `R CMD check` installed-package mode | Added `semseeker:::` prefix | 0.11.x |
-| `test-0-init_env.R` | Path assertion `== paste0(folder,"/Data")` fails on macOS when `normalizePath()` resolves `/var` symlink to `/private/var` | Changed to `normalizePath(file.path(...), mustWork=FALSE)` | 0.11.x |
+| `test-core_init_env.R` | Path assertion `== paste0(folder,"/Data")` fails on macOS when `normalizePath()` resolves `/var` symlink to `/private/var` | Changed to `normalizePath(file.path(...), mustWork=FALSE)` | 0.11.x |
 | `test-coverage.yml` | `dependencies = TRUE` triggers `pathfindR` install → requires `ggkegg` (Bioconductor) → not available → test run crashes | Changed to `dependencies = NA`; pathway tests skip via `requireNamespace()` guard | 0.11.x |
 
 ---
@@ -240,7 +240,7 @@ RENV_CONFIG_SANDBOX_ENABLED=FALSE RENV_ACTIVATE_PROJECT=0 \
   Rscript --vanilla -e '
     devtools::load_all(".")
     source("tests/testthat/setup.R")
-    testthat::test_file("tests/testthat/test-6-semseeker.R")
+    testthat::test_file("tests/testthat/test-e2e_semseeker.R")
   '
 ```
 

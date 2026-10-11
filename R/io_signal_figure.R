@@ -13,7 +13,7 @@
 #' The technology (`ssEnv$tech`) deliberately does **not** enter here: WGBS,
 #' ONT and PacBio produce fractions in [0,1] and are `BETA` like an array is.
 #' The package compares array and sequencing on purpose - see
-#' `test-cross-format-convergence.R` - and giving the same scale two different
+#' `test-e2e_cross_format_convergence.R` - and giving the same scale two different
 #' labels would misalign exactly those comparisons. Provenance is recorded
 #' elsewhere (`ssEnv$tech`, the `TECH` column stamped on results).
 #'

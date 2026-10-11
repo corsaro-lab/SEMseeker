@@ -98,6 +98,6 @@ test_that(".anno_build_island_area maps subareas with injected islands (no Annot
 # NOTE: .anno_build_island_area("OPENSEA") is intentionally NOT unit-tested here.
 # Its only logic beyond the shared .anno_opensea_gaps() (already covered above) is a
 # GenomeInfoDb::seqlengths() read, and GenomeInfoDb must not appear in a
-# skip_if_not_installed() (test-0-suggests-installed.R forbids skip-guarding a
+# skip_if_not_installed() (test-pkg_suggests_installed.R forbids skip-guarding a
 # package that is not in the CI install list). The OpenSea gap computation is
 # fully exercised by the .anno_opensea_gaps / .anno_assign_opensea_labels tests.

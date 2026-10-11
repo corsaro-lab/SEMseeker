@@ -240,7 +240,7 @@ test_that("sem_metrics_ranking: Inf values are replaced before ranking (no infin
 
 # ---------------------------------------------------------------------------
 # 3. assoc_model_performance: train+test path and overfitting detection
-# (extends the basic tests in test-0-pure-functions.R)
+# (extends the basic tests in test-assoc_misc_1.R)
 # ---------------------------------------------------------------------------
 
 test_that("assoc_model_performance: train+test path adds *_test columns", {
