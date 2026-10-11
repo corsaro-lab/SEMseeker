@@ -41,3 +41,4 @@ dev/test-reports/
 # Dependency-analysis artifacts (dev/deps/snapshots is committed on purpose)
 dev/deps/output/
 dev/deps/cache/
+tests/testthat/testthat-problems.rds
