@@ -80,9 +80,12 @@
 # populationMatrix <- as.data.frame(matrix(runif(num_rows * num_cols), nrow = num_rows, ncol = num_cols))
 # library(future)
 # options(future.globals.maxSize = 10 * 1024^3)
-Sys.setenv(OBJC_DISABLE_INITIALIZE_FORK_SAFETY='YES')
 
-rm(list = ls())
+# No rm(list = ls()) here. testthat sources the helper-*.R files into this same
+# environment before this file, so clearing it deleted every helper whose name
+# does not start with a dot, and the tests that needed one had to source the
+# helper again by hand.
+
 # DEBUG: trace setup.R progress so we can see, in a run log, at which step the
 # annotation and its dependency chain get loaded.
 #
@@ -275,8 +278,3 @@ check_execution_context <- function() {
 }
 
 check_execution_context()
-
-# TODO
-# core_recover session stored
-#
-tmp <- tempdir()
