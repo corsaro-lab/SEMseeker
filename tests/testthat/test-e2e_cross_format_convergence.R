@@ -18,8 +18,6 @@
 test_that("array, WGBS bedmethyl and LONGREAD bedmethyl produce convergent SEM calls", {
   testthat::skip_on_cran()
   testthat::skip_if_not_installed("polars")
-  if (!exists("make_bedmethyl_per_sample", mode = "function"))
-    source(testthat::test_path("helper-bedmethyl.R"))
 
   ## ── 1. Real GSE133774 fixture filtered to KCNQ1OT1 + H19/IGF2 probes ─────
   ## Same fixture used by setup.R and the getting-started vignette.
