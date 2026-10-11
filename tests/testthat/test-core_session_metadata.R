@@ -4,7 +4,7 @@
 ##   core_session_metadata_write()        session_metadata.json provenance
 ##   core_pivot_sidecar_write()           per-pivot _meta.json sidecar
 ##   core_check_session_compatibility()   cross-session build/tech enforcement
-##   assoc_quantreg_metrics()             pinball loss / QQ metrics (no plot)
+##   assoc_quantreg_metrics()             pinball loss / QQ metrics, and its charts
 ##
 
 # ---------------------------------------------------------------------------
@@ -121,4 +121,60 @@ test_that("assoc_quantreg_metrics computes pinball loss and QQ metrics", {
   # residuals = c(0,0,1); tau=0.5 -> only the +1 residual contributes 0.5
   expect_equal(out$pinball_loss, 0.5)
   expect_equal(out$below_quantile, 2 / 3)
+})
+
+test_that("assoc_quantreg_metrics with plot = TRUE writes both fitted-model charts", {
+  tf <- sem_test_folder()
+  SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+
+  out <- SEMseeker:::assoc_quantreg_metrics(
+    predicted_values     = c(1.1, 2.3, 3.0, 4.5),
+    expected_values      = c(1.0, 2.0, 3.0, 4.0),
+    tau                  = 0.5,
+    res                  = data.frame(seed = 1),
+    family_test          = "quantreg_0.5",
+    independent_variable = "x",
+    transformation_y     = "",
+    dependent_variable   = "y",
+    permutation_vector   = c(0.1, 0.2, 0.3, 0.4),
+    plot                 = TRUE)
+
+  # residuals = c(-0.1,-0.3,0,-0.5), all <= 0: (1 - 0.5) * 0.9 = 0.45;
+  # every observed value is at or below its prediction, so 1, and |0.5 - 1|
+  expect_equal(out$pinball_loss, 0.45)
+  expect_equal(out$below_quantile, 1)
+  expect_equal(out$qq_distance, 0.5)
+
+  charts <- list.files(file.path(tf, "Chart", "FITTED_MODEL"))
+  expect_setequal(charts, c("QUANTREG_0_5_X_VS_Y.png",
+                            "QUANTREG_0_5_X_VS_Y_HISTOGRAM.png"))
+})
+
+test_that("assoc_quantreg_metrics with plot = TRUE and no data warns and draws nothing", {
+  tf <- sem_test_folder()
+  SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+
+  warnings <- character(0)
+  withCallingHandlers(
+    SEMseeker:::assoc_quantreg_metrics(
+      predicted_values     = numeric(0),
+      expected_values      = numeric(0),
+      tau                  = 0.5,
+      res                  = data.frame(seed = 1),
+      family_test          = "quantreg_0.5",
+      independent_variable = "x",
+      transformation_y     = "",
+      dependent_variable   = "y",
+      permutation_vector   = numeric(0),
+      plot                 = TRUE),
+    warning = function(w) {
+      warnings <<- c(warnings, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    })
+
+  expect_true("No data available for plotting observed vs. predicted." %in% warnings)
+  expect_true("No data available for plotting histogram of betas." %in% warnings)
+  expect_length(list.files(file.path(tf, "Chart", "FITTED_MODEL")), 0L)
 })
