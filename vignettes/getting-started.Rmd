@@ -95,17 +95,19 @@ Supported input platforms: Illumina EPIC (850k), 450k, and 27k arrays
 # Install remotes if needed
 install.packages("remotes")
 
-# Install SEMseeker from GitHub
-remotes::install_github("corsaro-lab/SEMseeker")
-```
+# SEMseeker needs polars below 2.0, installed from its GitHub tag:
+# community.r-multiverse.org serves only the latest release. NOT_CRAN
+# downloads the prebuilt library instead of compiling Rust, and the
+# timeout covers that download (about 255 MB).
+Sys.setenv(NOT_CRAN = "true", R_DEFAULT_INTERNET_TIMEOUT = "1800")
+install.packages(
+  "https://github.com/pola-rs/r-polars/archive/refs/tags/v1.16.0.tar.gz",
+  repos = NULL, type = "source"
+)
 
-> **Note:** semseeker requires the `polars` package from R-multiverse.
-> It is installed automatically as a dependency. If you get an installation
-> error, try:
-> ```r
-> Sys.setenv(NOT_CRAN = "true")
-> install.packages("polars", repos = "https://community.r-multiverse.org")
-> ```
+# Install SEMseeker from GitHub, keeping that polars
+remotes::install_github("corsaro-lab/SEMseeker", upgrade = "never")
+```
 
 ### System dependencies
 

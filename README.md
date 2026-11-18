@@ -35,12 +35,20 @@ Supported input technologies:
 
 ## Installation
 
-Install from GitHub using devtools:
+SEMseeker needs `polars` below version 2.0. Its repository,
+community.r-multiverse.org, serves only the latest release, so install the
+last 1.x from its GitHub tag first, then SEMseeker without upgrading it:
 
 ```r
-install.packages("devtools")
-library(devtools)
-install_github("corsaro-lab/SEMseeker")
+install.packages("remotes")
+# NOT_CRAN downloads the prebuilt polars library instead of compiling Rust;
+# the timeout covers that download (about 255 MB).
+Sys.setenv(NOT_CRAN = "true", R_DEFAULT_INTERNET_TIMEOUT = "1800")
+install.packages(
+  "https://github.com/pola-rs/r-polars/archive/refs/tags/v1.16.0.tar.gz",
+  repos = NULL, type = "source"
+)
+remotes::install_github("corsaro-lab/SEMseeker", upgrade = "never")
 ```
 
 ### System requirements
