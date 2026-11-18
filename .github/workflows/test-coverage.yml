@@ -110,12 +110,13 @@ jobs:
           #
           #   Rfast    test-assoc_glm_model_bulk.R (binomial_bulk)
           #   mockery  test-assoc_model_limma.R (mocked bindings)
+          #   nanoparquet  test-io_engine.R (third-party parquet reader)
           suggests_cran <- c(
             "boot", "car", "circlize", "fastDummies", "fitdistrplus",
             "ggpubr", "M3C", "mediation", "meta", "nnet",
             "quantreg", "UpSetR", "matrixStats",
             "caret", "wordcloud", "KMEANS.KNN", "tidyverse",
-            "Rfast", "mockery"
+            "Rfast", "mockery", "nanoparquet"
           )
           # Rfast install is verbose on purpose: macOS arm64 binary often
           # lags behind fresh R releases on PPM (e.g. R 4.6.0 in 2026-04),

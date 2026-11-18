@@ -17,6 +17,8 @@ core_close_env <- function()
   core_remove_empty_folders(ssEnv$result_folder)
 
   future::plan( future::sequential)
+  # Before the temporary folder goes: the data engine spills inside it.
+  io_engine_disconnect()
   unlink(ssEnv$temp_folder,recursive=TRUE)
   core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Job Completed !")
   core_log_event("DEBUG: --------------------------------------------------------------")

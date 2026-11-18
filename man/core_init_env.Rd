@@ -27,6 +27,11 @@ core_init_env(result_folder, maxResources = 90, ...)
     Required for long-read data because LONGREAD cannot be distinguished from
     WGBS by probe-ID pattern alone.  Example:
     \code{core_init_env(folder, tech = "LONGREAD", genome_build = "hg38")}}
+  \item{\code{memory_limit}}{memory limit of the data engine, in DuckDB
+    syntax: \code{"50\%"} (default, half of the physical memory),
+    \code{"8GB"}, \code{"500MiB"}. DuckDB can exceed it by up to 130\%,
+    so it is not a hard ceiling. Each parallel worker takes an equal
+    share of it.}
 }}
 }
 \value{

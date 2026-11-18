@@ -36,7 +36,8 @@
   openai_api_key         = list(value = ""),
   multiple_test_adj      = list(value = "q", choices = c("BY","fdr","BH","bonferroni","q")),
   coverage_minimum       = list(value = 80),      # minimum % of input positions that must be present in the reference annotation; below it sem_coverage_gate() stops the run.
-  bulk_population        = list(value = TRUE)    # vectorized population is the default (no per-sample bed dump). Set FALSE only to core_recover the legacy per-sample loop.
+  bulk_population        = list(value = TRUE),   # vectorized population is the default (no per-sample bed dump). Set FALSE only to core_recover the legacy per-sample loop.
+  memory_limit           = list(value = "50%")   # memory limit of the data engine (DuckDB syntax: "50%", "8GB", "500MiB"). A percentage is of the physical memory, detected by DuckDB on every system; half and not DuckDB's 80% because DuckDB exceeds its limit by up to 130%.
 )
 
 .SS_FOLDERS <- c(
@@ -130,6 +131,10 @@
                                stringi::stri_rand_strings(1, 7, pattern = "[A-Za-z0-9]"),
                                sep = "")
   ssEnv$result_folder <- result_folder
+  # The process that opened the session. Multisession workers receive a copy of
+  # the session and compare it with their own id: io_engine_connection() gives
+  # a worker a share of the memory limit and one thread.
+  ssEnv$main_process_id <- Sys.getpid()
   for (key in names(.SS_FOLDERS))
     ssEnv[[key]] <- io_dir_check_and_create(result_folder, .SS_FOLDERS[[key]])
   ssEnv
@@ -251,6 +256,11 @@
 #'       Required for long-read data because LONGREAD cannot be distinguished from
 #'       WGBS by probe-ID pattern alone.  Example:
 #'       \code{core_init_env(folder, tech = "LONGREAD", genome_build = "hg38")}}
+#'     \item{\code{memory_limit}}{memory limit of the data engine, in DuckDB
+#'       syntax: \code{"50\%"} (default, half of the physical memory),
+#'       \code{"8GB"}, \code{"500MiB"}. DuckDB can exceed it by up to 130\%,
+#'       so it is not a hard ceiling. Each parallel worker takes an equal
+#'       share of it.}
 #'   }
 #'
 #' @return the working ssEnvonment

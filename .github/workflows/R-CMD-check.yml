@@ -232,7 +232,9 @@ jobs:
           #             test-coverage.yml already listed it; this file did not,
           #             so the three drawing tests skipped here and the
           #             suggests-installed meta-test failed the run.
-          install.packages(c("Rfast", "mockery", "ggpubr", "circlize"))
+          #   nanoparquet  test-io_engine.R (reads back the parquet files the
+          #             data engine writes, with a reader that is not the engine)
+          install.packages(c("Rfast", "mockery", "ggpubr", "circlize", "nanoparquet"))
         shell: Rscript {0}
 
       # The biological truth goes first: seconds, and if it fails the hour of
