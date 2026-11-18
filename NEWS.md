@@ -1,4 +1,4 @@
-# semseeker 0.99.6 (development)
+# semseeker 0.99.6
 
 ## Breaking changes
 
@@ -436,6 +436,18 @@
   as 0; for SIGNAL it is a missing measurement and the run stops instead of
   reading a beta of 0. The rule is applied to the pivot values only, before the
   merge with the sample sheet, instead of to the merged table.
+
+- **The two population engines call the same lesions.** The window test of the
+  per-sample engine corrected by the span its probes actually cover, the bulk
+  engine by the nominal window, twice `LESIONS_BP`. On a sparse array the first
+  correction is lighter, so the per-sample engine could call lesions the bulk
+  engine did not. Both now use the nominal window, which is what every result of
+  the default bulk engine was computed with.
+
+- **`association_analysis()` stops cleanly when no burden column is left to
+  test.** When every burden column is constant and dropped, the per-area loop
+  was called on an empty set and the run stopped with an error from the
+  parallel backend.
 
 - **The per-sample path writes a column for every sample.** A sample that found
   nothing for a marker writes no bed file, so its column was missing from the
