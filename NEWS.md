@@ -2,6 +2,14 @@
 
 ## Breaking changes
 
+- **SEMseeker requires `polars` below 2.0.** polars 2.0 gives different names
+  to the columns of files read without a header, which made the construction of
+  the position pivots stop with "unable to find column", and it makes the
+  streaming engine the default, which may change the order of rows. Installing
+  SEMseeker today pulled polars 2.1 from community.r-multiverse.org, which keeps
+  only the latest release. The README and the getting-started vignette show how
+  to install polars 1.16.0 from its GitHub tag before SEMseeker.
+
 - **`plot_manhattan_plot_per_area()` is now
   `sem_marker_value_per_area_plot()`, and it draws for the first time.** It was
   exported, documented and reachable by nobody: no function, vignette or test in
