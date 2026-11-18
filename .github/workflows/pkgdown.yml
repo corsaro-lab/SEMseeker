@@ -45,6 +45,19 @@ jobs:
               CRAN    = "https://packagemanager.posit.co/cran/latest"
             )
           )
+          # polars 2 renamed the columns of headerless files and changed the
+          # default query engine, so SEMseeker stays below 2.0 until it moves
+          # to another engine. community.r-multiverse.org serves only the latest
+          # release: the last 1.x is installed from its GitHub tag, after
+          # install_deps() has pulled 2.x. NOT_CRAN makes its configure step
+          # download the prebuilt library instead of compiling Rust, and the
+          # timeout covers that download (about 255 MB).
+          Sys.setenv(NOT_CRAN = "true", R_DEFAULT_INTERNET_TIMEOUT = "1800")
+          install.packages(
+            "https://github.com/pola-rs/r-polars/archive/refs/tags/v1.16.0.tar.gz",
+            repos = NULL, type = "source"
+          )
+          stopifnot(packageVersion("polars") < "2.0.0")
           # Bioconductor annotation packages — needed by probe_annotation_build()
           # and examples in the reference documentation
           BiocManager::install(
