@@ -153,7 +153,7 @@ sem_study_summary_get <- function(sql_sample_selection = "", regions = NULL,
   if (is.null(lazy))
     return(NULL)
 
-  row <- as.data.frame(lazy$collect())
+  row <- as.data.frame(dplyr::collect(lazy))
   if (nrow(row) == 0)
     return(NULL)
 

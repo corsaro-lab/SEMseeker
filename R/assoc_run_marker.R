@@ -105,7 +105,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
     # transpose below yields one feature column - the same shape the fitting
     # code already handles for a pivot of many rows. That is why one road is
     # enough, and why depth had nothing left to select.
-    pivot_lazy <- io_read_pivot(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA,
+    pivot_lazy <- io_read_pivot_polars(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA,
                                 aggregation = aggregation, scope = scope)
     if (is.null(pivot_lazy)) {
       core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),

@@ -126,14 +126,14 @@ sem_analyze_population_bulk <- function(signal_data, sample_sheet,
   # tocca le sample. Quindi possiamo derivarlo dal pivot raw senza pagare
   # quel picco.
   raw_signal_schema <- names(
-    io_read_pivot("SIGNAL", io_signal_figure(), "POSITION", "WHOLE")$collect_schema()
+    io_read_pivot_polars("SIGNAL", io_signal_figure(), "POSITION", "WHOLE")$collect_schema()
   )
   coord_cols  <- c("CHR", "START", "END", ".HIGH", ".LOW")
   sample_cols <- setdiff(raw_signal_schema, coord_cols)
 
   # Carica SIGNAL pivot lazy + cast CHR to String (io_signal_save lascia Categorical
   # mentre thr_lazy ha String -> mismatch nel join) + join thresholds
-  signal_lazy <- io_read_pivot("SIGNAL", io_signal_figure(), "POSITION", "WHOLE")$
+  signal_lazy <- io_read_pivot_polars("SIGNAL", io_signal_figure(), "POSITION", "WHOLE")$
     with_columns(polars::pl$col("CHR")$cast(polars::pl$String))$
     join(thr_lazy, on = c("CHR", "START", "END"), how = "inner")
 

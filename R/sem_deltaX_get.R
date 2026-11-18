@@ -112,8 +112,8 @@ sem_deltaX_get <- function(markers = NULL) {
 
     # read via unified dispatcher. The file.exists() guard above
     # has already filtered out cases where neither source pivot exists.
-    lf_h <- io_read_pivot(src, "HYPER", area, subarea)
-    lf_o <- io_read_pivot(src, "HYPO",  area, subarea)
+    lf_h <- io_read_pivot_polars(src, "HYPER", area, subarea)
+    lf_o <- io_read_pivot_polars(src, "HYPO",  area, subarea)
     cols_h <- setdiff(names(lf_h$collect_schema()), c("CHR", "START", "END"))
     cols_o <- setdiff(names(lf_o$collect_schema()), c("CHR", "START", "END"))
 

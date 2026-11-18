@@ -122,7 +122,7 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
   # Scan parquet UNA SOLA VOLTA fuori dal loop: la lazy frame è immutabile,
   # ogni $filter/$join in iterazione produce una nuova lazy frame senza
   # ri-aprire il parquet. Riduce overhead per iter su big matrix.
-  sd_lazy <- io_read_pivot("SIGNAL", io_signal_figure(), "PROBE", "WHOLE")$
+  sd_lazy <- io_read_pivot_polars("SIGNAL", io_signal_figure(), "PROBE", "WHOLE")$
               with_columns(polars::pl$col("AREA")$alias("PROBE"))
 
   for (i in seq_along(chrs)) {

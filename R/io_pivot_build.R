@@ -156,7 +156,7 @@ key_col_value <- function(aggregation) {
 #' @noRd
 .io_pivot_masked_lazy <- function(marker, figure, scope, area, subarea) {
 
-  base <- io_read_pivot(marker, figure, area = "POSITION", subarea = "WHOLE",
+  base <- io_read_pivot_polars(marker, figure, area = "POSITION", subarea = "WHOLE",
                         aggregation = "VALUE", scope = "INSTANCE", build = FALSE)
   if (is.null(base))
     return(NULL)

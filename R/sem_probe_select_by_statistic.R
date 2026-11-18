@@ -64,7 +64,7 @@ sem_probe_select_by_statistic <- function(marker, figure,
   if (is.null(pivot_lazy))
     return(NULL)
 
-  pivot <- as.data.frame(pivot_lazy$collect())
+  pivot <- as.data.frame(dplyr::collect(pivot_lazy))
   sample_columns <- setdiff(colnames(pivot), "AREA")
   if (nrow(pivot) == 0L || length(sample_columns) == 0L)
     return(NULL)

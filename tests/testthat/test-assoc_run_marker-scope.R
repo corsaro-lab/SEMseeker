@@ -208,7 +208,7 @@ test_that("the collapsed burden is restricted to its own region class", {
     p <- SEMseeker:::io_read_pivot("MUTATIONS", "HYPER", area, subarea,
                                    aggregation = "SUM", scope = "SAMPLE")
     skip_if(is.null(p), paste("collapsed artefact missing for", area, subarea))
-    df <- as.data.frame(p$collect())
+    df <- as.data.frame(dplyr::collect(p))
     v <- unlist(df[1, setdiff(colnames(df), "AREA")], use.names = TRUE)
     v[order(names(v))]
   }

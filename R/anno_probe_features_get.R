@@ -58,7 +58,7 @@ anno_probe_features_get <- function(area_subarea) {
     signal_pivot_lazy <- io_read_pivot("SIGNAL", io_signal_figure(), "PROBE", "WHOLE")
     if (is.null(signal_pivot_lazy))
       stop("SIGNAL PROBE pivot not available - cannot detect technology.")
-    signal_data_r <- as.data.frame(signal_pivot_lazy$collect())
+    signal_data_r <- as.data.frame(dplyr::collect(signal_pivot_lazy))
     if ("AREA" %in% colnames(signal_data_r)) {
       rownames(signal_data_r) <- signal_data_r$AREA
       signal_data_r$AREA <- NULL
@@ -87,7 +87,9 @@ anno_probe_features_get <- function(area_subarea) {
       stop("POSITION pivot not found. Ensure io_signal_save() completed before ",
            "calling anno_probe_features_get() for area '", area_subarea, "'.")
 
-    pos <- as.data.frame(sig_pivot_lazy$collect())[, c("CHR", "START", "END")]
+    # Only the coordinates are needed: selected before collecting, so the
+    # sample columns are never read.
+    pos <- as.data.frame(dplyr::collect(dplyr::select(sig_pivot_lazy, dplyr::all_of(c("CHR", "START", "END")))))
     probe_ids <- paste0(pos$CHR, "_", pos$START)
 
     # --- Coordinate-only areas (no annotation needed) ---

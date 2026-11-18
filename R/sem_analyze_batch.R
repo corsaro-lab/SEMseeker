@@ -37,7 +37,7 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
   # read via unified dispatcher. CASE 2 (streaming merge) lets
   # the SEM step pick up raw bed/bedgraph files when the SIGNAL
   # pivot has not been materialised yet.
-  signal_pivot <- io_read_pivot("SIGNAL", io_signal_figure(), "POSITION", "WHOLE")
+  signal_pivot <- io_read_pivot_polars("SIGNAL", io_signal_figure(), "POSITION", "WHOLE")
   resume_mode  <- !is.null(signal_pivot)
 
   if (resume_mode) {
