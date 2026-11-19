@@ -5,15 +5,13 @@
 #' POSITION/WHOLE pivot parquet on disk is up to date with respect to the
 #' samples in \code{population}.
 #'
-#' Implementation note (2026-06-01, unified pivot reader):
-#'   The previous R-side \code{for (s in 1:N)} loop with per-sample
-#'   \code{readr::read_tsv} + \code{$join(how = "full")} paid the R→Rust FFI
-#'   cost N times and ran single-threaded. It has been replaced by a single
-#'   call to \code{\link{io_stream_merge_bed}}, which scans all missing bed files
-#'   in parallel inside the polars Rust runtime and pivots long→wide in one
-#'   shot. When the pivot already exists with a subset of samples, the new
-#'   wide block is merged into it via a single full-outer join on
-#'   \code{(CHR, START, END)} with coalesce on the key columns.
+#' The new samples are merged from their bed files by
+#' \code{\link{io_stream_merge_bed}}. When the pivot already exists with a
+#' subset of the samples, the new columns join it in one full outer join on
+#' \code{(CHR, START, END)}, so a position found only by the new samples or
+#' only by the old ones keeps its coordinates. Everything runs in the data
+#' engine and the pivot never enters R: on the largest studies it holds
+#' millions of positions for thousands of samples.
 #'
 #' @param population data.frame with \code{Sample_ID} and \code{Sample_Group}
 #'   columns identifying the samples to materialise.
@@ -55,12 +53,11 @@ anno_create_position_pivots <- function(population, keys) {
                                                          area, subarea)
 
     # Figure out which samples are still missing from the existing pivot.
+    connection <- io_engine_connection()
+    pivot_source <- sprintf("read_parquet(%s)", DBI::dbQuoteString(connection, pivot_filename))
     existing_samples <- character(0)
-    if (file.exists(pivot_filename)) {
-      existing_samples <- colnames(
-        polars::pl$scan_parquet(pivot_filename, n_rows = 1)$collect()
-      )
-    }
+    if (file.exists(pivot_filename))
+      existing_samples <- DBI::dbGetQuery(connection, paste("DESCRIBE SELECT * FROM", pivot_source))$column_name
     missing_pop <- pop_clean[!(pop_clean$Sample_ID %in% existing_samples), ]
     if (nrow(missing_pop) == 0L) next
 
@@ -82,7 +79,8 @@ anno_create_position_pivots <- function(population, keys) {
 
       # No new bed file, only samples that found nothing: the existing pivot
       # gets their zero columns below.
-      out <- polars::pl$scan_parquet(pivot_filename)
+      source_query <- paste("SELECT * FROM", pivot_source)
+      present_columns <- existing_samples
 
     } else {
 
@@ -90,48 +88,32 @@ anno_create_position_pivots <- function(population, keys) {
                 " anno_create_position_pivots[", marker, "_", figure,
                 "] stream-merging ", length(bed_paths), " bed file(s)")
 
-      # The merge is written by the data engine to a file of its own; the
-      # polars chain below reads it back until this function moves to the
-      # data engine too.
       merged_filename <- tempfile("merged_pivot_", fileext = ".parquet")
       io_stream_merge_bed(bed_paths, marker, figure, merged_filename)
-      new_lazy <- polars::pl$scan_parquet(merged_filename)
+      merged_source <- sprintf("read_parquet(%s)", DBI::dbQuoteString(connection, merged_filename))
+      merged_columns <- DBI::dbGetQuery(connection, paste("DESCRIBE SELECT * FROM", merged_source))$column_name
 
-      out <- if (file.exists(pivot_filename)) {
-        # Merge new sample columns into the existing pivot via one full-outer
-        # join on the genomic key. Coalesce CHR/START/END to avoid the
-        # _right duplicate columns polars emits on a full join.
-        polars::pl$scan_parquet(pivot_filename)$join(
-          new_lazy,
-          on  = c("CHR", "START", "END"),
-          how = "full"
-        )$with_columns(
-          polars::pl$when(polars::pl$col("CHR")$is_not_null())$
-            then(polars::pl$col("CHR"))$
-            otherwise(polars::pl$col("CHR_right"))$alias("CHR"),
-          polars::pl$when(polars::pl$col("START")$is_not_null())$
-            then(polars::pl$col("START"))$
-            otherwise(polars::pl$col("START_right"))$alias("START"),
-          polars::pl$when(polars::pl$col("END")$is_not_null())$
-            then(polars::pl$col("END"))$
-            otherwise(polars::pl$col("END_right"))$alias("END")
-        )$drop(c("CHR_right", "START_right", "END_right"))
+      if (file.exists(pivot_filename)) {
+        # USING merges the three key columns into one, taking each from
+        # whichever side has the position; the old samples come first, then
+        # the new ones in the order of their files.
+        source_query <- sprintf("SELECT * FROM %s AS existing FULL JOIN %s AS merged USING (CHR, START, \"END\")",
+                                pivot_source, merged_source)
+        present_columns <- c(existing_samples, setdiff(merged_columns, existing_samples))
       } else {
-        new_lazy
+        source_query <- paste("SELECT * FROM", merged_source)
+        present_columns <- merged_columns
       }
     }
 
     # Every sample of the population gets its column. A sample that found
     # nothing writes no bed file, and without this its column would be
     # missing, which a reader cannot tell apart from a lost sample.
-    absent <- setdiff(unique(pop_clean$Sample_ID), names(out))
-    if (length(absent) > 0L)
-      out <- do.call(out$with_columns,
-                     lapply(absent, function(id) polars::pl$lit(0)$alias(id)))
-
-    out$collect()$
-      sort(c("CHR", "START"), descending = FALSE)$
-      write_parquet(tmp_filename)
+    absent <- setdiff(unique(pop_clean$Sample_ID), present_columns)
+    zero_columns <- if (length(absent) == 0L) ""
+                    else paste0(", ", paste0("CAST(0 AS DOUBLE) AS ", DBI::dbQuoteIdentifier(connection, absent), collapse = ", "))
+    DBI::dbExecute(connection, sprintf("COPY (SELECT *%s FROM (%s) ORDER BY CHR, START) TO %s (FORMAT parquet, COMPRESSION zstd)",
+                                       zero_columns, source_query, DBI::dbQuoteString(connection, tmp_filename)))
 
     file.rename(tmp_filename, pivot_filename)
     if (length(bed_paths) > 0L) unlink(merged_filename)

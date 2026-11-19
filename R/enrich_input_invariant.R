@@ -85,13 +85,12 @@ enrich_input_assert <- function(inference_details, ssEnv = NULL) {
       # so it does not get to condemn either.
       judged <- TRUE
       hit <- tryCatch({
-        lazy <- polars::pl$scan_csv(f, separator = ";", decimal_comma = TRUE,
-                                    null_values = "NA",
-                                    infer_schema_length = 100000L)
-        nrow(as.data.frame(
-          lazy$select(c("SCOPE", "AREA"))$filter(
-            polars::pl$col("SCOPE")$eq(want$scope)$and(
-              polars::pl$col("AREA")$eq(want$area)))$head(1L)$collect()))
+        # Every column is read as text: only SCOPE and AREA are compared, so
+        # the decimal comma of the numeric columns never has to be parsed.
+        connection <- io_engine_connection()
+        nrow(DBI::dbGetQuery(connection, sprintf(
+          "SELECT 1 FROM read_csv(%s, delim = ';', header = true, all_varchar = true) WHERE SCOPE = %s AND AREA = %s LIMIT 1",
+          DBI::dbQuoteString(connection, f), DBI::dbQuoteString(connection, want$scope), DBI::dbQuoteString(connection, want$area))))
       }, error = function(e) NA_integer_)
 
       if (is.na(hit)) { judged <- FALSE; next }
