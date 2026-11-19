@@ -90,8 +90,12 @@ anno_create_position_pivots <- function(population, keys) {
                 " anno_create_position_pivots[", marker, "_", figure,
                 "] stream-merging ", length(bed_paths), " bed file(s)")
 
-      # One-shot lazy pivot built by polars Rust runtime (no R-side loop).
-      new_lazy <- io_stream_merge_bed(bed_paths, marker, figure)
+      # The merge is written by the data engine to a file of its own; the
+      # polars chain below reads it back until this function moves to the
+      # data engine too.
+      merged_filename <- tempfile("merged_pivot_", fileext = ".parquet")
+      io_stream_merge_bed(bed_paths, marker, figure, merged_filename)
+      new_lazy <- polars::pl$scan_parquet(merged_filename)
 
       out <- if (file.exists(pivot_filename)) {
         # Merge new sample columns into the existing pivot via one full-outer
@@ -130,6 +134,7 @@ anno_create_position_pivots <- function(population, keys) {
       write_parquet(tmp_filename)
 
     file.rename(tmp_filename, pivot_filename)
+    if (length(bed_paths) > 0L) unlink(merged_filename)
     # Sidecar JSON is now materialised by core_ensure_sidecars() at the end of the
     # pipeline (single point of responsibility).
     gc(verbose = FALSE)

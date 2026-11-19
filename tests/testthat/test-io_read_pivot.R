@@ -77,24 +77,45 @@ test_that("io_pivot_ensure() merges the bed files once and the merged file is th
   testthat::expect_identical(SEMseeker:::io_pivot_ensure("MUTATIONS", "HYPER"), pivot_path)
 })
 
-test_that("io_stream_merge_bed() builds a lazy frame from minimal bed fixtures", {
+test_that("io_stream_merge_bed() writes the wide pivot, samples in the order of the files", {
+
+  skip_on_cran()
+  skip_if_not_installed("nanoparquet")
+
+  tempFolder <- tempfile("read_pivot_test_")
+  bed_dir <- file.path(tempFolder, "Data", "Case", "MUTATIONS_HYPER")
+  dir.create(bed_dir, recursive = TRUE)
+
+  # S002 is given first: its column must come first, not in alphabetical order.
+  bg2 <- file.path(bed_dir, "S002_MUTATIONS_HYPER.bedgraph")
+  bg1 <- file.path(bed_dir, "S001_MUTATIONS_HYPER.bedgraph")
+  writeLines(c("chr1\t100\t101\t0.3", "chr1\t300\t301\t0.9"), bg2)
+  writeLines(c("chr1\t100\t101\t0.5", "chr2\t200\t201\t0.7"), bg1)
+  pivot_file <- file.path(tempFolder, "merged.parquet")
+
+  SEMseeker:::io_stream_merge_bed(c(bg2, bg1), "MUTATIONS", "HYPER", pivot_file)
+  out <- as.data.frame(nanoparquet::read_parquet(pivot_file))
+
+  testthat::expect_identical(colnames(out), c("CHR", "START", "END", "S002", "S001"))
+  # One row per position, sorted on CHR then START, "chr" removed.
+  testthat::expect_identical(out$CHR, c("1", "1", "2"))
+  testthat::expect_equal(out$START, c(100, 300, 200))
+  testthat::expect_equal(out$S002, c(0.3, 0.9, NA))
+  testthat::expect_equal(out$S001, c(0.5, NA, 0.7))
+})
+
+test_that("io_stream_merge_bed() refuses a position repeated within one sample", {
 
   skip_on_cran()
 
   tempFolder <- tempfile("read_pivot_test_")
   bed_dir <- file.path(tempFolder, "Data", "Case", "MUTATIONS_HYPER")
   dir.create(bed_dir, recursive = TRUE)
-
-  # Two tiny bedgraph files, sample S001 and S002, overlapping coordinates
   bg1 <- file.path(bed_dir, "S001_MUTATIONS_HYPER.bedgraph")
-  bg2 <- file.path(bed_dir, "S002_MUTATIONS_HYPER.bedgraph")
-  writeLines(c("chr1\t100\t101\t0.5", "chr1\t200\t201\t0.7"), bg1)
-  writeLines(c("chr1\t100\t101\t0.3", "chr1\t300\t301\t0.9"), bg2)
+  # The same position twice, once with and once without the "chr" prefix.
+  writeLines(c("chr1\t100\t101\t0.5", "1\t100\t101\t0.6"), bg1)
 
-  merged <- SEMseeker:::io_stream_merge_bed(c(bg1, bg2), "MUTATIONS", "HYPER")
-  testthat::expect_s3_class(merged, "polars_lazy_frame")
-
-  out <- merged$collect()
-  testthat::expect_true(all(c("CHR","START","END","S001","S002") %in% colnames(out)))
-  testthat::expect_equal(nrow(out), 3L)   # 100, 200, 300 = 3 distinct rows
+  testthat::expect_error(
+    SEMseeker:::io_stream_merge_bed(bg1, "MUTATIONS", "HYPER", file.path(tempFolder, "merged.parquet")),
+    "repeated within one sample")
 })

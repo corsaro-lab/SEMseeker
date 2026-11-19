@@ -192,7 +192,7 @@ test_that("the collapsed burden is restricted to its own region class", {
   mask_size <- function(area, subarea) {
     m <- SEMseeker:::.io_pivot_masked_lazy("MUTATIONS", "HYPER", "SAMPLE", area, subarea)
     if (is.null(m)) return(NA_integer_)
-    nrow(as.data.frame(m$lazy$collect()))
+    nrow(as.data.frame(dplyr::collect(m$lazy)))
   }
   whole    <- mask_size("PROBE", "WHOLE")
   gene     <- mask_size("GENE",  "WHOLE")

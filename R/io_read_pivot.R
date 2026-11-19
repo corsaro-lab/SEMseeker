@@ -163,7 +163,7 @@ io_pivot_ensure <- function(marker, figure, area = "POSITION", subarea = "WHOLE"
               "] merging ", length(bed_files), " bed/bedgraph files into ",
               basename(pivot_filename))
     dir.create(dirname(pivot_filename), recursive = TRUE, showWarnings = FALSE)
-    io_stream_merge_bed(bed_files, marker, figure)$sink_parquet(pivot_filename)
+    io_stream_merge_bed(bed_files, marker, figure, pivot_filename)
     # Sidecar JSON is materialised by core_ensure_sidecars() at pipeline end.
     return(pivot_filename)
   }

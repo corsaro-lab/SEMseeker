@@ -569,7 +569,7 @@ test_that("VALUE carries the per-position values, unreduced", {
 
   masked <- SEMseeker:::.io_pivot_masked_lazy("SIGNAL", "BETA", "INSTANCE",
                                               "POSITION", "WHOLE")
-  got <- as.data.frame(masked$lazy$collect())
+  got <- as.data.frame(dplyr::collect(masked$lazy))
 
   # One row per position, nothing aggregated, and the three coordinates composed
   # into ONE identifier - the form io_probe_id_to_coord() splits back.
