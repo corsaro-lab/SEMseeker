@@ -1,52 +1,50 @@
 
-#' Convert a POSITION-keyed signal pivot into a PROBE-keyed lazy frame.
+#' Convert a POSITION-keyed signal pivot into a PROBE-keyed lazy table.
 #'
-#' Returns a Polars LazyFrame rather than an R
-#' data.frame. Materialisation downstream is opt-in only - sem_analyze_batch
-#' and sem_analyze_population_bulk consume the lazy frame directly. This
-#' eliminates the ~12 GB R-side peak that caused silent jetsam kills on
-#' ewas-scale matrices (367k × 4013) in resume mode (v18, v21).
+#' The SEM step works on probes, while the SIGNAL pivot is keyed by position.
+#' The result is a lazy table of the data engine, not an R data.frame:
+#' callers collect only the columns they need (the reference samples, then
+#' one population at a time), which keeps a 367k x 4 013 matrix out of R.
 #'
-#' Contract change: callers that need PROBE as a column see it as a
-#' regular polars String column. Callers that previously read `rownames`
-#' must switch to selecting / collecting the `PROBE` column.
+#' Rows follow the order of the probe annotation, as the polars version did.
+#' The annotation is reduced to the probes of the detected technology and to
+#' distinct rows before the join; the pivot has one row per position, so this
+#' gives the same rows as removing duplicates after the join.
 #'
-#' Order: input must already be sorted (sort gate = io_signal_save chunked
-#' per-chr by START). This function preserves order via `unique(maintain_order=TRUE)`.
+#' The annotation is registered as a view for the life of the connection,
+#' because the lazy table returned refers to it.
 #'
-#' @param signal_data polars LazyFrame, polars DataFrame, or R data.frame
-#'   carrying CHR/START/END + sample columns. Lazy input keeps the entire
-#'   pipeline in zero-copy mode; R data.frame is wrapped before the join.
+#' @param signal_data a tbl_lazy of the data engine (for instance from
+#'   io_scan_parquet()) or an R data.frame, with CHR, START, END and one
+#'   column per sample
 #'
-#' @return A polars LazyFrame with the PROBE column and one column per
-#'   sample. CHR/START/END/tech annotation columns are dropped after the
-#'   join, since downstream consumers only need the probe-keyed shape.
+#' @return A tbl_lazy with the PROBE column and one column per sample, in
+#'   the order of the probe annotation.
+#' @keywords internal
+#' @noRd
 anno_position_pivot_to_probe <- function(signal_data)
 {
- 
-  ssEnv          <- core_get_session_info()
-  tech_col       <- ssEnv$tech
+  ssEnv     <- core_get_session_info()
+  tech_col  <- ssEnv$tech
   probe_features <- anno_probe_annotation_build(ssEnv$tech)[, c("PROBE", "CHR", "START", "END", tech_col)]
-  probe_features_lf <- polars::as_polars_df(probe_features)$lazy()
+  in_tech <- probe_features[[tech_col]]
+  probe_features <- unique(probe_features[!is.na(in_tech) & in_tech, c("PROBE", "CHR", "START", "END")])
+  probe_features <- data.frame(PROBE = as.character(probe_features$PROBE),
+                               CHR   = as.character(probe_features$CHR),
+                               START = probe_features$START,
+                               END   = probe_features$END,
+                               ANNOTATION_ORDER = seq_len(nrow(probe_features)),
+                               stringsAsFactors = FALSE)
+  annotation <- io_register_frame(probe_features)
 
-  # Accept polars LazyFrame, polars DataFrame, or R data.frame/matrix.
-  # Staying lazy here avoids materialising the full SIGNAL pivot (e.g. 367k
-  # probes × 4k samples ≈ 12 GB) into R memory before the join.
-  signal_lazy <-
-    if (inherits(signal_data, "polars_lazy_frame"))      signal_data
-    else if (inherits(signal_data, "polars_data_frame")) signal_data$lazy()
-    else                                                  polars::as_polars_df(signal_data)$lazy()
-
-  # Single lazy chain: join on coords, dedupe preserving input order
-  # (the single sort gate is io_signal_save, at pivot save),
-  # filter probes matching the detected technology, drop annotation columns.
-  # NO collect() - caller takes a LazyFrame. Materialisation, if needed,
-  # is the caller's explicit decision.
-  result_lf <- probe_features_lf$
-    join(signal_lazy, on = c("CHR", "START", "END"), how = "inner")$
-    unique(maintain_order = TRUE)$
-    filter(polars::pl$col(tech_col)$is_not_null() & polars::pl$col(tech_col))$
-    drop(c("CHR", "START", "END", tech_col))
-
-  result_lf
+  signal_lazy <- if (inherits(signal_data, "tbl_lazy")) signal_data else io_register_frame(signal_data)
+  connection <- dbplyr::remote_con(signal_lazy)
+  query_text <- sprintf('
+    SELECT annotation.PROBE, signal.* EXCLUDE (CHR, START, "END")
+    FROM (%s) AS annotation
+    JOIN (%s) AS signal
+      ON annotation.CHR = CAST(signal.CHR AS VARCHAR) AND annotation.START = signal.START AND annotation."END" = signal."END"
+    ORDER BY annotation.ANNOTATION_ORDER',
+    dbplyr::sql_render(annotation), dbplyr::sql_render(signal_lazy))
+  dplyr::tbl(connection, dbplyr::sql(query_text))
 }

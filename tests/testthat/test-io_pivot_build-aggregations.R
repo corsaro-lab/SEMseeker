@@ -37,6 +37,8 @@ test_that("each algebraic aggregation at scope SAMPLE gives the value worked out
 
   written <- SEMseeker:::io_pivot_build("SIGNAL", "BETA", scope = "SAMPLE", area = "POSITION", subarea = "WHOLE",
                                         aggregations = c("SUM", "MEAN", "MEDIAN", "VARIANCE", "IQR"))
+  # The artefacts are read with nanoparquet, a reader that is neither the
+  # engine under test nor polars. aggregation: one of the names of `written`.
   read_one <- function(aggregation) as.data.frame(nanoparquet::read_parquet(written[[aggregation]]))
 
   expected_s1 <- c(SUM = 20, MEAN = 4, MEDIAN = 3, VARIANCE = 12.5, IQR = 2)

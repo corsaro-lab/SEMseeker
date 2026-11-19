@@ -45,7 +45,7 @@ test_that("sem_analyze_population_bulk - synthetic 10x5 produces correct pivots"
                                                     SEMseeker:::io_signal_figure(),
                                                     "POSITION", "WHOLE")
   dir.create(dirname(signal_path), recursive = TRUE, showWarnings = FALSE)
-  polars::as_polars_df(probe_df)$write_parquet(signal_path)
+  nanoparquet::write_parquet(probe_df, signal_path)
 
   # ---- Synthetic thresholds (high=0.8, low=0.2 per ogni probe) -----------
   thresholds <- data.frame(
@@ -89,7 +89,7 @@ test_that("sem_analyze_population_bulk - synthetic 10x5 produces correct pivots"
                                                           "POSITION", "WHOLE")
   testthat::expect_true(file.exists(deltas_hyper_path))
 
-  deltas_hyper_df <- as.data.frame(polars::pl$read_parquet(deltas_hyper_path))
+  deltas_hyper_df <- as.data.frame(nanoparquet::read_parquet(deltas_hyper_path))
   testthat::expect_equal(nrow(deltas_hyper_df), n_probes)
   testthat::expect_setequal(setdiff(colnames(deltas_hyper_df),
                                     c("CHR", "START", "END")), sample_ids)
@@ -104,7 +104,7 @@ test_that("sem_analyze_population_bulk - synthetic 10x5 produces correct pivots"
                                                          "POSITION", "WHOLE")
   testthat::expect_true(file.exists(deltas_hypo_path))
 
-  deltas_hypo_df <- as.data.frame(polars::pl$read_parquet(deltas_hypo_path))
+  deltas_hypo_df <- as.data.frame(nanoparquet::read_parquet(deltas_hypo_path))
   expected_hypo  <- pmax(0.2 - signal_matrix, 0)
   actual_hypo    <- align_by_coord(deltas_hypo_df, probe_df, sample_ids)
   testthat::expect_equal(actual_hypo, expected_hypo,
@@ -115,7 +115,7 @@ test_that("sem_analyze_population_bulk - synthetic 10x5 produces correct pivots"
                                                        "POSITION", "WHOLE")
   testthat::expect_true(file.exists(mut_hyper_path))
 
-  mut_hyper_df <- as.data.frame(polars::pl$read_parquet(mut_hyper_path))
+  mut_hyper_df <- as.data.frame(nanoparquet::read_parquet(mut_hyper_path))
   expected_mut <- (expected_hyper > 0) * 1L
   actual_mut   <- align_by_coord(mut_hyper_df, probe_df, sample_ids)
   testthat::expect_equal(actual_mut, expected_mut, ignore_attr = TRUE)
@@ -125,7 +125,7 @@ test_that("sem_analyze_population_bulk - synthetic 10x5 produces correct pivots"
                                                           "POSITION", "WHOLE")
   testthat::expect_true(file.exists(deltar_hyper_path))
 
-  deltar_hyper_df <- as.data.frame(polars::pl$read_parquet(deltar_hyper_path))
+  deltar_hyper_df <- as.data.frame(nanoparquet::read_parquet(deltar_hyper_path))
   expected_deltar <- expected_hyper / (0.8 - 0.2)
   actual_deltar   <- align_by_coord(deltar_hyper_df, probe_df, sample_ids)
   testthat::expect_equal(actual_deltar, expected_deltar,
@@ -136,7 +136,7 @@ test_that("sem_analyze_population_bulk - synthetic 10x5 produces correct pivots"
                                                        "POSITION", "WHOLE")
   testthat::expect_true(file.exists(les_hyper_path))
 
-  les_hyper_df <- as.data.frame(polars::pl$read_parquet(les_hyper_path))
+  les_hyper_df <- as.data.frame(nanoparquet::read_parquet(les_hyper_path))
   testthat::expect_equal(nrow(les_hyper_df), n_probes)
   testthat::expect_setequal(setdiff(colnames(les_hyper_df),
                                     c("CHR", "START", "END")), sample_ids)

@@ -128,15 +128,16 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
       coverage_sig$CHR <- anno_normalize_chr(coverage_sig$CHR, "internal")
       coverage_n_input  <- nrow(coverage_sig)
       coverage_n_ranges <- nrow(signal_thresholds)
-      coverage_sig_lf <- polars::as_polars_df(
-        coverage_sig[, c("CHR", "START", "END")])$
-        with_columns(polars::pl$col("CHR")$cast(polars::pl$String))$lazy()
-      coverage_thr_lf <- polars::as_polars_df(
-        signal_thresholds[, c("CHR", "START", "END")])$
-        with_columns(polars::pl$col("CHR")$cast(polars::pl$String))$lazy()
-      coverage_n_covered <- coverage_sig_lf$join(
-        coverage_thr_lf, on = c("CHR", "START", "END"), how = "inner"
-      )$collect()$height
+      # The count is an inner join of the two coordinate sets, done by the
+      # data engine: the bed file of a long-read sample holds millions of rows.
+      coverage_sig_lf <- io_register_frame(data.frame(CHR = as.character(coverage_sig$CHR),
+                                                      START = coverage_sig$START, END = coverage_sig$END,
+                                                      stringsAsFactors = FALSE))
+      coverage_thr_lf <- io_register_frame(data.frame(CHR = as.character(signal_thresholds$CHR),
+                                                      START = signal_thresholds$START, END = signal_thresholds$END,
+                                                      stringsAsFactors = FALSE))
+      coverage_n_covered <- dplyr::pull(dplyr::collect(dplyr::count(
+        dplyr::inner_join(coverage_sig_lf, coverage_thr_lf, by = c("CHR", "START", "END")))), "n")
       core_log_event(
         "BANNER: ", format(Sys.time(), "%a %b %d %X %Y"),
         " [sem_analyze_population] Coverage -",

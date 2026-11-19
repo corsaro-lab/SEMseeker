@@ -1,34 +1,31 @@
-#' sem_analyze_population_bulk - vectorized population analysis (2026-06-08)
+#' Compute the population markers of every sample at once, from the pivots
 #'
-#' Drop-in replacement per sem_analyze_population() che SOSTITUISCE il per-sample
-#' loop (con dump bedgraph per ogni sample x marker x figure) con operazioni
-#' bulk Polars sul SIGNAL pivot wide gia' scritto da signal_save.
+#' The per-sample engine writes one bedGraph per sample, marker and figure and
+#' merges them back into pivots, which on 4 000 samples took about 11 hours.
+#' This engine computes the same markers column by column on the SIGNAL
+#' POSITION pivot that io_signal_save() wrote, and writes each pivot once:
 #'
-#' Pipeline:
-#'   1. SIGNAL pivot esiste gia' (io_signal_save) -> niente per-sample SIGNAL dump.
-#'   2. DELTAS_HYPER pivot = (SIGNAL - high_threshold) clip lower=0  (per-col bulk)
-#'      DELTAS_HYPO  pivot = (low_threshold - SIGNAL) clip lower=0
-#'   3. MUTATIONS_{HYPER,HYPO} pivot = (DELTAS > 0) cast Int32
-#'   4. DELTAR_{HYPER,HYPO}    pivot = DELTAS / (high - low)
-#'   5. LESIONS_{HYPER,HYPO}   pivot = sliding-window enrichment binomial test
-#'      per sample (operando sulle colonne del MUTATIONS pivot, in-memory).
+#'   DELTAS_HYPER = max(SIGNAL - high threshold, 0)
+#'   DELTAS_HYPO  = max(low threshold - SIGNAL, 0)
+#'   MUTATIONS    = DELTAS > 0, as an integer
+#'   DELTAR       = DELTAS / max(high - low, 1e-9)
+#'   LESIONS      = the binomial window test of sem_lesions_get_bulk() on the
+#'                  MUTATIONS pivot, 200 samples at a time
 #'
-#' Output identici alle versioni per-sample bit-per-bit per MUTATIONS/LESIONS
-#' (rank-invariante sotto monotona, vedi memory option-A-beta-to-m-upstream)
-#' e numericamente equivalenti per DELTAS/DELTAR (stessa formula, applicata
-#' bulk invece di per sample).
+#' A missing signal stays missing in every marker. The two engines must give
+#' the same values: test-e2e_population_path_equivalence.R checks it. A pivot
+#' that already exists is not written again, and when all of them exist the
+#' function returns before reading anything.
 #'
-#' Risparmio atteso su ewas (4013 sample):
-#'   - per-sample loop: ~11 h (write+gzip bedgraph + decompress + read.delim)
-#'   - bulk: ~10-30 min (lazy ops Polars + per-sample LESIONS in memoria)
-#'
-#' @param signal_data passato per compatibilita' di firma, ignorato (usiamo
-#'   il pivot SIGNAL gia' su disco da io_signal_save).
-#' @param sample_sheet df con Sample_ID, Sample_Group; usato per liste sample.
-#' @param signal_thresholds df con CHR, START, END,
-#'   signal_superior_thresholds (high), signal_inferior_thresholds (low),
-#'   signal_median_values.
-#' @param probe_features passato per compatibilita'.
+#' @param signal_data kept for the signature of sem_analyze_population();
+#'   not used, the signal is read from the SIGNAL POSITION pivot
+#' @param sample_sheet kept for the same signature; not used, the samples are
+#'   the columns of the SIGNAL pivot
+#' @param signal_thresholds data.frame with CHR, START, END,
+#'   signal_superior_thresholds (high) and signal_inferior_thresholds (low),
+#'   one row per position
+#' @param probe_features kept for the same signature; not used
+#' @return NULL, invisibly; the side effect is the marker pivots
 #'
 #' @keywords internal
 #' @noRd
@@ -80,62 +77,50 @@ sem_analyze_population_bulk <- function(signal_data, sample_sheet,
          " - io_signal_save() deve essere chiamato prima.")
   }
 
-  # 2026-06-09: use the in-memory `signal_thresholds`
-  # data.frame DIRECTLY (it's the function argument - caller has it
-  # available, no need for disk I/O). The polars 1.11 quirk that
-  # required the arrow tempfile workaround was: as_polars_df on a
-  # data.frame with `CHR` as factor produced a Categorical column,
-  # and `$with_columns($cast(String))` did not actually convert.
-  # The simpler fix is to force CHR to character ON THE R-SIDE
-  # before as_polars_df - polars maps R character → polars String
-  # directly. Same for START / END as integer.
-  thr_lazy <- polars::as_polars_df(
-    data.frame(
-      CHR   = as.character(signal_thresholds$CHR),
-      START = as.integer(signal_thresholds$START),
-      END   = as.integer(signal_thresholds$END),
-      .HIGH = signal_thresholds$signal_superior_thresholds,
-      .LOW  = signal_thresholds$signal_inferior_thresholds,
-      stringsAsFactors = FALSE,
-      check.names      = FALSE
-    )
-  )$lazy()
-
-  # 2026-06-09: release the R-side signal_thresholds binding
-  # after the data is copied into polars. signal_thresholds is the
-  # function ARG (~50 MB on ewas 367k probes × 5 thresholds cols), and
-  # without explicit cleanup R keeps it alive for the rest of the
-  # function while polars also holds its own copy in Rust heap - both
-  # heaps holding the same data is exactly what we tried to avoid
-  # everywhere else (the lazy passthrough).
-  # NOTE: the CALLER's binding (analyze_batch.R: populationControlRange-
-  # BetaValues) is still alive in the parent frame - full release
-  # requires the caller to also rm() after this function returns.
-  n_thr_positions <- nrow(signal_thresholds)   # cache before rm() (used in core_log_event below)
+  # The thresholds join the signal on the coordinates, as a view of the data
+  # engine. CHR as text and START/END as integers, the types of the pivot.
+  connection <- io_engine_connection()
+  thresholds_view <- paste0("thresholds_", gsub("[^A-Za-z0-9]", "", basename(tempfile(""))))
+  duckdb::duckdb_register(connection, thresholds_view, data.frame(
+    CHR   = as.character(signal_thresholds$CHR),
+    START = as.integer(signal_thresholds$START),
+    END   = as.integer(signal_thresholds$END),
+    .HIGH = signal_thresholds$signal_superior_thresholds,
+    .LOW  = signal_thresholds$signal_inferior_thresholds,
+    stringsAsFactors = FALSE,
+    check.names      = FALSE
+  ))
+  on.exit(duckdb::duckdb_unregister(connection, thresholds_view), add = TRUE)
+  n_thr_positions <- nrow(signal_thresholds)
   rm(signal_thresholds)
   invisible(gc(verbose = FALSE))
 
-  # 2026-06-09: estrarre lo schema dei sample columns DAL PIVOT RAW
-  # prima di applicare $with_columns(cast) + $join. Polars 1.x ha un picco
-  # di memoria significativo su $collect_schema() invocato dopo una catena
-  # complessa lazy (cast + join inner): l'optimizer materializza tutto il
-  # working buffer per risolvere lo schema della join, causando il picco
-  # ~10-15 GB visto su ewas (367k × 4013) prima ancora che la query inizi.
-  # Lo schema dei sample columns è invariante al cast + join: il cast non
-  # cambia le colonne, il join inner aggiunge solo `.HIGH`/`.LOW` ma non
-  # tocca le sample. Quindi possiamo derivarlo dal pivot raw senza pagare
-  # quel picco.
-  raw_signal_schema <- names(
-    io_read_pivot_polars("SIGNAL", io_signal_figure(), "POSITION", "WHOLE")$collect_schema()
-  )
-  coord_cols  <- c("CHR", "START", "END", ".HIGH", ".LOW")
-  sample_cols <- setdiff(raw_signal_schema, coord_cols)
+  # Paths and sample ids are free text and enter the SQL quoted. path: a file
+  # path, quoted as an SQL string; name: a column name, quoted as an SQL
+  # identifier.
+  quote_text <- function(path) DBI::dbQuoteString(connection, path)
+  quote_name <- function(name) as.character(DBI::dbQuoteIdentifier(connection, name))
+  # The column names of a parquet file, read from its footer without reading
+  # the data. path: the parquet file.
+  pivot_columns <- function(path)
+    DBI::dbGetQuery(connection, sprintf("DESCRIBE SELECT * FROM read_parquet(%s)", quote_text(path)))$column_name
+  # Writes `select_list` over `source_query` to `path`, keeping the row order
+  # of the source. select_list: the SQL expressions after SELECT; source_query:
+  # the FROM clause; path: the parquet file.
+  write_pivot <- function(select_list, source_query, path)
+    DBI::dbExecute(connection, sprintf("COPY (SELECT %s FROM %s) TO %s (FORMAT parquet, COMPRESSION zstd)",
+                                       select_list, source_query, quote_text(path)))
+  # A NULL stays NULL: DuckDB's greatest() would turn greatest(NULL, 0) into
+  # 0, a missing signal into "no deviation". value_sql: the SQL of the value.
+  floor_at_zero <- function(value_sql)
+    sprintf("CASE WHEN (%1$s) IS NULL THEN NULL ELSE greatest(%1$s, 0) END", value_sql)
 
-  # Carica SIGNAL pivot lazy + cast CHR to String (io_signal_save lascia Categorical
-  # mentre thr_lazy ha String -> mismatch nel join) + join thresholds
-  signal_lazy <- io_read_pivot_polars("SIGNAL", io_signal_figure(), "POSITION", "WHOLE")$
-    with_columns(polars::pl$col("CHR")$cast(polars::pl$String))$
-    join(thr_lazy, on = c("CHR", "START", "END"), how = "inner")
+  signal_pivot_columns <- pivot_columns(signal_pivot_path)
+  sample_cols <- setdiff(signal_pivot_columns, c("CHR", "START", "END", ".HIGH", ".LOW"))
+  coordinates_sql <- 'signal.CHR, signal.START, signal."END"'
+  signal_join <- sprintf('read_parquet(%s) AS signal JOIN %s AS thresholds
+                          ON CAST(signal.CHR AS VARCHAR) = thresholds.CHR AND signal.START = thresholds.START AND signal."END" = thresholds."END"',
+                         quote_text(signal_pivot_path), thresholds_view)
 
   core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
             " [sem_analyze_population_bulk] joined SIGNAL with thresholds: ",
@@ -143,8 +128,6 @@ sem_analyze_population_bulk <- function(signal_data, sample_sheet,
             n_thr_positions, " positions")
 
   # ---- Step 2: DELTAS_HYPER, DELTAS_HYPO bulk -----------------------------
-  # DELTAS_HYPER[s, p] = max(SIGNAL[s,p] - high[p], 0)
-  # DELTAS_HYPO[s, p]  = max(low[p] - SIGNAL[s,p], 0)
   for (figure in c("HYPER", "HYPO")) {
     deltas_path <- io_pivot_file_name_parquet("DELTAS", figure, "POSITION", "WHOLE")
     if (file.exists(deltas_path)) {
@@ -153,23 +136,18 @@ sem_analyze_population_bulk <- function(signal_data, sample_sheet,
       next
     }
     t0 <- Sys.time()
-    deltas_exprs <- lapply(sample_cols, function(s) {
-      if (figure == "HYPER") {
-        diff_expr <- polars::pl$col(s)$sub(polars::pl$col(".HIGH"))
-      } else {
-        diff_expr <- polars::pl$col(".LOW")$sub(polars::pl$col(s))
-      }
-      diff_expr$clip(lower_bound = 0)$alias(s)
-    })
-    out_lazy <- do.call(signal_lazy$with_columns, deltas_exprs)$
-      drop(c(".HIGH", ".LOW"))
-    out_lazy$sink_parquet(deltas_path)
+    deltas_sql <- vapply(sample_cols, function(sample_name) {
+      column <- paste0("signal.", quote_name(sample_name))
+      difference <- if (figure == "HYPER") paste(column, "- thresholds.\".HIGH\"") else paste("thresholds.\".LOW\" -", column)
+      paste(floor_at_zero(difference), "AS", quote_name(sample_name))
+    }, character(1))
+    write_pivot(paste(c(coordinates_sql, deltas_sql), collapse = ", "), signal_join, deltas_path)
     core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
               " [bulk] DELTAS_", figure, " written in ",
               round(as.numeric(difftime(Sys.time(), t0, units = "secs")), 1), " sec")
   }
 
-  # ---- Step 3: MUTATIONS_{HYPER,HYPO} bulk = (DELTAS > 0) cast Int32 -----
+  # ---- Step 3: MUTATIONS_{HYPER,HYPO} bulk = (DELTAS > 0) as INTEGER -----
   for (figure in c("HYPER", "HYPO")) {
     mut_path <- io_pivot_file_name_parquet("MUTATIONS", figure, "POSITION", "WHOLE")
     if (file.exists(mut_path)) {
@@ -179,12 +157,10 @@ sem_analyze_population_bulk <- function(signal_data, sample_sheet,
     }
     t0 <- Sys.time()
     deltas_path <- io_pivot_file_name_parquet("DELTAS", figure, "POSITION", "WHOLE")
-    deltas_lazy <- polars::pl$scan_parquet(deltas_path)
-    mut_exprs <- lapply(sample_cols, function(s) {
-      polars::pl$col(s)$gt(0)$cast(polars::pl$Int32)$alias(s)
-    })
-    out_lazy <- do.call(deltas_lazy$with_columns, mut_exprs)
-    out_lazy$sink_parquet(mut_path)
+    mutations_sql <- vapply(sample_cols, function(sample_name)
+      sprintf("CAST(%1$s > 0 AS INTEGER) AS %1$s", quote_name(sample_name)), character(1))
+    write_pivot(paste(c('CHR, START, "END"', mutations_sql), collapse = ", "),
+                sprintf("read_parquet(%s)", quote_text(deltas_path)), mut_path)
     core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
               " [bulk] MUTATIONS_", figure, " written in ",
               round(as.numeric(difftime(Sys.time(), t0, units = "secs")), 1), " sec")
@@ -200,19 +176,15 @@ sem_analyze_population_bulk <- function(signal_data, sample_sheet,
     }
     t0 <- Sys.time()
     deltas_path <- io_pivot_file_name_parquet("DELTAS", figure, "POSITION", "WHOLE")
-    deltas_lazy <- polars::pl$scan_parquet(deltas_path)$
-      with_columns(polars::pl$col("CHR")$cast(polars::pl$String))$
-      join(thr_lazy$select(c("CHR", "START", "END", ".HIGH", ".LOW")),
-           on = c("CHR", "START", "END"), how = "inner")
-    # dividend = high - low (avoid 0 by adding tiny eps a la sem_deltar_single_sample)
-    deltar_exprs <- lapply(sample_cols, function(s) {
-      div_expr <- polars::pl$col(".HIGH")$sub(polars::pl$col(".LOW"))$
-        clip(lower_bound = 1e-9)
-      polars::pl$col(s)$truediv(div_expr)$alias(s)
-    })
-    out_lazy <- do.call(deltas_lazy$with_columns, deltar_exprs)$
-      drop(c(".HIGH", ".LOW"))
-    out_lazy$sink_parquet(deltar_path)
+    deltas_join <- sprintf('read_parquet(%s) AS signal JOIN %s AS thresholds
+                            ON CAST(signal.CHR AS VARCHAR) = thresholds.CHR AND signal.START = thresholds.START AND signal."END" = thresholds."END"',
+                           quote_text(deltas_path), thresholds_view)
+    # the range of the reference, floored at 1e-9 so a constant probe does
+    # not divide by zero, as in sem_deltar_single_sample()
+    range_sql <- 'CASE WHEN (thresholds.".HIGH" - thresholds.".LOW") IS NULL THEN NULL ELSE greatest(thresholds.".HIGH" - thresholds.".LOW", 1e-9) END'
+    deltar_sql <- vapply(sample_cols, function(sample_name)
+      sprintf("signal.%1$s / (%2$s) AS %1$s", quote_name(sample_name), range_sql), character(1))
+    write_pivot(paste(c(coordinates_sql, deltar_sql), collapse = ", "), deltas_join, deltar_path)
     core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
               " [bulk] DELTAR_", figure, " written in ",
               round(as.numeric(difftime(Sys.time(), t0, units = "secs")), 1), " sec")
@@ -248,11 +220,9 @@ sem_analyze_population_bulk <- function(signal_data, sample_sheet,
     for (ci in seq_along(sample_chunks)) {
       cols_this <- sample_chunks[[ci]]
       # Carica solo le colonne di questo chunk + coordinate (ordinato per CHR/START)
-      mut_chunk <- polars::pl$scan_parquet(mut_path)$
-        select(c("CHR", "START", "END", cols_this))$
-        sort(c("CHR", "START"))$
-        collect()
-      mut_df <- as.data.frame(mut_chunk)
+      mut_df <- DBI::dbGetQuery(connection, sprintf('SELECT CHR, START, "END", %s FROM read_parquet(%s) ORDER BY CHR, START',
+                                                    paste(vapply(cols_this, quote_name, character(1)), collapse = ", "),
+                                                    quote_text(mut_path)))
       mut_df$CHR <- as.character(mut_df$CHR)
 
       # Delega LESIONS computation a sem_lesions_get_bulk (multi-sample bp window).
@@ -271,8 +241,8 @@ sem_analyze_population_bulk <- function(signal_data, sample_sheet,
         stringsAsFactors = FALSE
       )
       chunk_file <- file.path(tmp_dir, sprintf("%03d.parquet", ci))
-      polars::as_polars_df(les_df)$write_parquet(chunk_file)
-      rm(mut_chunk, mut_df, les_mat, les_df); invisible(gc(verbose = FALSE))
+      io_write_frame_parquet(les_df, chunk_file)
+      rm(mut_df, les_mat, les_df); invisible(gc(verbose = FALSE))
     }
 
     # Concat dei chunk per colonna (tutti hanno stesso ordine righe).
@@ -280,14 +250,11 @@ sem_analyze_population_bulk <- function(signal_data, sample_sheet,
     if (length(chunk_paths) == 1L) {
       file.copy(chunk_paths[1], lesions_path, overwrite = TRUE)
     } else {
-      les_combined <- polars::pl$scan_parquet(chunk_paths[1])
-      for (i in 2:length(chunk_paths)) {
-        les_next <- polars::pl$scan_parquet(chunk_paths[i])
-        les_combined <- les_combined$join(les_next,
-                                          on = c("CHR", "START", "END"),
-                                          how = "inner")
-      }
-      les_combined$sink_parquet(lesions_path)
+      # Every chunk holds the same positions: the samples are joined back on
+      # the coordinates, in the order of the chunks.
+      chunk_sources <- sprintf("read_parquet(%s) AS chunk%d", vapply(chunk_paths, quote_text, character(1)), seq_along(chunk_paths))
+      joined <- paste(c(chunk_sources[1], sprintf('JOIN %s USING (CHR, START, "END")', chunk_sources[-1])), collapse = " ")
+      write_pivot("*", joined, lesions_path)
     }
 
     core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),

@@ -15,7 +15,7 @@ sem_signal_range_values <- function(populationMatrix, batch_id, probe_features) 
   thresholds_file_name <- io_file_path_build(ssEnv$result_folderData ,c(batch_id, "signal_thresholds"),"parquet")
   if(file.exists(thresholds_file_name))
   {
-    result <- as.data.frame(polars::pl$read_parquet(thresholds_file_name))
+    result <- io_read_parquet_frame(thresholds_file_name)
     return(result)
   }
   if (sum(is.na(populationMatrix)) > 0)
@@ -75,26 +75,28 @@ sem_signal_range_values <- function(populationMatrix, batch_id, probe_features) 
   if(nrow(result) != nrow(populationMatrix))
     stop("I'M STOPPING HERE, No thresholds defined for the population.")
 
-  result <- polars::as_polars_df(result)$lazy()
-  probe_features <- polars::as_polars_df(probe_features)$lazy()
-  # rename AREA as PROBE
-  result <- probe_features$join(
-    result,
-    on = c("PROBE"),
-    how = "inner"
-  )
-  # Drop PROBE_WHOLE before writing thresholds: it's the canonical
-  # (AREA, SUBAREA) name for the probe-level baseline (kept on
-  # probe_features so downstream association code can do dynamic
-  # `probe_features[[area_subarea]]` lookup) but it's a 1:1 alias of
-  # PROBE, so persisting it to the thresholds parquet is pure waste.
-  if ("PROBE_WHOLE" %in% names(result))
-    result <- result$drop(c("PROBE_WHOLE"))
-  result <- result$sort(c("CHR", "START","END"), descending = FALSE)
-  result <- result$collect()
-  result$write_parquet(thresholds_file_name)
+  # The thresholds take the probe coordinates and annotation by joining on
+  # PROBE: the annotation columns first, then the thresholds, sorted on CHR,
+  # START and END with CHR as text. Factors are passed as text, because the
+  # data engine would sort a factor by its levels and not lexically.
+  as_text <- function(frame) {
+    # frame: a data.frame; returns it with every factor column as character
+    factor_columns <- vapply(frame, is.factor, logical(1))
+    frame[factor_columns] <- lapply(frame[factor_columns], as.character)
+    frame
+  }
+  # PROBE_WHOLE is the canonical (AREA, SUBAREA) name of the probe-level
+  # baseline, kept on probe_features for the association lookups; it is a
+  # 1:1 alias of PROBE and is not persisted with the thresholds.
+  probe_features <- probe_features[, setdiff(colnames(probe_features), "PROBE_WHOLE"), drop = FALSE]
+  connection <- io_engine_connection()
+  annotation_lazy <- io_register_frame(as_text(probe_features))
+  thresholds_lazy <- io_register_frame(as_text(result))
+  result <- DBI::dbGetQuery(connection, sprintf('SELECT * FROM (%s) AS annotation JOIN (%s) AS thresholds USING (PROBE) ORDER BY CHR, START, "END"',
+                                                dbplyr::sql_render(annotation_lazy), dbplyr::sql_render(thresholds_lazy)))
+  io_write_frame_parquet(result, thresholds_file_name)
 
   core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Thresholds defined for: ", nrow(result), " probe_features.")
   gc()
-  return(as.data.frame(result))
+  return(result)
 }

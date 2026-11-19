@@ -70,8 +70,14 @@ io_engine_connection <- function() {
   dir.create(spill_directory, recursive = TRUE, showWarnings = FALSE)
 
   connection <- DBI::dbConnect(duckdb::duckdb(shared_home = FALSE))
+  # SET and current_setting() are the only ways to change and read a setting:
+  # dbConnect(config = ) ignores them (see the header of this file).
+  # setting_name: a DuckDB setting such as "memory_limit"; setting_value:
+  # its value, quoted as text (DuckDB parses "50%", "8GB", "4").
   set_value <- function(setting_name, setting_value)
     DBI::dbExecute(connection, sprintf("SET %s = %s", setting_name, DBI::dbQuoteString(connection, as.character(setting_value))))
+  # setting_name: the setting to read back; returns its value as DuckDB
+  # reports it ("32.0 GiB", 4, a path).
   read_value <- function(setting_name)
     DBI::dbGetQuery(connection, sprintf("SELECT current_setting('%s') AS setting_value", setting_name))$setting_value
 
@@ -184,4 +190,38 @@ io_sink_parquet <- function(lazy_table, parquet_path) {
   DBI::dbExecute(connection, sprintf("COPY (%s) TO %s (FORMAT parquet, COMPRESSION zstd)",
                                      query_text, DBI::dbQuoteString(connection, parquet_path)))
   invisible(parquet_path)
+}
+
+#' Write an R data frame to a parquet file through the data engine.
+#'
+#' Replaces polars' as_polars_df(frame)$write_parquet(path). The frame is
+#' registered only for the copy and unregistered afterwards, so the engine
+#' does not keep a reference to a frame that may be the whole signal matrix.
+#'
+#' @param frame a data.frame; its column types are kept (integer as INTEGER,
+#'   double as DOUBLE, character as VARCHAR)
+#' @param parquet_path the file to write; an existing file is replaced
+#' @return parquet_path, invisibly
+#' @noRd
+io_write_frame_parquet <- function(frame, parquet_path) {
+  connection <- io_engine_connection()
+  view_name <- paste0("frame_", gsub("[^A-Za-z0-9]", "", basename(tempfile(""))))
+  duckdb::duckdb_register(connection, view_name, as.data.frame(frame))
+  on.exit(duckdb::duckdb_unregister(connection, view_name), add = TRUE)
+  DBI::dbExecute(connection, sprintf("COPY (SELECT * FROM %s) TO %s (FORMAT parquet, COMPRESSION zstd)",
+                                     DBI::dbQuoteIdentifier(connection, view_name), DBI::dbQuoteString(connection, parquet_path)))
+  invisible(parquet_path)
+}
+
+#' Read a whole parquet file into an R data frame through the data engine.
+#'
+#' Replaces as.data.frame(polars::pl$read_parquet(path)) for the small files
+#' read whole (thresholds, cleaned inputs).
+#'
+#' @param parquet_path the file to read
+#' @return a data.frame
+#' @noRd
+io_read_parquet_frame <- function(parquet_path) {
+  connection <- io_engine_connection()
+  DBI::dbGetQuery(connection, sprintf("SELECT * FROM read_parquet(%s)", DBI::dbQuoteString(connection, parquet_path)))
 }

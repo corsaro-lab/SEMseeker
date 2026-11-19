@@ -176,6 +176,9 @@ key_col_value <- function(aggregation) {
 .io_agg_sql <- function(connection, column, aggregation, column_type) {
   quoted <- DBI::dbQuoteIdentifier(connection, column)
   is_integer <- toupper(column_type) %in% c("TINYINT", "SMALLINT", "INTEGER", "BIGINT", "UTINYINT", "USMALLINT", "UINTEGER")
+  # SQL for polars' "nearest" quantile, which no DuckDB function computes:
+  # the element of rank floor((n - 1) q + 0.5) among the sorted non-missing
+  # values. quantile_level: q, a number in [0, 1].
   nearest <- function(quantile_level)
     sprintf("list_extract(list_sort(list(%1$s) FILTER (WHERE %1$s IS NOT NULL)), CAST(floor((count(%1$s) - 1) * %2$s + 0.5) AS BIGINT) + 1)",
             quoted, quantile_level)
@@ -212,6 +215,8 @@ key_col_value <- function(aggregation) {
     return(NULL)
 
   connection <- io_engine_connection()
+  # Sample ids are free text: every column name enters the SQL quoted.
+  # name: a column name; returns it as a quoted SQL identifier.
   quote_name <- function(name) as.character(DBI::dbQuoteIdentifier(connection, name))
   base_columns <- colnames(io_scan_parquet(base_path))
   # Coordinates normalised as the polars build did: 32-bit START and END, CHR
@@ -226,7 +231,10 @@ key_col_value <- function(aggregation) {
                         DBI::dbQuoteString(connection, normalizePath(base_path, winslash = "/")))
   # Every column but these is kept, in its order: what is left is the key and
   # the samples.
+  # columns: the column names, in order; dropped: the names to leave out.
   without <- function(columns, dropped) setdiff(columns, dropped)
+  # The callers aggregate with dplyr verbs, so the masked query is handed
+  # back as a lazy table. query_text: the SELECT that masks the pivot.
   as_lazy <- function(query_text) dplyr::tbl(connection, dbplyr::sql(query_text))
 
   # The whole genome, unmasked: no annotation needed, every position takes part.
