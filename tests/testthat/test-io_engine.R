@@ -52,9 +52,17 @@ test_that("the default limit is half of the physical memory, read by DuckDB on e
   # connection gives the denominator without any code specific to one system.
   plain_connection <- DBI::dbConnect(duckdb::duckdb(shared_home = FALSE))
   on.exit(DBI::dbDisconnect(plain_connection, shutdown = TRUE), add = TRUE)
-  ratio <- amount_bytes(engine_setting(connection, "memory_limit")) / amount_bytes(engine_setting(plain_connection, "memory_limit"))
+  engine_text <- engine_setting(connection, "memory_limit")
+  plain_text <- engine_setting(plain_connection, "memory_limit")
 
-  expect_equal(ratio, 50 / 80, tolerance = 0.01)
+  # DuckDB prints each amount with one decimal ("3.5 GiB"), so each carries an
+  # error of up to half a unit of that decimal. On a machine of a few GB that
+  # rounding alone moves the ratio by more than 1%, so the tolerance is the
+  # rounding itself, not a fixed percentage.
+  rounding_bytes <- function(amount_text) 0.05 * amount_bytes(paste(1, strsplit(trimws(amount_text), " ")[[1]][2]))
+  expected_bytes <- amount_bytes(plain_text) * 50 / 80
+  allowed_error <- rounding_bytes(engine_text) + rounding_bytes(plain_text) * 50 / 80
+  expect_lte(abs(amount_bytes(engine_text) - expected_bytes), allowed_error)
 })
 
 test_that("a limit passed to dbConnect(config = ) is not applied, so the check above would catch it", {
