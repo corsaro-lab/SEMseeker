@@ -53,7 +53,7 @@ association analysis.
 result_dir <- tempdir()
 \dontrun{
 assoc_bayes_analysis(
-  result_folder        = "~/semseeker_results/",
+  result_folder        = file.path(tempdir(), "semseeker_results"),
   independent_variable = "Sample_Group"
 )
 }

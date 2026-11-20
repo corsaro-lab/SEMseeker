@@ -9,6 +9,15 @@
   The files on disk are unchanged: pivots are still parquet, so results written
   by earlier versions are read as they are.
 
+- **`start_fresh = TRUE` deletes only folders SEMseeker created.** It used to
+  delete whatever `result_folder` named, so a mistyped path or a folder holding
+  other work was removed without a question. A result folder is now deleted
+  only when it is empty or carries the session file SEMseeker writes
+  (`Log/session_info.rds`); otherwise the run stops before anything is touched,
+  naming the folder. The home directory, the working directory, the root and
+  any folder containing them are always refused. The examples in the help
+  pages write under `tempdir()`.
+
 ## Bug fixes
 
 - **bedMethyl input reads the 5mC rows only.** `modkit pileup` writes one row

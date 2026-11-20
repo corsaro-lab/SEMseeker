@@ -131,8 +131,11 @@
 #'   \code{"multisession"}: it means fork(), which is unsafe with this
 #'   package's native thread pool on every platform that offers it, and
 #'   absent on Windows. The conversion is logged.
-#' @param start_fresh logical. If \code{TRUE}, delete previous inference
-#'   results before running (default \code{FALSE}).
+#' @param start_fresh logical. If \code{TRUE}, delete the previous inference
+#'   results (the \code{Inference} folder inside \code{result_folder}) before
+#'   running (default \code{FALSE}). The deletion is refused, and the run
+#'   stops, when \code{result_folder} is not a folder SEMseeker created (it
+#'   holds no \code{Log/session_info.rds}).
 #' @param ... Additional arguments passed to \code{core_init_env()}.
 #'
 #' @return Invisibly \code{NULL}. Inference result CSV files are written to
@@ -150,7 +153,7 @@
 #'     aggregation          = "MEAN",
 #'     scope                = "INSTANCE"
 #'   ),
-#'   result_folder     = "~/semseeker_results/",
+#'   result_folder     = file.path(tempdir(), "semseeker_results"),
 #'   markers           = "DELTARP",
 #'   areas             = "GENE",
 #'   subareas          = "WHOLE",
@@ -175,7 +178,7 @@ association_analysis <- function(inference_details, result_folder, maxResources 
     " SEMseeker will perform the association analysys for project \n in ",
     ssEnv$result_folderData)
 
-  if (start_fresh) unlink(ssEnv$result_folderInference, recursive = TRUE)
+  if (start_fresh) core_folder_delete(ssEnv$result_folderInference, result_folder = result_folder)
   io_dir_check_and_create(ssEnv$result_folderInference, c())
 
   localKeys <- ssEnv$keys_markers_figures

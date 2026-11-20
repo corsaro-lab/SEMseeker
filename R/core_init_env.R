@@ -98,7 +98,7 @@
 
 .core_init_env_bootstrap_session <- function(result_folder, start_fresh) {
   if (start_fresh) {
-    unlink(result_folder, recursive = TRUE, force = TRUE)
+    core_folder_delete(result_folder)
     ssEnv <- list()
   } else if (dir.exists(result_folder)) {
     ssEnv <- core_get_session_info(result_folder)

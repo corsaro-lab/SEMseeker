@@ -143,8 +143,11 @@ Asking for \code{"multicore"} is accepted and converted to
 package's native thread pool on every platform that offers it, and
 absent on Windows. The conversion is logged.}
 
-\item{start_fresh}{logical. If \code{TRUE}, delete previous inference
-results before running (default \code{FALSE}).}
+\item{start_fresh}{logical. If \code{TRUE}, delete the previous inference
+results (the \code{Inference} folder inside \code{result_folder}) before
+running (default \code{FALSE}). The deletion is refused, and the run
+stops, when \code{result_folder} is not a folder SEMseeker created (it
+holds no \code{Log/session_info.rds}).}
 
 \item{...}{Additional arguments passed to \code{core_init_env()}.}
 }
@@ -171,7 +174,7 @@ association_analysis(
     aggregation          = "MEAN",
     scope                = "INSTANCE"
   ),
-  result_folder     = "~/semseeker_results/",
+  result_folder     = file.path(tempdir(), "semseeker_results"),
   markers           = "DELTARP",
   areas             = "GENE",
   subareas          = "WHOLE",

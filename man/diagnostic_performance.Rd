@@ -51,7 +51,7 @@ result_dir <- tempdir()
 \dontrun{
 diagnostic_performance(
   combinations         = list(c("CASE_A", "CASE_B")),
-  result_folder        = "~/semseeker_results/",
+  result_folder        = file.path(tempdir(), "semseeker_results"),
   independent_variable = "Sample_Group"
 )
 }

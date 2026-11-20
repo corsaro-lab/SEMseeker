@@ -15,8 +15,11 @@
 #'   \code{"multisession"}: it means fork(), which is unsafe with this
 #'   package's native thread pool on every platform that offers it, and
 #'   absent on Windows. The conversion is logged.
-#' @param start_fresh logical. If \code{TRUE}, delete previous results before
-#'   running (default \code{FALSE}).
+#' @param start_fresh logical. If \code{TRUE}, the association analysis it
+#'   runs deletes the previous inference results (the \code{Inference} folder
+#'   inside \code{result_folder}) first (default \code{FALSE}). The deletion
+#'   is refused, and the run stops, when \code{result_folder} is not a folder
+#'   SEMseeker created (it holds no \code{Log/session_info.rds}).
 #' @param ... Additional named arguments passed to \code{core_init_env()}.
 #' @return Invisibly \code{NULL}. Results are written to the inference
 #'   sub-folder of \code{result_folder}.
@@ -26,7 +29,7 @@
 #' meta_association_replication(
 #'   inference_details_origin = inference_study1,
 #'   inference_details        = inference_study2,
-#'   result_folder            = "~/semseeker_comparison/"
+#'   result_folder            = file.path(tempdir(), "semseeker_comparison")
 #' )
 #' }
 #' @export

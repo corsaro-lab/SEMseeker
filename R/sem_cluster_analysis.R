@@ -13,7 +13,7 @@ sem_cluster_analysis <- function(cluster_variables,ellipsis=TRUE, sql_sample_sel
   core_log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will perform the cluster analysys for project \n in ", ssEnv$result_folderData)
 
   if(start_fresh)
-    unlink(ssEnv$result_folderInference, recursive = TRUE)
+    core_folder_delete(ssEnv$result_folderInference, result_folder = result_folder)
   io_dir_check_and_create(ssEnv$result_folderInference,c())
   localKeys <- ssEnv$keys_areas_subareas_markers_figures
 

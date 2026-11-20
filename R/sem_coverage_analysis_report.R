@@ -26,8 +26,8 @@
 #' # BETA is the scale this particular run was written on; a run on the
 #' # logit scale produces SIGNAL_MVALUE_PROBE_WHOLE_HG19.parquet instead.
 #' sem_coverage_analysis_report(
-#'   signal_data   = "~/semseeker_results/Data/Pivots/SIGNAL/SIGNAL_BETA_PROBE_WHOLE_HG19.parquet",
-#'   result_folder = "~/semseeker_results/"
+#'   signal_data   = file.path(tempdir(), "semseeker_results", "Data", "Pivots", "SIGNAL", "SIGNAL_BETA_PROBE_WHOLE_HG19.parquet"),
+#'   result_folder = file.path(tempdir(), "semseeker_results")
 #' )
 #' }
 #' @export

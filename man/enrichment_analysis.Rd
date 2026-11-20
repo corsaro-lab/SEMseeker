@@ -120,7 +120,7 @@ enrichment_analysis(
   pvalue_columns     = "PVALUE_ADJ_ALL_BH",
   adjustment_methods = "BH",
   alphas             = 0.05,
-  result_folder      = "~/semseeker_results/",
+  result_folder      = file.path(tempdir(), "semseeker_results"),
   WebGestalt         = TRUE
 )
 }
