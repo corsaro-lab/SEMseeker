@@ -26,7 +26,10 @@ io_data_preparation(
 
 \item{independent_variable}{regressor}
 
-\item{g_start}{index of the first burden column in tempDataFrame}
+\item{g_start}{index of the first burden column in tempDataFrame. Checked,
+not trusted: the burden columns are found by name (every column but the
+independent variable and the covariates) and the run stops if
+g_start:g_end does not point at exactly those.}
 
 \item{g_end}{index of the last burden column in tempDataFrame}
 
@@ -35,17 +38,20 @@ io_data_preparation(
 \item{key}{named list with AREA, SUBAREA, MARKER and FIGURE identifiers, used
 to name the artefact in the log when degenerate columns are dropped}
 
-\item{transformation_x}{transformation to apply to the independent variable}
+\item{transformation_x}{not applied here: the independent variable is
+transformed upstream, in assoc_predictors_prepare(), into a column of its own.
+Kept so the callers' signature does not change.}
 
 \item{independent_variable_order}{optional order of the levels of an ordinal
 independent variable, "+"-separated. See util_level_order().
 before the fit; "none" leaves it untouched}
 }
 \value{
-A named list with two elements: \code{tempDataFrame} (the prepared
-  and optionally transformed data.frame) and \code{independent_variableLevels}
-  (the factor levels of the independent variable, or \code{NULL} for continuous
-  outcomes).
+A named list: \code{tempDataFrame} (the prepared and optionally
+  transformed data.frame), \code{independent_variableLevels} (the factor
+  levels of the independent variable, or \code{NULL} for continuous outcomes)
+  and \code{burden_columns} (the names of the burden columns that survived,
+  which is what the callers iterate over).
 }
 \description{
 Title
