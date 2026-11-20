@@ -27,6 +27,13 @@
 
 ## Bug fixes
 
+- **An object called `existing_db` in the workspace no longer stops the
+  enrichment.** The ctdR, STRINGdb, Phenolyzer with STRINGdb and pathfindR
+  backends of `enrichment_analysis()` looked for a name `existing_db` up to the
+  global environment and, when they found one, read a table that nothing
+  defined. The branch is removed; resuming an enrichment already on disk works
+  as before.
+
 - **bedMethyl input reads the 5mC rows only.** `modkit pileup` writes one row
   per modification at the same position, 5mC (`m`) and 5hmC (`h`). Every row
   was read, so a file holding both gave a position two values, and joining

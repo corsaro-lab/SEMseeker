@@ -43,8 +43,6 @@ enrich_Phenolyzer_STRINGdb <- function(study,
       seq <- 0
       progress <- progress + 1
 
-      if(exists("existing_db"))
-        existing_keys <- unique(pathway_report[pathway_report$source==db,"key"])
 
       if(ssEnv$showprogress)
         progress_bar(sprintf("Searching for pathway using STRINGdb for %s",keys[i,]$COMBINED))

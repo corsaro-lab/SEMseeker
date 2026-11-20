@@ -50,17 +50,11 @@ enrich_pathfindR <- function(study,
         # db <- "KEGG"
         # pvalue_column <- "PVALUE_ADJ_ALL_BH"
 
-        if(exists("existing_db"))
-          existing_keys <- unique(pathway_report[pathway_report$source==db,"key"])
-
         if(ssEnv$showprogress)
           progress_bar(sprintf("Searching for pathway using pathfindR for %s, %s, %s, %s",keys[i,]$AREA,keys[i,]$SUBAREA,keys[i,]$MARKER,keys[i,]$FIGURE))
 
         key <- paste(keys[i,]$AREA,keys[i,]$SUBAREA,keys[i,]$MARKER,keys[i,]$FIGURE, sep="_")
 
-        if(exists("existing_db") & exists("existing_keys"))
-          if(any(key %in% existing_keys))
-            next
         suffix <- ""
         if(statistic_parameter=="")
           suffix <- "without_signal_"
@@ -74,7 +68,6 @@ enrich_pathfindR <- function(study,
           result_pathway <- utils::read.csv2(pathway_report_path)
           enrich_result_save(result_pathway, pathway_report_path, "pathfindR", study = study)
           next
-          # existing_db <-   unique(pathway_report$source)
         }
 
         results_inference <- assoc_results_get(
