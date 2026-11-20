@@ -1,4 +1,4 @@
-# semseeker 0.99.6 (development)
+# semseeker 0.99.7 (development)
 
 ## Breaking changes
 
@@ -8,6 +8,30 @@
   DESCRIPTION, and SEMseeker installs with `remotes::install_github()` alone.
   The files on disk are unchanged: pivots are still parquet, so results written
   by earlier versions are read as they are.
+
+## Bug fixes
+
+- **bedMethyl input reads the 5mC rows only.** `modkit pileup` writes one row
+  per modification at the same position, 5mC (`m`) and 5hmC (`h`). Every row
+  was read, so a file holding both gave a position two values, and joining
+  several such files multiplied the rows. SEMseeker measures methylation: the
+  reader now keeps the rows with code `m` and ignores the others, so a standard
+  `modkit pileup` output is read as it is. A file with no 5mC row, a 5mC
+  position repeated within one file, and two files given the same sample id
+  now stop the run with a message naming the sample. Results computed from
+  bedMethyl files that contained 5hmC rows must be run again.
+
+# semseeker 0.99.6
+
+## Breaking changes
+
+- **SEMseeker requires `polars` below 2.0.** polars 2.0 gives different names
+  to the columns of files read without a header, which made the construction of
+  the position pivots stop with "unable to find column", and it makes the
+  streaming engine the default, which may change the order of rows. Installing
+  SEMseeker today pulled polars 2.1 from community.r-multiverse.org, which keeps
+  only the latest release. The README and the getting-started vignette show how
+  to install polars 1.16.0 from its GitHub tag before SEMseeker.
 
 - **`plot_manhattan_plot_per_area()` is now
   `sem_marker_value_per_area_plot()`, and it draws for the first time.** It was
@@ -392,16 +416,6 @@
 
 ## Bug fixes
 
-- **bedMethyl input reads the 5mC rows only.** `modkit pileup` writes one row
-  per modification at the same position, 5mC (`m`) and 5hmC (`h`). Every row
-  was read, so a file holding both gave a position two values, and joining
-  several such files multiplied the rows. SEMseeker measures methylation: the
-  reader now keeps the rows with code `m` and ignores the others, so a standard
-  `modkit pileup` output is read as it is. A file with no 5mC row, a 5mC
-  position repeated within one file, and two files given the same sample id
-  now stop the run with a message naming the sample. Results computed from
-  bedMethyl files that contained 5hmC rows must be run again.
-
 - **`transformation_x` now reaches the model.** It was applied in
   `io_data_preparation()`, written into the table, and lost when the table was
   rebuilt from a copy taken before the transformation. Only `scale` worked, by
@@ -453,6 +467,18 @@
   as 0; for SIGNAL it is a missing measurement and the run stops instead of
   reading a beta of 0. The rule is applied to the pivot values only, before the
   merge with the sample sheet, instead of to the merged table.
+
+- **The two population engines call the same lesions.** The window test of the
+  per-sample engine corrected by the span its probes actually cover, the bulk
+  engine by the nominal window, twice `LESIONS_BP`. On a sparse array the first
+  correction is lighter, so the per-sample engine could call lesions the bulk
+  engine did not. Both now use the nominal window, which is what every result of
+  the default bulk engine was computed with.
+
+- **`association_analysis()` stops cleanly when no burden column is left to
+  test.** When every burden column is constant and dropped, the per-area loop
+  was called on an empty set and the run stopped with an error from the
+  parallel backend.
 
 - **The per-sample path writes a column for every sample.** A sample that found
   nothing for a marker writes no bed file, so its column was missing from the
