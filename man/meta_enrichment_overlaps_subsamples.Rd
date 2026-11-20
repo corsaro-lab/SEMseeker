@@ -52,14 +52,10 @@ Invisibly `NULL`; stability tables and plots are written under
 \description{
 Tests the stability of enrichment (pathway/term) results under
   random subsampling of a single cohort, quantifying how robust the enriched
-  terms are to sample variability. The intra-study counterpart of
-  [meta_enrichment_compare_studies()].
+  terms are to sample variability.
 }
 \examples{
 # See vignette("pathway-analysis", package = "SEMseeker") for a runnable
 # enrichment-stability (subsampling) workflow on real result folders.
 invisible(NULL)
-}
-\seealso{
-[meta_enrichment_compare_studies()]
 }

@@ -54,7 +54,6 @@ association_analysis()    →  statistical associations (CSV in Inference/)
       ↓
 pathway_*()               →  enriched pathways / networks (CSV in Pathway/)
       ↓
-meta_enrichment_compare_studies()       →  cross-cohort Venn diagrams
 meta_enrichment_overlaps_subsamples()   →  stability across subsamples
 ```
 
@@ -435,19 +434,7 @@ Each CSV is processed by `enrich_analysy_add_category()` which:
 
 <hr>
 
-## Cross-study and cross-subsample comparison
-
-### `meta_enrichment_compare_studies()`
-
-Compares enriched pathways across two or more independent cohorts and produces
-Venn diagrams [@VennDiagram] of overlapping terms:
-
-```{r cross_studies, eval=FALSE}
-meta_enrichment_compare_studies(
-  result_folder = "~/meta_results/",
-  # studies A and B must already have Pathway/ results
-)
-```
+## Cross-subsample comparison
 
 ### `meta_enrichment_overlaps_subsamples()`
 
@@ -481,7 +468,6 @@ meta_enrichment_overlaps_subsamples(
 | Partial pathway activation (sparse hits) | `enrich_pathfindR()` |
 | Environmental/chemical exposure study | `enrich_ctdR()` |
 | Known disease hypothesis | `enrich_Phenolyzer_WebGestalt()` or `enrich_Phenolyzer_STRINGdb()` |
-| Replication across cohorts | `meta_enrichment_compare_studies()` |
 | Bootstrap stability check | `meta_enrichment_overlaps_subsamples()` |
 
 ## Session info

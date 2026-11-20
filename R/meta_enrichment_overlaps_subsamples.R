@@ -1,8 +1,7 @@
 #' @title Enrichment stability across random subsamples of a study
 #' @description Tests the stability of enrichment (pathway/term) results under
 #'   random subsampling of a single cohort, quantifying how robust the enriched
-#'   terms are to sample variability. The intra-study counterpart of
-#'   [meta_enrichment_compare_studies()].
+#'   terms are to sample variability.
 #' @param inference_details Data frame describing the enrichment analyses to run
 #'   (one row per analysis).
 #' @param pathways_sql_selection Optional SQL WHERE fragment to restrict the
@@ -21,7 +20,6 @@
 #' @param ... Additional arguments forwarded to [core_init_env()].
 #' @return Invisibly `NULL`; stability tables and plots are written under
 #'   `result_folder`.
-#' @seealso [meta_enrichment_compare_studies()]
 #' @examples
 #' # See vignette("pathway-analysis", package = "SEMseeker") for a runnable
 #' # enrichment-stability (subsampling) workflow on real result folders.

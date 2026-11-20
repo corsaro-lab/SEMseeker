@@ -18,6 +18,13 @@
   any folder containing them are always refused. The examples in the help
   pages write under `tempdir()`.
 
+- **`meta_enrichment_compare_studies()` is removed.** It stopped on its first
+  line in every call: it read the enrichment results to compare from an object
+  nothing supplied, and four of the arguments it used were not in its
+  signature. Comparing enrichment across cohorts will come back as a designed
+  function once the enrichment backends are settled;
+  `meta_enrichment_overlaps_subsamples()` is unchanged.
+
 ## Bug fixes
 
 - **bedMethyl input reads the 5mC rows only.** `modkit pileup` writes one row
