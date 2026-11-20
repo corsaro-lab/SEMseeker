@@ -73,7 +73,7 @@ test_that("scope SAMPLE: the statistic uses every sample, the first one included
                                               "_SAMPLE_PROBE_WHOLE_SUM_.*\\.parquet$"),
                              full.names = TRUE)
     expect_length(pivot_file, 1L)
-    pivot <- as.data.frame(polars::pl$read_parquet(pivot_file))
+    pivot <- as.data.frame(SEMseeker:::io_read_parquet_frame(pivot_file))
 
     # The case the defect needs: a first sample column that is not zero. If no
     # figure has it, this test could not tell the defect from the fix.

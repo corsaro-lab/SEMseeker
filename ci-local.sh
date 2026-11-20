@@ -27,7 +27,7 @@
 #                                     Example: ./ci-local.sh native tests/testthat/test-anno_concordance_report.R
 #   All native modes set NOT_CRAN=true so skip_on_cran() does not fire,
 #   matching the GitHub Actions matrix.
-#   Requires: devtools, testthat, polars, and the package's Imports
+#   Requires: devtools, testthat, and the package's Imports
 #   available in the local user library.
 #
 # Error collection:

@@ -37,27 +37,10 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
   # Reading once + using the pre-loaded snapshot for the area_to_remove filter
   # keeps both behaviours correct without growing `results` across iterations.
   if (file.exists(fileNameResults) && file.info(fileNameResults)$size > 10) {
-    # polars read del CSV di resume cache, 10-30x piu' veloce di
-    # utils::read.csv2 su file da 600-880 MB. Mantiene la write con
-    # write.csv2 per evitare incompatibilita' di formato (polars writes
-    # boolean come 'true'/'false' minuscoli, read.csv2 poi li carica come
-    # character e rompe i subset logici downstream).
-    # 2026-06-09: three polars 1.x quirks rolled into one read_csv:
-    #   1. null_values="NA"          - utils::write.csv2 emits "NA" literal
-    #      for missing, polars treats only "" as null on numeric columns,
-    #      so without this it fails on "NA" in an f64-locked column.
-    #   2. infer_schema_length large - early rows can be all zeros for
-    #      INTERCEPT_PVALUE / similar, polars infers i64, then later finds a
-    #      scientific-notation float (e.g. "2,52861832797769e-304") and
-    #      fails to coerce to integer. Scanning more rows up-front lets it
-    #      infer Float64 correctly.
-    #   3. decimal_comma=TRUE        - write.csv2 uses "," as decimal sep.
-    # Both quirks were exposed on ewas v32 / v33 mid-association.
-    old_results_global <- unique(as.data.frame(
-      polars::pl$read_csv(fileNameResults, separator = ";",
-                          decimal_comma = TRUE, null_values = "NA",
-                          infer_schema_length = 100000L)
-    ))
+    # The resume cache is read through the data engine (io_read_csv2_frame),
+    # 10-30x faster than utils::read.csv2 on files of 600-880 MB. The write
+    # stays with write.csv2, so the file format does not change.
+    old_results_global <- unique(io_read_csv2_frame(fileNameResults))
     results <- plyr::rbind.fill(results, old_results_global)
   } else {
     old_results_global <- data.frame()
@@ -105,7 +88,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
     # transpose below yields one feature column - the same shape the fitting
     # code already handles for a pivot of many rows. That is why one road is
     # enough, and why depth had nothing left to select.
-    pivot_lazy <- io_read_pivot_polars(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA,
+    pivot_lazy <- io_read_pivot(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA,
                                 aggregation = aggregation, scope = scope)
     if (is.null(pivot_lazy)) {
       core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
@@ -124,7 +107,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
     # the legacy chunked loop runs below, all of which together peak at
     # ~30× the raw matrix on a 366k-probe pivot. assoc_apply_stat_model_batch_lazy()
     # consumes the LazyFrame directly, applies the resume filter
-    # in polars, and materialises ONE R matrix only.
+    # in the data engine, and materialises ONE R matrix only.
     is_batch_family <- grepl("^(limma|voom)_", family_test)
     if (is_batch_family) {
       area_to_remove <- character(0)
@@ -133,7 +116,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
       }
       core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
                 " Batch family '", family_test,
-                "': lazy polars path. area_to_remove=",
+                "': lazy data-engine path. area_to_remove=",
                 length(area_to_remove))
 
       result_temp_local_batch <- assoc_apply_stat_model_batch_lazy(
@@ -164,7 +147,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
       if (nrow(results) != 0)
         results <- results[which(results$MARKER == key$MARKER), , drop = FALSE]
 
-      # Force release of polars wrappers + assoc_apply_stat_model_batch_lazy locals
+      # Force release of the lazy table + assoc_apply_stat_model_batch_lazy locals
       # (y_mat ~12 GB on 367k×4k SIGNAL@PROBE + MArrayLM fit + voom weights
       # + design). R's lazy GC otherwise carries them across iterations and
       # the second batch on the same family OOMs at ~165 GB compressed
@@ -177,7 +160,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
 
     core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
       " Starting to read pivot:", pivot_filename, ".")
-    tempDataFrame <- as.data.frame(pivot_lazy$collect())
+    tempDataFrame <- as.data.frame(dplyr::collect(pivot_lazy))
 
     # use the pre-loaded snapshot (old_results_global) for the
     # area_to_remove filter, NOT a fresh re-read of the file. Don't rbind.fill

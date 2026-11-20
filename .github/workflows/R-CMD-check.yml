@@ -64,7 +64,7 @@ jobs:
       R_KEEP_PKG_SOURCE: yes
       RENV_CONFIG_SANDBOX_ENABLED: false
       RENV_ACTIVATE_PROJECT: 0
-      # Required by polars installer (not on CRAN)
+      # the tests skipped on CRAN run here too
       NOT_CRAN: "true"
       # Fallback for `fs` when uv.h is missing on Linux runners
       # (no-op when P3M binary is used)
@@ -113,11 +113,6 @@ jobs:
           key: ${{ runner.os }}-r-${{ matrix.config.r }}-${{ hashFiles('DESCRIPTION') }}
           restore-keys: ${{ runner.os }}-r-${{ matrix.config.r }}-
 
-      # Use remotes instead of pak/setup-r-dependencies so that
-      # Additional_repositories (community.r-multiverse.org for polars) and
-      # Remotes (drake69/ctdR) in DESCRIPTION are honoured correctly.
-      # pak resolves deps before configuring extra repos, making polars unresolvable.
-      #
       # dependencies = NA  →  only Imports/Depends/LinkingTo (skip Suggests).
       # Suggests (pathfindR, GEOquery, caret, …) include heavy Bioconductor packages
       # that are not needed for R CMD check and were the main source of install time.
@@ -140,23 +135,9 @@ jobs:
           remotes::install_deps(
             dependencies = NA,
             repos = c(
-              rpolars = "https://community.r-multiverse.org",
               getOption("repos")
             )
           )
-          # polars 2 renamed the columns of headerless files and changed the
-          # default query engine, so SEMseeker stays below 2.0 until it moves
-          # to another engine. community.r-multiverse.org serves only the latest
-          # release: the last 1.x is installed from its GitHub tag, after
-          # install_deps() has pulled 2.x. NOT_CRAN makes its configure step
-          # download the prebuilt library instead of compiling Rust, and the
-          # timeout covers that download (about 255 MB).
-          Sys.setenv(NOT_CRAN = "true", R_DEFAULT_INTERNET_TIMEOUT = "1800")
-          install.packages(
-            "https://github.com/pola-rs/r-polars/archive/refs/tags/v1.16.0.tar.gz",
-            repos = NULL, type = "source"
-          )
-          stopifnot(packageVersion("polars") < "2.0.0")
           # Install Bioconductor packages used by the test suite. The set is
           # explicitly enumerated and kept in sync by `test-pkg_suggests_installed.R`,
           # the meta-test that scans every `skip_if_not_installed("pkg")` call in

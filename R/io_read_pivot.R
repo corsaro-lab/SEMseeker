@@ -15,8 +15,7 @@
 # or error. io_read_pivot() scans the path lazily with the data engine.
 #
 # The parquet file is the contract between writers and readers, whatever
-# engine each uses: while SEMseeker moves from polars to DuckDB, the callers
-# not yet moved read the same file through io_read_pivot_polars().
+# engine each uses.
 #
 # Rationale: the materialised pivot is treated as an OPTIONAL cache, not as
 # the primary storage. Deleting it forces a re-merge from the bed files.
@@ -53,27 +52,6 @@ io_read_pivot <- function(marker, figure, area = "POSITION", subarea = "WHOLE",
   if (is.null(pivot_filename))
     return(NULL)
   io_scan_parquet(pivot_filename)
-}
-
-#' Read a marker pivot as a lazy polars frame, for the callers not yet moved
-#' to the data engine.
-#'
-#' Transitional: the population and association engines still build polars
-#' queries on the pivot. They read the same file io_read_pivot() reads, so the
-#' bridge costs no memory, and each caller drops it when it moves to the data
-#' engine. Removed with polars.
-#'
-#' @inheritParams io_read_pivot
-#' @return A lazy \code{polars} frame, or \code{NULL} as io_read_pivot().
-#' @keywords internal
-#' @noRd
-io_read_pivot_polars <- function(marker, figure, area = "POSITION", subarea = "WHOLE",
-                                 aggregation = NULL, scope = "INSTANCE", build = TRUE) {
-  pivot_filename <- io_pivot_ensure(marker, figure, area = area, subarea = subarea,
-                                    aggregation = aggregation, scope = scope, build = build)
-  if (is.null(pivot_filename))
-    return(NULL)
-  polars::pl$scan_parquet(pivot_filename)
 }
 
 #' Make a marker pivot available on disk and return its path.

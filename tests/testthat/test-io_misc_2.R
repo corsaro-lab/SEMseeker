@@ -359,7 +359,7 @@ test_that("two aggregations of the same artefact are two different numbers", {
 
   base <- SEMseeker:::io_pivot_file_name_parquet("SIGNAL", "BETA", "POSITION", "WHOLE")
   dir.create(dirname(base), recursive = TRUE, showWarnings = FALSE)
-  polars::as_polars_df(df)$write_parquet(base)
+  SEMseeker:::io_write_frame_parquet(df, base)
 
   written <- SEMseeker:::io_pivot_build("SIGNAL", "BETA", scope = "SAMPLE",
                                         area = "PROBE", subarea = "WHOLE",
@@ -370,7 +370,7 @@ test_that("two aggregations of the same artefact are two different numbers", {
     p <- SEMseeker:::io_pivot_file_name_parquet("SIGNAL", "BETA", "PROBE", "WHOLE",
                                                 aggregation = agg, scope = "SAMPLE")
     expect_true(file.exists(p))
-    as.data.frame(polars::pl$read_parquet(p))
+    as.data.frame(SEMseeker:::io_read_parquet_frame(p))
   }
 
   got_mean   <- read_one("MEAN")
@@ -561,7 +561,7 @@ test_that("VALUE carries the per-position values, unreduced", {
 
   p <- SEMseeker:::io_pivot_file_name_parquet("SIGNAL", "BETA", "POSITION", "WHOLE")
   dir.create(dirname(p), recursive = TRUE, showWarnings = FALSE)
-  polars::as_polars_df(df)$write_parquet(p)
+  SEMseeker:::io_write_frame_parquet(df, p)
 
   # The name resolves to VALUE on its own: at a single position there is nothing
   # to reduce, so the identity is the only meaningful operator.

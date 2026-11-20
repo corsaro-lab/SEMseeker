@@ -56,20 +56,20 @@ test_that("annotations", {
 
     mutations_pivot_file_name_parquet <- SEMseeker:::io_pivot_file_name_parquet("MUTATIONS",figure,area,subarea)
     if(file.exists(mutations_pivot_file_name_parquet))
-      mutations_pivot <- polars::pl$read_parquet(mutations_pivot_file_name_parquet)|> as.data.frame()
+      mutations_pivot <- SEMseeker:::io_read_parquet_frame(mutations_pivot_file_name_parquet)|> as.data.frame()
     else
       next
 
     mutations_position_pivot_file_name_parquet <- SEMseeker:::io_pivot_file_name_parquet("MUTATIONS",figure,"POSITION","")
     if(file.exists(mutations_position_pivot_file_name_parquet))
-      mutations_position_pivot <- polars::pl$read_parquet(mutations_position_pivot_file_name_parquet)|> as.data.frame()
+      mutations_position_pivot <- SEMseeker:::io_read_parquet_frame(mutations_position_pivot_file_name_parquet)|> as.data.frame()
     else
       next
 
     io_pivot_file_name_parquet <- SEMseeker:::io_pivot_file_name_parquet(marker,figure,area,subarea)
     testthat::expect_true(file.exists(io_pivot_file_name_parquet))
     if(file.exists(io_pivot_file_name_parquet))
-      pivot <- polars::pl$read_parquet(io_pivot_file_name_parquet)|> as.data.frame()
+      pivot <- SEMseeker:::io_read_parquet_frame(io_pivot_file_name_parquet)|> as.data.frame()
     else
       pivot <- NULL
 

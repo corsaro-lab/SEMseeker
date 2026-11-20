@@ -165,3 +165,24 @@ test_that("the engine writes nothing in the home directory", {
 
   expect_false(dir.exists(file.path(fake_home, ".duckdb")))
 })
+
+test_that("a CSV written by write.csv2 reads back as read.csv2 reads it", {
+  # The resume cache of the association: ";" separator, "," decimal mark,
+  # "NA" for missing, a p-value whose first rows are zeros and a later one
+  # in scientific notation, which an integer type inferred early would refuse.
+  first_rows <- 3L
+  written <- data.frame(
+    MARKER = c(rep("DELTAR", first_rows), "MUTATIONS", "DELTAR"),
+    AREA_OF_TEST = c("cg1", "cg2", "a;b", "BRCA1", "TP53"),
+    PVALUE = c(rep(0, first_rows), 2.52861832797769e-304, NA),
+    ESTIMATE = c(1.5, -2, 3.25, 0.125, -7),
+    SIGNIFICANT = c(TRUE, FALSE, NA, TRUE, FALSE),
+    stringsAsFactors = FALSE)
+  csv_file <- tempfile(fileext = ".csv")
+  on.exit(unlink(csv_file), add = TRUE)
+  utils::write.csv2(written, csv_file, row.names = FALSE)
+
+  read_back <- SEMseeker:::io_read_csv2_frame(csv_file)
+  expect_equal(read_back, utils::read.csv2(csv_file, stringsAsFactors = FALSE), ignore_attr = TRUE)
+  expect_equal(read_back$PVALUE[4], 2.52861832797769e-304)
+})

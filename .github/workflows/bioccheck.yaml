@@ -27,7 +27,7 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
-      # polars is on community.r-multiverse.org, not CRAN
+      # the tests skipped on CRAN run here too
       NOT_CRAN: "true"
       # 'fs' (transitive dep of rmarkdown/bslib/pkgdown) needs libuv at build
       # time. Use the bundled libuv shipped with 'fs' instead of system
@@ -64,9 +64,7 @@ jobs:
           key: ${{ runner.os }}-r-bioccheck-${{ hashFiles('SEMseeker/DESCRIPTION') }}
           restore-keys: ${{ runner.os }}-r-bioccheck-
 
-      # Use remotes (not pak/setup-r-dependencies) so DESCRIPTION's
-      # Additional_repositories (community.r-multiverse.org for polars) is
-      # honoured. Then install BiocCheck and the Illumina annotation
+      # Install the hard dependencies with remotes, then BiocCheck and the Illumina annotation
       # Suggests required for the array-tech detection paths.
       - name: Install R dependencies
         run: |
@@ -78,23 +76,9 @@ jobs:
           remotes::install_deps(
             dependencies = NA,
             repos = c(
-              rpolars = "https://community.r-multiverse.org",
               CRAN    = "https://packagemanager.posit.co/cran/latest"
             )
           )
-          # polars 2 renamed the columns of headerless files and changed the
-          # default query engine, so SEMseeker stays below 2.0 until it moves
-          # to another engine. community.r-multiverse.org serves only the latest
-          # release: the last 1.x is installed from its GitHub tag, after
-          # install_deps() has pulled 2.x. NOT_CRAN makes its configure step
-          # download the prebuilt library instead of compiling Rust, and the
-          # timeout covers that download (about 255 MB).
-          Sys.setenv(NOT_CRAN = "true", R_DEFAULT_INTERNET_TIMEOUT = "1800")
-          install.packages(
-            "https://github.com/pola-rs/r-polars/archive/refs/tags/v1.16.0.tar.gz",
-            repos = NULL, type = "source"
-          )
-          stopifnot(packageVersion("polars") < "2.0.0")
           BiocManager::install("BiocCheck", ask = FALSE, update = FALSE)
           BiocManager::install(
             c(
@@ -114,7 +98,6 @@ jobs:
               dependencies = NA,
               upgrade = "never",
               repos = c(
-                rpolars = "https://community.r-multiverse.org",
                 CRAN    = "https://packagemanager.posit.co/cran/latest"
               )
             ),

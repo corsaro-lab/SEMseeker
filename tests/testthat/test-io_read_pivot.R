@@ -1,6 +1,5 @@
 # io_read_pivot() dispatch on tiny fixtures: io_pivot_ensure() makes the file
-# available, io_read_pivot() scans it with the data engine, and the polars
-# bridge reads the same file for the callers not yet moved.
+# available and io_read_pivot() scans it with the data engine.
 
 test_that("io_read_pivot() returns NULL when no storage exists", {
 
@@ -35,8 +34,8 @@ test_that("io_read_pivot() prefers cached parquet over bed files", {
   pivot_path <- SEMseeker:::io_pivot_file_name_parquet("MUTATIONS", "HYPER",
                                                    "POSITION", "WHOLE")
   dir.create(dirname(pivot_path), recursive = TRUE, showWarnings = FALSE)
-  polars::as_polars_df(data.frame(CHR = "1", START = 1L, END = 2L,
-                                  SAMPLE_X = 0.0))$write_parquet(pivot_path)
+  SEMseeker:::io_write_frame_parquet(data.frame(CHR = "1", START = 1L, END = 2L,
+                                                SAMPLE_X = 0.0), pivot_path)
 
   testthat::expect_identical(SEMseeker:::io_pivot_ensure("MUTATIONS", "HYPER"), pivot_path)
 
@@ -44,9 +43,6 @@ test_that("io_read_pivot() prefers cached parquet over bed files", {
   testthat::expect_s3_class(result, "tbl_lazy")
   testthat::expect_true("SAMPLE_X" %in% colnames(dplyr::collect(result)))
 
-  bridged <- SEMseeker:::io_read_pivot_polars("MUTATIONS", "HYPER")
-  testthat::expect_s3_class(bridged, "polars_lazy_frame")
-  testthat::expect_identical(as.data.frame(bridged$collect()), as.data.frame(dplyr::collect(result)))
 })
 
 test_that("io_pivot_ensure() merges the bed files once and the merged file is the cache", {

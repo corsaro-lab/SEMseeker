@@ -225,3 +225,23 @@ io_read_parquet_frame <- function(parquet_path) {
   connection <- io_engine_connection()
   DBI::dbGetQuery(connection, sprintf("SELECT * FROM read_parquet(%s)", DBI::dbQuoteString(connection, parquet_path)))
 }
+
+#' Read a CSV written by utils::write.csv2() into an R data frame through the
+#' data engine.
+#'
+#' The association results are written with write.csv2() and read back at
+#' every resume; the files reach 600-880 MB, where read.csv2() is 10-30 times
+#' slower. The format of write.csv2() is declared rather than sniffed: ";" as
+#' separator, "," as decimal mark, "NA" for missing values. Types are inferred
+#' on the first 100000 rows, because the first rows of a p-value column can be
+#' all zeros and an integer inferred there fails on a later "2,5e-304".
+#'
+#' @param csv_path the file to read
+#' @return a data.frame
+#' @noRd
+io_read_csv2_frame <- function(csv_path) {
+  connection <- io_engine_connection()
+  DBI::dbGetQuery(connection, sprintf(
+    "SELECT * FROM read_csv(%s, delim = ';', decimal_separator = ',', nullstr = 'NA', header = true, sample_size = 100000)",
+    DBI::dbQuoteString(connection, csv_path)))
+}

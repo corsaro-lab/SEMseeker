@@ -95,18 +95,8 @@ Supported input platforms: Illumina EPIC (850k), 450k, and 27k arrays
 # Install remotes if needed
 install.packages("remotes")
 
-# SEMseeker needs polars below 2.0, installed from its GitHub tag:
-# community.r-multiverse.org serves only the latest release. NOT_CRAN
-# downloads the prebuilt library instead of compiling Rust, and the
-# timeout covers that download (about 255 MB).
-Sys.setenv(NOT_CRAN = "true", R_DEFAULT_INTERNET_TIMEOUT = "1800")
-install.packages(
-  "https://github.com/pola-rs/r-polars/archive/refs/tags/v1.16.0.tar.gz",
-  repos = NULL, type = "source"
-)
-
-# Install SEMseeker from GitHub, keeping that polars
-remotes::install_github("corsaro-lab/SEMseeker", upgrade = "never")
+# Install SEMseeker from GitHub
+remotes::install_github("corsaro-lab/SEMseeker")
 ```
 
 ### System dependencies
@@ -330,12 +320,11 @@ MUTATIONS_HYPER_SAMPLE_GENE_WHOLE_SUM_HG19     the same total, over gene probes 
 ### Reading results
 
 ```{r read_results, eval=FALSE}
-library(polars)
-
 # Read the DELTARP pivot table (the marker name is identical at every
-# aggregation level; only the AREA segment changes, e.g. GENE vs PROBE)
-deltarp <- as.data.frame(
-  pl$read_parquet("~/semseeker_results/Data/Pivots/DELTARP/DELTARP_HYPER_GENE_WHOLE_hg19.parquet")
+# aggregation level; only the AREA segment changes, e.g. GENE vs PROBE).
+# Pivots are plain parquet files: any parquet reader opens them.
+deltarp <- nanoparquet::read_parquet(
+  "~/semseeker_results/Data/Pivots/DELTARP/DELTARP_HYPER_GENE_WHOLE_hg19.parquet"
 )
 
 head(deltarp[, 1:6])

@@ -10,7 +10,6 @@
 
 test_that("limma chunked per chr is bit-equal to monolithic (+ global eBayes)", {
   skip_if_not_installed("limma")
-  skip_if_not_installed("polars")
 
   set.seed(20260609L)
   n_probes  <- 100L
@@ -39,7 +38,7 @@ test_that("limma chunked per chr is bit-equal to monolithic (+ global eBayes)", 
   # Lazy pivot in the schema: AREA + sample cols.
   df <- data.frame(AREA = probe_ids, Y, check.names = FALSE,
                     stringsAsFactors = FALSE)
-  pivot_lazy <- polars::as_polars_df(df)$lazy()
+  pivot_lazy <- SEMseeker:::io_register_frame(df)
 
   # Same design for both paths.
   design <- cbind(`(Intercept)` = 1, IV_1 = iv)

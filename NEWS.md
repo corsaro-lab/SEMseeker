@@ -2,13 +2,12 @@
 
 ## Breaking changes
 
-- **SEMseeker requires `polars` below 2.0.** polars 2.0 gives different names
-  to the columns of files read without a header, which made the construction of
-  the position pivots stop with "unable to find column", and it makes the
-  streaming engine the default, which may change the order of rows. Installing
-  SEMseeker today pulled polars 2.1 from community.r-multiverse.org, which keeps
-  only the latest release. The README and the getting-started vignette show how
-  to install polars 1.16.0 from its GitHub tag before SEMseeker.
+- **SEMseeker no longer depends on `polars`.** Every query over the pivots, the
+  population markers and the association batch path now runs in DuckDB, which
+  is on CRAN; `polars` and the extra repository it needed are gone from
+  DESCRIPTION, and SEMseeker installs with `remotes::install_github()` alone.
+  The files on disk are unchanged: pivots are still parquet, so results written
+  by earlier versions are read as they are.
 
 - **`plot_manhattan_plot_per_area()` is now
   `sem_marker_value_per_area_plot()`, and it draws for the first time.** It was

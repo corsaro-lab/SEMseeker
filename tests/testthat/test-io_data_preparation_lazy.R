@@ -1,5 +1,5 @@
-# 2026-06-09: polars-native equivalent of
-# `io_data_preparation()` for the lazy batch path. Pins down:
+# Data-engine equivalent of `io_data_preparation()` for the lazy batch
+# path. Pins down:
 #
 #   1. transformation_y (none/log/log2/log10/exp/scale) produces values
 #      bit-equal (tol 1e-7) to R-side log() / log10() / etc.
@@ -8,16 +8,18 @@
 #   3. Unsupported transformation_y (factor, quantile_<N>) emits a
 #      warning, falls back to "none", and continues — the lazy batch
 #      path keeps running (no hard stop, by design).
-#   4. The function ALWAYS returns a polars_lazy_frame (never materialises).
+#   4. The function ALWAYS returns a lazy table (never materialises).
+#   5. The degenerate filter reads the transformed values, and the rows
+#      keep the order of the input.
+# Expected values come from base R on the same matrix, not from the engine.
 
 test_that("io_data_preparation_lazy passes 'none' through unchanged when no degenerate rows", {
-  skip_if_not_installed("polars")
   set.seed(11L)
   mat <- matrix(stats::rnorm(50L * 8L), nrow = 50L, ncol = 8L)
   df <- data.frame(AREA = paste0("p_", seq_len(50L)), mat,
                     check.names = FALSE)
   colnames(df)[-1] <- paste0("S", sprintf("%02d", 1:8))
-  pivot <- polars::as_polars_df(df)$lazy()
+  pivot <- SEMseeker:::io_register_frame(df)
 
   out <- SEMseeker:::io_data_preparation_lazy(
     pivot_lazy        = pivot,
@@ -25,14 +27,13 @@ test_that("io_data_preparation_lazy passes 'none' through unchanged when no dege
     transformation_y  = "none",
     apply_degenerate_filter = FALSE
   )
-  expect_s3_class(out, "polars_lazy_frame")
-  collected <- as.data.frame(out$collect())
+  expect_s3_class(out, "tbl_lazy")
+  collected <- as.data.frame(dplyr::collect(out))
   expect_equal(nrow(collected), 50L)
   expect_equal(collected[, -1L], df[, -1L], tolerance = 1e-12)
 })
 
 test_that("degenerate-burden filter drops rows with var(Y)==0", {
-  skip_if_not_installed("polars")
   set.seed(12L)
   n <- 30L
   mat <- matrix(stats::rnorm(n * 5L), nrow = n, ncol = 5L)
@@ -41,34 +42,33 @@ test_that("degenerate-burden filter drops rows with var(Y)==0", {
   df <- data.frame(AREA = paste0("p_", seq_len(n)), mat,
                     check.names = FALSE)
   colnames(df)[-1] <- paste0("S", sprintf("%02d", 1:5))
-  pivot <- polars::as_polars_df(df)$lazy()
+  pivot <- SEMseeker:::io_register_frame(df)
 
   out <- SEMseeker:::io_data_preparation_lazy(
     pivot, paste0("S", sprintf("%02d", 1:5)),
     transformation_y = "none",
     apply_degenerate_filter = TRUE
   )
-  collected <- as.data.frame(out$collect())
+  collected <- as.data.frame(dplyr::collect(out))
   expect_equal(nrow(collected), n - 2L)
   expect_false("p_3"  %in% collected$AREA)
   expect_false("p_17" %in% collected$AREA)
 })
 
 test_that("transformation_y=log10 matches R log10 bit-equal (tol 1e-9)", {
-  skip_if_not_installed("polars")
   set.seed(13L)
   mat <- abs(matrix(stats::rnorm(20L * 4L), nrow = 20L, ncol = 4L)) + 1
   df <- data.frame(AREA = paste0("p_", seq_len(20L)), mat,
                     check.names = FALSE)
   colnames(df)[-1] <- paste0("S", sprintf("%02d", 1:4))
-  pivot <- polars::as_polars_df(df)$lazy()
+  pivot <- SEMseeker:::io_register_frame(df)
 
   out <- SEMseeker:::io_data_preparation_lazy(
     pivot, paste0("S", sprintf("%02d", 1:4)),
     transformation_y = "log10",
     apply_degenerate_filter = FALSE
   )
-  collected <- as.data.frame(out$collect())
+  collected <- as.data.frame(dplyr::collect(out))
 
   # R-side reference: log10(x + 1e-9) — matches the EPS used inside
   # io_data_preparation_lazy() to avoid log10(0) → -Inf.
@@ -78,21 +78,20 @@ test_that("transformation_y=log10 matches R log10 bit-equal (tol 1e-9)", {
 })
 
 test_that("transformation_y=scale produces mean~0, sd~1 per sample col", {
-  skip_if_not_installed("polars")
   set.seed(14L)
   mat <- matrix(stats::rnorm(40L * 3L, mean = 5, sd = 2),
                  nrow = 40L, ncol = 3L)
   df <- data.frame(AREA = paste0("p_", seq_len(40L)), mat,
                     check.names = FALSE)
   colnames(df)[-1] <- paste0("S", sprintf("%02d", 1:3))
-  pivot <- polars::as_polars_df(df)$lazy()
+  pivot <- SEMseeker:::io_register_frame(df)
 
   out <- SEMseeker:::io_data_preparation_lazy(
     pivot, paste0("S", sprintf("%02d", 1:3)),
     transformation_y = "scale",
     apply_degenerate_filter = FALSE
   )
-  collected <- as.data.frame(out$collect())
+  collected <- as.data.frame(dplyr::collect(out))
   for (s in paste0("S", sprintf("%02d", 1:3))) {
     expect_equal(mean(collected[[s]]), 0, tolerance = 1e-9)
     expect_equal(stats::sd(collected[[s]]), 1, tolerance = 1e-9)
@@ -100,13 +99,12 @@ test_that("transformation_y=scale produces mean~0, sd~1 per sample col", {
 })
 
 test_that("unsupported transformation_y (factor) → warning + fallback to none", {
-  skip_if_not_installed("polars")
   set.seed(15L)
   mat <- matrix(stats::rnorm(30L * 4L), nrow = 30L, ncol = 4L)
   df <- data.frame(AREA = paste0("p_", seq_len(30L)), mat,
                     check.names = FALSE)
   colnames(df)[-1] <- paste0("S", sprintf("%02d", 1:4))
-  pivot <- polars::as_polars_df(df)$lazy()
+  pivot <- SEMseeker:::io_register_frame(df)
 
   expect_warning(
     out <- SEMseeker:::io_data_preparation_lazy(
@@ -117,19 +115,18 @@ test_that("unsupported transformation_y (factor) → warning + fallback to none"
     regexp = "factor.*NOT supported"
   )
   # Output is the input unchanged (transformation skipped, no degenerate filter)
-  collected <- as.data.frame(out$collect())
+  collected <- as.data.frame(dplyr::collect(out))
   expect_equal(nrow(collected), 30L)
   expect_equal(collected[, -1L], df[, -1L], tolerance = 1e-12)
 })
 
 test_that("unsupported quantile_4 → warning + fallback to none", {
-  skip_if_not_installed("polars")
   set.seed(16L)
   mat <- matrix(stats::rnorm(20L * 3L), nrow = 20L, ncol = 3L)
   df <- data.frame(AREA = paste0("p_", seq_len(20L)), mat,
                     check.names = FALSE)
   colnames(df)[-1] <- paste0("S", sprintf("%02d", 1:3))
-  pivot <- polars::as_polars_df(df)$lazy()
+  pivot <- SEMseeker:::io_register_frame(df)
 
   expect_warning(
     SEMseeker:::io_data_preparation_lazy(
@@ -140,21 +137,64 @@ test_that("unsupported quantile_4 → warning + fallback to none", {
   )
 })
 
-test_that("io_data_preparation_lazy refuses non-Polars input gracefully", {
-  skip_if_not_installed("polars")
+test_that("io_data_preparation_lazy accepts a data.frame and refuses anything else", {
+  out <- SEMseeker:::io_data_preparation_lazy(
+    pivot_lazy = data.frame(AREA = c("a", "b"), S1 = c(1, 2), S2 = c(3, 5)),
+    sample_cols = c("S1", "S2")
+  )
+  expect_s3_class(out, "tbl_lazy")
+  expect_equal(nrow(dplyr::collect(out)), 2L)
   expect_error(
     SEMseeker:::io_data_preparation_lazy(
-      pivot_lazy = data.frame(S1 = 1:5),
+      pivot_lazy = list(S1 = 1:5),
       sample_cols = "S1"
     ),
-    regexp = "polars LazyFrame or DataFrame"
+    regexp = "lazy table of the data engine or a data.frame"
   )
 })
 
+test_that("the degenerate filter reads the transformed values, not the raw ones", {
+  # Row r2 differs before the transformation and is constant after it:
+  # exp() of both values underflows to 0. Row r3 is constant in both.
+  df <- data.frame(AREA = c("r1", "r2", "r3"),
+                   S1 = c(1, -1000, 4), S2 = c(2, -2000, 4))
+  out <- SEMseeker:::io_data_preparation_lazy(
+    SEMseeker:::io_register_frame(df), c("S1", "S2"),
+    transformation_y = "exp", apply_degenerate_filter = TRUE
+  )
+  collected <- as.data.frame(dplyr::collect(out))
+  expect_equal(collected$AREA, "r1")
+  expect_equal(collected$S1, exp(1), tolerance = 1e-12)
+})
+
+test_that("rows keep the input order and absent values do not make a row degenerate", {
+  set.seed(17L)
+  n <- 200L
+  df <- data.frame(AREA = sprintf("p_%03d", sample(n)),
+                   S1 = stats::rnorm(n), S2 = stats::rnorm(n), S3 = stats::rnorm(n))
+  df$S2[5L] <- NA                    # still varies on S1 and S3
+  df[9L, c("S1", "S2", "S3")] <- NA  # nothing to compare: dropped
+  out <- SEMseeker:::io_data_preparation_lazy(
+    SEMseeker:::io_register_frame(df), c("S1", "S2", "S3"),
+    transformation_y = "none", apply_degenerate_filter = TRUE
+  )
+  collected <- as.data.frame(dplyr::collect(out))
+  expect_equal(collected$AREA, df$AREA[-9L])
+})
+
+test_that("log of zero and of a negative value follow IEEE, as base R does", {
+  df <- data.frame(AREA = c("z", "n", "p"), S1 = c(0, -1, 2), S2 = c(1, 1, 3))
+  out <- SEMseeker:::io_data_preparation_lazy(
+    SEMseeker:::io_register_frame(df), c("S1", "S2"),
+    transformation_y = "log", apply_degenerate_filter = FALSE
+  )
+  collected <- as.data.frame(dplyr::collect(out))
+  expect_equal(collected$S1, suppressWarnings(log(c(0, -1, 2) + 1e-9)), tolerance = 1e-12)
+})
+
 test_that("io_data_preparation_lazy refuses empty sample_cols", {
-  skip_if_not_installed("polars")
   df <- data.frame(AREA = "a", S1 = 1)
-  pivot <- polars::as_polars_df(df)$lazy()
+  pivot <- SEMseeker:::io_register_frame(df)
   expect_error(
     SEMseeker:::io_data_preparation_lazy(
       pivot_lazy = pivot,
