@@ -72,7 +72,7 @@ test_that("sem_deltaX_get", {
 
     mutations_pivot_file_name <- SEMseeker:::io_pivot_file_name_parquet("MUTATIONS",figure,area,subarea)
     if(file.exists(mutations_pivot_file_name))
-      mutations_pivot <- as.data.frame(polars::pl$read_parquet(mutations_pivot_file_name))
+      mutations_pivot <- as.data.frame(nanoparquet::read_parquet(mutations_pivot_file_name))
     else
       next
 
@@ -80,7 +80,7 @@ test_that("sem_deltaX_get", {
     # derived markers may not exist with sparse synthetic data
     if(!file.exists(io_pivot_file_name))
       next
-    pivot <- as.data.frame(polars::pl$read_parquet(io_pivot_file_name))
+    pivot <- as.data.frame(nanoparquet::read_parquet(io_pivot_file_name))
 
     pivot <- pivot[,-c(1:3)]
     mutations_pivot <- mutations_pivot[,-c(1:3)]

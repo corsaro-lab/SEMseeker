@@ -117,13 +117,13 @@
 
   # empirical safety factor on the gate threshold.
   # The 1.5× lmfit_GB factor (line 71) under-estimates real peak because:
-  #   - polars→R hand-off materialises 1-2 extra wide-frame copies during
-  #     as.data.frame(collect()) before lmFit even starts
+  #   - the engine→R hand-off materialises 1-2 extra wide-frame copies during
+  #     collect() before lmFit even starts (factor measured with polars)
   #   - limma internals (residuals + sigma2 + Amean + qr.Q ...) routinely
   #     run another ~0.5× on top of the response matrix
   #   - eBayes post-fit objects (lods, t, p, B, var.post) add up to fit_object_GB
   #     ALREADY accounted, but are produced WHILE residuals are still alive
-  #   - the R process carries a non-trivial baseline (polars cache + R
+  #   - the R process carries a non-trivial baseline (engine cache + R
   #     working set accumulated by previous dispatches): mem available for
   #     the *next* lmFit peak is < available_GB by ~current RSS
   #

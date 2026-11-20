@@ -287,3 +287,63 @@ test_that("bedmethyl output is compatible with io_coord_probe_features", {
   expect_equal(pf$START, out$START)
   expect_equal(pf$END,   out$START + 1L)
 })
+
+# ---- modification codes: only 5mC is read ----------------------------------
+
+#' Write a modkit file whose rows carry their own modification code.
+#'
+#' @param path destination file
+#' @param rows data.frame with chrom, start, end, mod, N_valid_cov and
+#'   fraction_modified_percent
+.write_bedmethyl_with_codes <- function(path, rows) {
+  out <- data.frame(rows$chrom, rows$start, rows$end, rows$mod, 0L, "+", rows$start, rows$end, "0,0,0",
+                    rows$N_valid_cov, rows$fraction_modified_percent)
+  utils::write.table(out, path, sep = "\t", row.names = FALSE, col.names = FALSE, quote = FALSE)
+}
+
+test_that("io_bedmethyl_read keeps the 5mC rows of a file that also holds 5hmC", {
+  folder <- withr::local_tempdir()
+  # modkit writes one row per modification at the same position
+  .write_bedmethyl_with_codes(file.path(folder, "A.bed"),
+    data.frame(chrom = "chr1", start = c(10, 10, 20, 20), end = c(11, 11, 21, 21), mod = c("m", "h", "m", "h"),
+               N_valid_cov = 10, fraction_modified_percent = c(40, 5, 80, 10)))
+  .write_bedmethyl_with_codes(file.path(folder, "B.bed"),
+    data.frame(chrom = "chr1", start = c(10, 10), end = c(11, 11), mod = c("h", "m"),
+               N_valid_cov = 10, fraction_modified_percent = c(7, 60)))
+
+  result <- SEMseeker:::io_bedmethyl_read(file.path(folder, c("A.bed", "B.bed")))
+
+  expect_identical(colnames(result), c("CHR", "START", "END", "A", "B"))
+  expect_equal(nrow(result), 2L)
+  expect_equal(result$A, c(0.4, 0.8))
+  expect_equal(result$B, c(0.6, NA))
+})
+
+test_that("io_bedmethyl_read refuses a file with no 5mC row", {
+  folder <- withr::local_tempdir()
+  .write_bedmethyl_with_codes(file.path(folder, "A.bed"),
+    data.frame(chrom = "chr1", start = 10, end = 11, mod = "m", N_valid_cov = 10, fraction_modified_percent = 40))
+  .write_bedmethyl_with_codes(file.path(folder, "H.bed"),
+    data.frame(chrom = "chr1", start = 10, end = 11, mod = "h", N_valid_cov = 10, fraction_modified_percent = 5))
+
+  expect_error(SEMseeker:::io_bedmethyl_read(file.path(folder, c("A.bed", "H.bed"))), "no 5mC row .* H")
+})
+
+test_that("io_bedmethyl_read refuses a 5mC position repeated within one sample", {
+  folder <- withr::local_tempdir()
+  .write_bedmethyl_with_codes(file.path(folder, "A.bed"),
+    data.frame(chrom = "chr1", start = c(10, 10), end = c(11, 11), mod = "m", N_valid_cov = 10,
+               fraction_modified_percent = c(40, 45)))
+
+  expect_error(SEMseeker:::io_bedmethyl_read(file.path(folder, "A.bed")), "repeated within one sample")
+})
+
+test_that("io_bedmethyl_read refuses repeated sample ids", {
+  folder <- withr::local_tempdir()
+  for (name in c("A.bed", "B.bed"))
+    .write_bedmethyl_with_codes(file.path(folder, name),
+      data.frame(chrom = "chr1", start = 10, end = 11, mod = "m", N_valid_cov = 10, fraction_modified_percent = 40))
+
+  expect_error(SEMseeker:::io_bedmethyl_read(file.path(folder, c("A.bed", "B.bed")), sample_ids = c("X", "X")),
+               "must be unique")
+})

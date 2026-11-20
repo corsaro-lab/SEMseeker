@@ -130,7 +130,7 @@ sem_marker_value_per_sample_plot <- function(marker, figure, probe,
   if (is.null(pivot_lazy))
     return(NULL)
 
-  pivot <- as.data.frame(pivot_lazy$collect())
+  pivot <- as.data.frame(dplyr::collect(pivot_lazy))
   if (nrow(pivot) == 0L)
     return(NULL)
 

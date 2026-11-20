@@ -17,7 +17,6 @@
 
 test_that("array, WGBS bedmethyl and LONGREAD bedmethyl produce convergent SEM calls", {
   testthat::skip_on_cran()
-  testthat::skip_if_not_installed("polars")
 
   ## ── 1. Real GSE133774 fixture filtered to KCNQ1OT1 + H19/IGF2 probes ─────
   ## Same fixture used by setup.R and the getting-started vignette.
@@ -151,7 +150,7 @@ test_that("array, WGBS bedmethyl and LONGREAD bedmethyl produce convergent SEM c
   ## Quantization-tolerant convergence: WGBS and LONGREAD row counts must be
   ## within ±50 % of the array baseline (depth=30 → ~3 % beta quantization).
   pivot_rows <- function(path) {
-    tryCatch(polars::pl$read_parquet(path)$height, error = function(e) 0L)
+    tryCatch(nrow(SEMseeker:::io_read_parquet_frame(path)), error = function(e) 0L)
   }
   n_array <- pivot_rows(file.path(out_array, mut_pivot_rel))
   n_wgbs  <- pivot_rows(file.path(out_wgbs,  mut_pivot_rel))

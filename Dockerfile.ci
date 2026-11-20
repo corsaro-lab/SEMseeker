@@ -16,7 +16,7 @@ FROM rocker/r-ver:4.6
 ENV RENV_CONFIG_SANDBOX_ENABLED=false
 ENV RENV_ACTIVATE_PROJECT=0
 
-# ── Required by polars installer
+# ── The tests skipped on CRAN run here too
 ENV NOT_CRAN=true
 
 # ── R CMD check flags (mirrors what r-lib/actions/check-r-package sets in CI)
@@ -47,39 +47,23 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # ── R repository configuration
-#    P3M Ubuntu noble binaries → no compilation for CRAN packages
-#    community.r-multiverse.org → polars (also ships Linux binaries)
+#    P3M binaries → no compilation for CRAN packages. The distribution is read
+#    from the base image, not written here: binaries built for another Ubuntu
+#    release link system libraries of other versions (stringi built for noble
+#    looks for ICU 74 and finds ICU 78 on resolute, and fails to load).
 #    Write to Rprofile.site so every Rscript invocation picks it up
-RUN echo 'options(repos = c(\n\
-  multiverse = "https://community.r-multiverse.org",\n\
-  P3M        = "https://packagemanager.posit.co/cran/__linux__/noble/latest",\n\
-  CRAN       = "https://cloud.r-project.org"\n\
-))' >> /usr/local/lib/R/etc/Rprofile.site
+RUN CODENAME="$(. /etc/os-release && echo "$VERSION_CODENAME")" && \
+  printf 'options(repos = c(\n  P3M  = "https://packagemanager.posit.co/cran/__linux__/%s/latest",\n  CRAN = "https://cloud.r-project.org"\n))\n' "$CODENAME" \
+  >> /usr/local/lib/R/etc/Rprofile.site
 
-# ── Raise the download timeout from R's 60 second default.
-#    The polars installer fetches a pre-built library of about 265 MB. At the
-#    default the transfer is cut mid-file and download.file() reports a length
-#    mismatch rather than a timeout; the installer then falls back to building
-#    from source, finds no cargo in this image, and the whole dependency layer
-#    fails. Observed twice in a row, truncating at 181 MB and 192 MB after
-#    1m 0.8s - the timeout, not the network.
+# ── Raise the download timeout from R's 60 second default, for the large
+#    packages of the dependency layer: at the default a long transfer is cut
+#    mid-file and download.file() reports a length mismatch, not a timeout.
 RUN echo 'options(timeout = max(1200, getOption("timeout")))' \
   >> /usr/local/lib/R/etc/Rprofile.site
 
 # ── Bootstrap tooling (pak for parallel installs, rcmdcheck for the check step)
 RUN Rscript -e "install.packages(c('pak', 'rcmdcheck'))"
-
-# ── Install polars ahead of pak, with install.packages().
-#    There is no binary of polars for aarch64 in the repositories above, so its
-#    configure script fetches a pre-built library of about 265 MB from a GitHub
-#    release. That download obeys options(timeout), and pak does NOT read
-#    Rprofile.site in the subprocesses it installs from, so under pak the
-#    transfer is cut at the 60 second default, the installer falls back to
-#    building from source, finds no cargo, and the whole dependency layer fails.
-#    install.packages() does read Rprofile.site, so with the raised timeout
-#    above the same download completes (measured: 111 s). pak then finds polars
-#    already installed and leaves it alone.
-RUN Rscript -e "install.packages('polars')"
 
 # ── Install package dependencies
 #    Layer is cached as long as DESCRIPTION doesn't change.
@@ -148,7 +132,7 @@ RUN Rscript -e "\
 #    The set mirrors what the GitHub workflows install, and the meta-test keeps
 #    the two in step: if a test starts depending on something else, it fails
 #    here rather than skipping in silence.
-RUN Rscript -e "install.packages(c('Rfast', 'mockery', 'ggpubr', 'car'))"
+RUN Rscript -e "install.packages(c('Rfast', 'mockery', 'ggpubr', 'car', 'circlize', 'nanoparquet'))"
 
 # ── Copy full package source (only invalidates the layer above when R code changes)
 COPY . .

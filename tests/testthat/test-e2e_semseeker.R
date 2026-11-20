@@ -46,7 +46,7 @@ test_that("semeeker", {
     # iteration to filter only (HYPER, HYPO) figures + comparable markers
     # is still to be reworked.
     if(file.exists(mutations_pivot_file_name))
-      mutations_pivot <- as.data.frame(polars::pl$read_parquet(mutations_pivot_file_name))
+      mutations_pivot <- as.data.frame(SEMseeker:::io_read_parquet_frame(mutations_pivot_file_name))
     else
       next
 
@@ -57,7 +57,7 @@ test_that("semeeker", {
     # supposed to exist.
     if(!file.exists(io_pivot_file_name))
       next
-    pivot <- as.data.frame(polars::pl$read_parquet(io_pivot_file_name))
+    pivot <- as.data.frame(SEMseeker:::io_read_parquet_frame(io_pivot_file_name))
 
     pivot <- pivot[,-c(1:3)]
     mutations_pivot <- mutations_pivot[,-c(1:3)]

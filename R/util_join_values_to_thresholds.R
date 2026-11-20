@@ -1,14 +1,15 @@
 # util_join_values_to_thresholds
 #
 # Private helper - inner-join a per-sample values data.frame to a thresholds
-# data.frame on (CHR, START, END) using Polars.
+# data.frame on (CHR, START, END) in the data engine.
 #
 # This is the canonical join used by sem_mutations_get(), sem_delta_single_sample(),
 # and sem_deltar_single_sample() - all three need the same intersection.
 #
-# WHY POLARS:
+# WHY THE DATA ENGINE:
 #   Nanopore bedmethyl files can have 28M+ rows.  Base-R merge()/match()
-#   is too slow at that scale.  Polars handles it with ease via lazy evaluation.
+#   is too slow at that scale.  The join runs in DuckDB, and the rows keep
+#   the order of `values`, as the polars join did.
 #
 # WHY INNER JOIN (not positional zip):
 #   The old sort-then-zip assumed values and thresholds had identical position
@@ -52,10 +53,19 @@ util_join_values_to_thresholds <- function(values, thresholds) {
   thr$START <- as.integer(thr$START)
   thr$END   <- as.integer(thr$END)
 
-  vals_lf <- polars::as_polars_df(vals)$lazy()
-  thr_lf  <- polars::as_polars_df(thr)$lazy()
+  vals$VALUES_ORDER <- seq_len(nrow(vals))
+  connection <- io_engine_connection()
+  vals_view <- paste0("values_", gsub("[^A-Za-z0-9]", "", basename(tempfile(""))))
+  thr_view  <- paste0(vals_view, "_thresholds")
+  duckdb::duckdb_register(connection, vals_view, vals)
+  duckdb::duckdb_register(connection, thr_view, thr)
+  on.exit({
+    duckdb::duckdb_unregister(connection, vals_view)
+    duckdb::duckdb_unregister(connection, thr_view)
+  }, add = TRUE)
 
-  as.data.frame(
-    vals_lf$join(thr_lf, on = c("CHR", "START", "END"), how = "inner")$collect()
-  )
+  joined <- DBI::dbGetQuery(connection, sprintf('SELECT * FROM %s JOIN %s USING (CHR, START, "END") ORDER BY VALUES_ORDER',
+                                                vals_view, thr_view))
+  joined$VALUES_ORDER <- NULL
+  joined
 }

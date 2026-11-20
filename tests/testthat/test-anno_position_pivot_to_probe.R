@@ -1,13 +1,13 @@
-# 2026-06-09: anno_position_pivot_to_probe returns LazyFrame.
+# anno_position_pivot_to_probe returns a lazy table of the data engine (a polars LazyFrame until the move to DuckDB).
 #
-# Contract change: returns polars_lazy_frame (was R data.frame in the
+# Contract change: returns a lazy table of the data engine (was R data.frame in the
 # legacy implementation). Caller is responsible for any materialization,
 # and most callers should NOT materialize — sem_analyze_batch resume path
 # now consumes the LazyFrame end-to-end. Prior R-side subset/sort
 # materialised 4–5 copies of the input, blowing 80+ GB peak on
 # ~367k × 4k inputs and triggering macOS jetsam OOM-kill silently.
 
-test_that("anno_position_pivot_to_probe accepts a polars LazyFrame and returns a LazyFrame", {
+test_that("anno_position_pivot_to_probe accepts a lazy table and returns a lazy table", {
 
   skip_on_cran()
 
@@ -38,8 +38,8 @@ test_that("anno_position_pivot_to_probe accepts a polars LazyFrame and returns a
     S002  = c(0.15, 0.25, 0.35, 0.45, 0.55),
     stringsAsFactors = FALSE
   )
-  pivot_lazy <- polars::as_polars_df(pivot_df)$lazy()
-  testthat::expect_s3_class(pivot_lazy, "polars_lazy_frame")
+  pivot_lazy <- SEMseeker:::io_register_frame(pivot_df)
+  testthat::expect_s3_class(pivot_lazy, "tbl_lazy")
 
   # Stub anno_probe_annotation_build so the test does not require the Bioconductor
   # annotation package (macOS setup.R skips loading it).
@@ -50,12 +50,12 @@ test_that("anno_position_pivot_to_probe accepts a polars LazyFrame and returns a
 
   out <- SEMseeker:::anno_position_pivot_to_probe(pivot_lazy)
 
-  # NEW CONTRACT: lazy passthrough: return type is LazyFrame.
-  testthat::expect_s3_class(out, "polars_lazy_frame")
+  # NEW CONTRACT: lazy passthrough: return type is a lazy table.
+  testthat::expect_s3_class(out, "tbl_lazy")
   testthat::expect_false(inherits(out, "data.frame"))
 
   # Schema: PROBE column + sample columns; CHR/START/END/tech dropped.
-  schema_cols <- names(out$collect_schema())
+  schema_cols <- colnames(out)
   testthat::expect_true("PROBE" %in% schema_cols)
   testthat::expect_false("CHR"   %in% schema_cols)
   testthat::expect_false("START" %in% schema_cols)
@@ -65,7 +65,7 @@ test_that("anno_position_pivot_to_probe accepts a polars LazyFrame and returns a
   testthat::expect_true("S002" %in% schema_cols)
 
   # Values preserved on collect (compare by PROBE-key order-independently).
-  collected <- as.data.frame(out$collect())
+  collected <- as.data.frame(dplyr::collect(out))
   rownames(collected) <- collected$PROBE
   testthat::expect_setequal(collected$PROBE, anno$PROBE)
   testthat::expect_equal(collected[anno$PROBE, "S001"], pivot_df$S001)
@@ -105,8 +105,8 @@ test_that("anno_position_pivot_to_probe still accepts an R data.frame input", {
   )
 
   out <- SEMseeker:::anno_position_pivot_to_probe(pivot_df)
-  testthat::expect_s3_class(out, "polars_lazy_frame")
-  collected <- as.data.frame(out$collect())
+  testthat::expect_s3_class(out, "tbl_lazy")
+  collected <- as.data.frame(dplyr::collect(out))
   testthat::expect_setequal(collected$PROBE, anno$PROBE)
   testthat::expect_setequal(setdiff(colnames(collected), "PROBE"), "S001")
 })
@@ -144,8 +144,8 @@ test_that("anno_position_pivot_to_probe drops probes flagged FALSE for the tech"
     .package = "SEMseeker"
   )
 
-  out <- SEMseeker:::anno_position_pivot_to_probe(polars::as_polars_df(pivot_df)$lazy())
-  collected <- as.data.frame(out$collect())
+  out <- SEMseeker:::anno_position_pivot_to_probe(SEMseeker:::io_register_frame(pivot_df))
+  collected <- as.data.frame(dplyr::collect(out))
   testthat::expect_setequal(collected$PROBE, anno$PROBE[anno$K850])
   testthat::expect_equal(nrow(collected), 2L)
 })

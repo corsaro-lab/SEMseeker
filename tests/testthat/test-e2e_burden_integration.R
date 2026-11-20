@@ -200,7 +200,7 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
     )
     for (pf in pq_files) {
       n_rows <- tryCatch(
-        as.integer(nrow(polars::pl$read_parquet(pf))),
+        as.integer(nrow(SEMseeker:::io_read_parquet_frame(pf))),
         error = function(e) NA_integer_
       )
       testthat::expect_gt(

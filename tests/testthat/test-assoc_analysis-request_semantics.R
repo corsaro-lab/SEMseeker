@@ -228,7 +228,7 @@ test_that("no two (region class, aggregation) pairs answer with the same numbers
     p <- SEMseeker:::io_read_pivot("MUTATIONS", "HYPER", cl[1], cl[2],
                                    aggregation = ag, scope = "SAMPLE")
     skip_if(is.null(p), paste("artefact unavailable:", cl[1], cl[2], ag))
-    df <- as.data.frame(p$collect())
+    df <- as.data.frame(dplyr::collect(p))
     v  <- unlist(df[1, setdiff(colnames(df), "AREA")], use.names = TRUE)
     answers[[length(answers) + 1L]] <- unname(v[order(names(v))])
     labels <- c(labels, paste(cl[1], cl[2], ag, sep = "_"))

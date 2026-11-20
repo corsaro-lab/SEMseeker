@@ -86,15 +86,13 @@ sem_sample_stats_build <- function() {
   if (is.null(pivot))
     return(NULL)
 
-  cols <- setdiff(names(pivot), c("CHR", "START", "END", "PROBE", "AREA"))
+  cols <- setdiff(colnames(pivot), c("CHR", "START", "END", "PROBE", "AREA"))
   if (length(cols) == 0)
     return(NULL)
 
-  # polars' R bindings take expressions through `...`, not as a list: the list
-  # has to be splatted with do.call(). Same idiom as sem_deltaX_get().
-  counts <- as.data.frame(
-    do.call(pivot$select, lapply(cols, function(cl)
-      polars::pl$col(cl)$is_not_null()$sum()$alias(cl)))$collect())
+  # One pass over the pivot, every sample counted in the same query.
+  counts <- as.data.frame(dplyr::collect(dplyr::summarise(pivot,
+    dplyr::across(dplyr::all_of(cols), ~ sum(ifelse(is.na(.x), 0L, 1L), na.rm = TRUE)))))
 
   data.frame(Sample_ID = cols,
              N_PROBES  = as.numeric(counts[1, cols]),

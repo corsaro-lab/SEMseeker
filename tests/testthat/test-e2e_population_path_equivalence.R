@@ -51,7 +51,7 @@
 # are the numeric ones other than START/END; everything else (CHR, START, END,
 # AREA, ...) identifies the row.
 .as_keyed_matrix <- function(path) {
-  df <- as.data.frame(polars::pl$read_parquet(path))
+  df <- as.data.frame(nanoparquet::read_parquet(path))
   numeric_cols <- names(df)[vapply(df, is.numeric, logical(1))]
   value_cols   <- setdiff(numeric_cols, c("START", "END"))
   key_cols     <- setdiff(names(df), value_cols)

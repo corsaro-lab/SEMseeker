@@ -83,47 +83,31 @@ test_that("source-level: skip predicates live in assoc_run_marker", {
   )
 })
 
-# ---- assoc_lmfit_chunked_by_chr: chromosome extraction strategy --------------
+# ---- assoc_lmfit_chunked_by_chr: chromosome taken from the AREA string ----
 
-test_that("assoc_lmfit_chunked_by_chr extracts CHR for long-reads via AREA string split on '_'", {
-  src <- paste(deparse(SEMseeker:::assoc_lmfit_chunked_by_chr), collapse = "\n")
-  # WGBS / LONGREAD strategy: split on "_" and pick first chunk
-  expect_true(
-    grepl('str\\$split\\("_"\\)\\$list\\$get\\(0L\\)', src),
-    info = "WGBS chunking strategy must parse CHR via str$split('_')$list$get(0L)"
-  )
-})
-
-# ---- Synthetic POSITION pivot smoke (read-only contract) -----------------
-
-test_that("synthetic long-read POSITION pivot can be lazily summarised by AREA prefix", {
+test_that("long-read chunking finds every chromosome from the AREA prefix and fits every position", {
   skip_on_cran()
-  # Build a tiny synthetic POSITION pivot with 5 chrs × 4 probes each = 20 rows
+  skip_if_not_installed("limma")
+  # A synthetic POSITION pivot with 5 chrs x 4 positions each = 20 rows; the
+  # chromosome is the token before the first "_" of AREA.
   set.seed(42)
   chrs    <- c("1", "2", "3", "X", "Y")
   starts  <- rep(c(10000L, 20000L, 30000L, 40000L), times = length(chrs))
   probes  <- paste(rep(chrs, each = 4), starts, sep = "_")
   n       <- length(probes)
+  sample_names <- sprintf("S%03d", 1:6)
+  values <- matrix(stats::runif(n * length(sample_names)), nrow = n, dimnames = list(probes, sample_names))
+  pivot_df <- data.frame(AREA = probes, values, check.names = FALSE, stringsAsFactors = FALSE)
+  design <- cbind(`(Intercept)` = 1, IV_1 = seq_along(sample_names))
 
-  pivot_df <- data.frame(
-    AREA = probes,
-    S001 = runif(n, 0, 1),
-    S002 = runif(n, 0, 1),
-    S003 = runif(n, 0, 1),
-    stringsAsFactors = FALSE
-  )
-  pivot_lazy <- polars::as_polars_df(pivot_df)$lazy()
+  fit <- SEMseeker:::assoc_lmfit_chunked_by_chr(
+    SEMseeker:::io_register_frame(pivot_df), sample_names, design, "limma",
+    key = list(MARKER = "TEST", FIGURE = "MEAN", AREA = "POSITION", SUBAREA = "WHOLE"),
+    family_test = "limma_1", probe_features = NULL, tech_is_longread = TRUE)
 
-  # The chunking strategy: extract leading token before the first "_".
-  chr_extracted <- as.character(as.data.frame(
-    pivot_lazy$
-      select(polars::pl$col("AREA")$str$split("_")$list$get(0L)$alias("CHR"))$
-      unique()$
-      collect()
-  )$CHR)
-
-  # Should core_recover the original 5 chromosomes (order-independent)
-  expect_setequal(chr_extracted, chrs)
+  expect_setequal(rownames(fit$coefficients), probes)
+  expected <- limma::lmFit(values, design)
+  expect_equal(fit$coefficients[probes, ], expected$coefficients[probes, ], tolerance = 1e-10)
 })
 
 # ---- core_get_meth_tech: WGBS pre-declaration is honoured ------------------

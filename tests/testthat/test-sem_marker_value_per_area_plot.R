@@ -129,10 +129,10 @@ test_that("the chart is drawn from a real pivot on disk", {
                                                       "GENE", "WHOLE",
                                                       aggregation = "SUM")
   dir.create(dirname(pivot_path), recursive = TRUE, showWarnings = FALSE)
-  polars::as_polars_df(data.frame(AREA = c("BRCA1", "TP53"),
+  SEMseeker:::io_write_frame_parquet(data.frame(AREA = c("BRCA1", "TP53"),
                                   CASE_1 = c(3, -2), REF_1 = c(0, 1),
                                   stringsAsFactors = FALSE)
-                       )$write_parquet(pivot_path)
+                       , pivot_path)
 
   sheet <- data.frame(Sample_ID = c("CASE_1", "REF_1"),
                       Sample_Group = c("Case", "Reference"),

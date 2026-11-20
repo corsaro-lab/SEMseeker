@@ -21,18 +21,16 @@
 #' are three different questions. Adding them counts it three times - see
 #' [io_pivot_build()], where the `SAMPLE` scope masks positions instead.
 #'
-#' @param lazy a polars LazyFrame carrying an `AREA` column.
-#' @return the LazyFrame with `AREA` exploded and trimmed.
+#' @param connection the data engine connection the query runs on.
+#' @param query_text SQL of a query with an `AREA` column.
+#' @return SQL of the same query with `AREA` exploded and trimmed, the other
+#'   columns unchanged and in their order.
 #' @keywords internal
 #' @noRd
-.anno_area_explode <- function(lazy) {
+.anno_area_explode <- function(connection, query_text) {
 
-  slashed_areas <- as.data.frame(
-    lazy$select("AREA")$
-      filter(polars::pl$col("AREA")$str$contains("/", literal = TRUE))$
-      unique()$
-      collect()
-  )$AREA
+  slashed_areas <- DBI::dbGetQuery(connection, sprintf(
+    "SELECT DISTINCT AREA FROM (%s) AS areas WHERE contains(AREA, '/')", query_text))$AREA
 
   if (length(slashed_areas) > 0L) {
     expansions <- vapply(
@@ -40,25 +38,22 @@
       function(s) paste(.anno_smart_split_area_name(s), collapse = ";"),
       character(1)
     )
-    mapping_lf <- polars::as_polars_df(data.frame(
+    mapping_query <- dbplyr::sql_render(io_register_frame(data.frame(
       AREA     = slashed_areas,
-      AREA_NEW = expansions,
+      AREA_NEW = unname(expansions),
       stringsAsFactors = FALSE
-    ))$lazy()
-    lazy <- lazy$join(mapping_lf, on = "AREA", how = "left")$with_columns(
-      polars::pl$when(polars::pl$col("AREA_NEW")$is_not_null())$
-        then(polars::pl$col("AREA_NEW"))$
-        otherwise(polars::pl$col("AREA"))$alias("AREA")
-    )$drop("AREA_NEW")
+    )))
+    query_text <- sprintf(
+      "SELECT source.* REPLACE (COALESCE(mapping.AREA_NEW, source.AREA) AS AREA)\nFROM (%s) AS source\nLEFT JOIN (%s) AS mapping ON source.AREA = mapping.AREA",
+      query_text, mapping_query)
   }
 
-  lazy <- lazy$with_columns(
-    polars::pl$col("AREA")$str$replace_all(",", ";")$str$split(";")
-  )$explode("AREA")
-
-  lazy <- lazy$with_columns(polars::pl$col("AREA")$str$strip_chars())
-
-  # Drop rows where AREA became empty after split/strip (e.g. trailing
-  # semicolons from malformed annotations).
-  lazy$filter(polars::pl$col("AREA")$str$len_chars() > 0)
+  # Split on ";" (and "," turned into ";"), one row per token, surrounding
+  # whitespace removed. Rows whose AREA became empty after split/strip (e.g.
+  # trailing semicolons from malformed annotations) are dropped.
+  exploded <- sprintf(
+    "SELECT * REPLACE (unnest(string_split(replace(AREA, ',', ';'), ';')) AS AREA) FROM (%s) AS composite", query_text)
+  sprintf(
+    "SELECT * FROM (SELECT * REPLACE (regexp_replace(AREA, '^\\s+|\\s+$', '', 'g') AS AREA) FROM (%s) AS split) AS trimmed WHERE length(AREA) > 0",
+    exploded)
 }

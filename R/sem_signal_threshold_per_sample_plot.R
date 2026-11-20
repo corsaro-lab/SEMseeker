@@ -108,7 +108,7 @@ sem_signal_threshold_per_sample_plot <- function(probe, sample_sheet,
   if (!file.exists(thresholds_file))
     return(NULL)
 
-  thresholds <- as.data.frame(polars::pl$read_parquet(thresholds_file))
+  thresholds <- io_read_parquet_frame(thresholds_file)
   row_index <- which(toupper(as.character(thresholds$PROBE)) == toupper(probe))
   if (length(row_index) == 0L)
     return(NULL)

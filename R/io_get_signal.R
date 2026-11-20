@@ -31,7 +31,7 @@ io_source_data_get <- function(source_data, check_is_numeric=FALSE){
     source <- as.data.frame(readRDS(source_data))
 
   if ( grepl("\\.parquet$", source_data))
-    source <- as.data.frame(polars::pl$read_parquet(source_data))
+    source <- io_read_parquet_frame(source_data)
 
   # if exists a column PROBE, set it as rownames
   if ("PROBE" %in% colnames(source))

@@ -21,7 +21,10 @@ test_that("tests/testthat contains only test sources", {
     "^test_template\\.R$",
     "^_snaps$",
     "^_disabled_.*\\.txt$",
-    "^testthat-problems\\.rds$"
+    "^testthat-problems\\.rds$",
+    # testthat >= 3.3 writes the failures of a run here; a failing test is
+    # reported by its own expectation, not again as a stray file
+    "^_problems$"
   )
   entries <- list.files(testthat::test_path(), all.files = TRUE,
                         no.. = TRUE)

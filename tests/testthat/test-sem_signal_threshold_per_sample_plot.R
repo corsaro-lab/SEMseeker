@@ -146,13 +146,13 @@ test_that("the thresholds are read and not recomputed, and a missing probe is NU
   thresholds_path <- SEMseeker:::io_file_path_build(
     SEMseeker:::core_get_session_info()$result_folderData,
     "1_signal_thresholds", "parquet")
-  polars::as_polars_df(data.frame(
+  SEMseeker:::io_write_frame_parquet(data.frame(
     PROBE = c("CG1", "CG2"),
     signal_inferior_thresholds = c(0.2, 0.1),
     signal_superior_thresholds = c(0.8, 0.9),
     signal_median_values = c(0.5, 0.5),
     iqr = c(0.2, 0.3), q1 = c(0.4, 0.35), q3 = c(0.6, 0.65),
-    stringsAsFactors = FALSE))$write_parquet(thresholds_path)
+    stringsAsFactors = FALSE), thresholds_path)
 
   envelope <- SEMseeker:::.sem_probe_thresholds_get("CG1")
   expect_equal(envelope$superior, 0.8)
@@ -173,10 +173,10 @@ test_that("the door writes a file and refuses to invent an envelope", {
   signal_path <- SEMseeker:::io_pivot_file_name_parquet(
     "SIGNAL", SEMseeker:::io_signal_figure(), "PROBE", "WHOLE")
   dir.create(dirname(signal_path), recursive = TRUE, showWarnings = FALSE)
-  polars::as_polars_df(data.frame(AREA = c("CG1", "CG2"),
+  SEMseeker:::io_write_frame_parquet(data.frame(AREA = c("CG1", "CG2"),
                                   CASE_1 = c(0.95, 0.5), REF_1 = c(0.52, 0.5),
                                   stringsAsFactors = FALSE)
-                       )$write_parquet(signal_path)
+                       , signal_path)
 
   sheet <- data.frame(Sample_ID = c("CASE_1", "REF_1"),
                       Sample_Group = c("Case", "Reference"),
@@ -189,10 +189,10 @@ test_that("the door writes a file and refuses to invent an envelope", {
   thresholds_path <- SEMseeker:::io_file_path_build(
     SEMseeker:::core_get_session_info()$result_folderData,
     "1_signal_thresholds", "parquet")
-  polars::as_polars_df(data.frame(
+  SEMseeker:::io_write_frame_parquet(data.frame(
     PROBE = "CG1", signal_inferior_thresholds = 0.2,
     signal_superior_thresholds = 0.8, signal_median_values = 0.5,
-    iqr = 0.2, q1 = 0.4, q3 = 0.6))$write_parquet(thresholds_path)
+    iqr = 0.2, q1 = 0.4, q3 = 0.6), thresholds_path)
 
   written <- SEMseeker::sem_signal_threshold_per_sample_plot("CG1", sheet)
   expect_true(file.exists(written))

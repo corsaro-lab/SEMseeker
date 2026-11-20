@@ -1,18 +1,19 @@
 # ---------------------------------------------------------------------------
-# sem_deltaX_get() - polars-native, wide-dataframe derived markers
+# sem_deltaX_get() - derived markers computed column by column on the pivots
 #
 # Written 2026-06-01 to replace an R-loop implementation, which was kept alongside it
 # for reference and A/B testing and removed on 2026-10-02 once nothing had called it
 # for four months. It is in the git history if the comparison is ever wanted again.
 #
 # Builds the derived pivot tables (DELTAQ, DELTARQ, DELTAP, DELTARP) from the
-# corresponding source pivots (DELTAS or DELTAR) entirely in polars.
+# corresponding source pivots (DELTAS or DELTAR) in the data engine, without
+# bringing the pivots into R (the quantile breaks excepted, see below).
 #
 # Invariants (confirmed with user 2026-06-01):
 #   - breaks GLOBAL on the union of HYPER+HYPO sample values (not per-figure)
 #   - zero == missing (excluded from stats, returned NA in the output)
-#   - right=TRUE intervals (a, b] - matches polars cut default and R cut
-#     default
+#   - right=TRUE intervals (a, b] - the polars cut default and the R cut
+#     default, kept when the engine moved to DuckDB
 #   - skip per-sample bedgraph dumps for derived markers (the removed R-loop
 #     implementation wrote 4013 single bedgraphs per derived marker x figure - the
 #     ~9 min wall-clock bottleneck on ewas_data_hub)
@@ -22,17 +23,14 @@
 #     equal-width on [global_min, global_max]. Only the per-column min/max
 #     are pulled out - O(N_samples) RAM, streaming-friendly. No unpivot.
 #   - For markers ending in 'Q' (DELTAQ, DELTARQ): quantile bin edges need
-#     the full value distribution; we collect the two source DataFrames and
-#     compute the quantiles in R (R `quantile` is C-vectorised and exact;
-#     polars `quantile` on a single big column also works but the unpivot
-#     in polars R 1.11 can drop class info on lazy frames).
-#   - Cut is applied column-wise inside a single $with_columns(): polars
-#     Rust runtime parallelises the expressions via Rayon, so the cost
-#     stays wide even though we list the columns from R.
+#     the full value distribution; the two source pivots are collected and
+#     the quantiles computed by R's `quantile`, as before the move to DuckDB,
+#     so the breaks do not depend on the engine.
+#   - The cut is one CASE per sample column, inside a single COPY.
 # ---------------------------------------------------------------------------
 
 #' Compute derived markers (DELTAQ/DELTARQ/DELTAP/DELTARP) direct from
-#' source pivots via polars wide expressions.
+#' source pivots, one SQL expression per sample column.
 #'
 #' @param markers Optional character vector to restrict which derived markers
 #'   to materialise. Default \code{NULL} = all eligible markers from
@@ -58,25 +56,31 @@ sem_deltaX_get <- function(markers = NULL) {
   area    <- "POSITION"
   subarea <- "WHOLE"
 
-  # Replace 0 with null (matches `vec[vec == 0] <- NA` in legacy sem_deltaX_get).
-  zero_to_null <- function(col_name) {
-    polars::pl$when(polars::pl$col(col_name) == 0)$
-      then(polars::pl$lit(NA_real_))$
-      otherwise(polars::pl$col(col_name))
-  }
+  connection <- io_engine_connection()
+  # Paths and sample ids are free text and enter the SQL quoted. path: a file
+  # path; name: a column name.
+  quote_text <- function(path) DBI::dbQuoteString(connection, path)
+  quote_name <- function(name) as.character(DBI::dbQuoteIdentifier(connection, name))
+  # Zero means "no deviation" and is excluded from the breaks and from the
+  # output, as `vec[vec == 0] <- NA` did in the R-loop version. column_sql:
+  # a quoted column name.
+  zero_to_null <- function(column_sql) sprintf("CASE WHEN %1$s = 0 THEN NULL ELSE %1$s END", column_sql)
+  # The sample columns of a source pivot. path: the parquet file.
+  sample_columns <- function(path)
+    setdiff(DBI::dbGetQuery(connection, sprintf("DESCRIBE SELECT * FROM read_parquet(%s)", quote_text(path)))$column_name,
+            c("CHR", "START", "END"))
 
-  # Per-column min/max ignoring nulls - pulled into R as scalars, then
-  # global aggregated. Memory cost: O(N_samples) doubles per source figure.
-  # NB: polars R $select() wants expressions as varargs, so we splice the
-  # list via do.call().
-  col_minmax <- function(lf, cols) {
-    mins_expr <- lapply(cols, function(c) zero_to_null(c)$min()$alias(c))
-    maxs_expr <- lapply(cols, function(c) zero_to_null(c)$max()$alias(c))
-    mins_row <- as.data.frame(do.call(lf$select, mins_expr)$collect())
-    maxs_row <- as.data.frame(do.call(lf$select, maxs_expr)$collect())
+  # Smallest and largest non-zero value over all the sample columns of a
+  # pivot, as two scalars: only one row of aggregates enters R.
+  # path: the parquet file; cols: its sample columns.
+  col_minmax <- function(path, cols) {
+    quoted <- vapply(cols, quote_name, character(1))
+    aggregates <- c(sprintf("min(%s)", zero_to_null(quoted)), sprintf("max(%s)", zero_to_null(quoted)))
+    extremes <- as.numeric(DBI::dbGetQuery(connection, sprintf("SELECT %s FROM read_parquet(%s)",
+                                                               paste(aggregates, collapse = ", "), quote_text(path)))[1, ])
     list(
-      min = suppressWarnings(min(as.numeric(mins_row[1, ]), na.rm = TRUE)),
-      max = suppressWarnings(max(as.numeric(maxs_row[1, ]), na.rm = TRUE))
+      min = suppressWarnings(min(extremes[seq_along(cols)], na.rm = TRUE)),
+      max = suppressWarnings(max(extremes[length(cols) + seq_along(cols)], na.rm = TRUE))
     )
   }
 
@@ -94,41 +98,37 @@ sem_deltaX_get <- function(markers = NULL) {
 
     if (file.exists(dest_h) && file.exists(dest_o)) {
       core_log_event("INFO: ", Sys.time(),
-                " [deltaX_get_polars] skip ", mar, " (both pivots already exist)")
+                " [deltaX_get] skip ", mar, " (both pivots already exist)")
       next
     }
     if (!file.exists(src_h) || !file.exists(src_o)) {
       core_log_event("WARNING: ", Sys.time(),
-                " [deltaX_get_polars] source pivot(s) missing for marker=", mar)
+                " [deltaX_get] source pivot(s) missing for marker=", mar)
       next
     }
 
     t_start <- Sys.time()
     core_log_event("INFO: ", t_start,
-              " [deltaX_get_polars] computing ", mar,
+              " [deltaX_get] computing ", mar,
               " (Q=", Q_val, ", suffix=",
               if (endsWith(mar, "P")) "P/equal-width" else "Q/quantile",
               ") direct from ", src, " pivots")
 
-    # read via unified dispatcher. The file.exists() guard above
-    # has already filtered out cases where neither source pivot exists.
-    lf_h <- io_read_pivot(src, "HYPER", area, subarea)
-    lf_o <- io_read_pivot(src, "HYPO",  area, subarea)
-    cols_h <- setdiff(names(lf_h$collect_schema()), c("CHR", "START", "END"))
-    cols_o <- setdiff(names(lf_o$collect_schema()), c("CHR", "START", "END"))
+    cols_h <- sample_columns(src_h)
+    cols_o <- sample_columns(src_o)
 
     # ---------------------------------------------------------------------
     # Compute global breaks on HYPER + HYPO (0 → null).
     # ---------------------------------------------------------------------
     if (endsWith(mar, "P")) {
       # Equal-width: O(N_samples) RAM.
-      mm_h <- col_minmax(lf_h, cols_h)
-      mm_o <- col_minmax(lf_o, cols_o)
+      mm_h <- col_minmax(src_h, cols_h)
+      mm_o <- col_minmax(src_o, cols_o)
       mn <- min(mm_h$min, mm_o$min, na.rm = TRUE)
       mx <- max(mm_h$max, mm_o$max, na.rm = TRUE)
       if (!is.finite(mn) || !is.finite(mx) || mn == mx) {
         core_log_event("WARNING: ", Sys.time(),
-                  " [deltaX_get_polars] degenerate range for ", mar,
+                  " [deltaX_get] degenerate range for ", mar,
                   ": min=", mn, " max=", mx, " - skip")
         next
       }
@@ -139,8 +139,12 @@ sem_deltaX_get <- function(markers = NULL) {
       # flatten - costly in RAM (~ N_samples × N_probes × 8 bytes per
       # source figure) but exact.
       probs <- seq(0, 1, length.out = Q_val + 1L)
-      df_h  <- as.data.frame(lf_h$select(cols_h)$collect())
-      df_o  <- as.data.frame(lf_o$select(cols_o)$collect())
+      read_values <- function(path, cols)
+        # path: a source pivot; cols: its sample columns, read whole
+        DBI::dbGetQuery(connection, sprintf("SELECT %s FROM read_parquet(%s)",
+                                            paste(vapply(cols, quote_name, character(1)), collapse = ", "), quote_text(path)))
+      df_h  <- read_values(src_h, cols_h)
+      df_o  <- read_values(src_o, cols_o)
       vals  <- c(unlist(df_h, use.names = FALSE),
                  unlist(df_o, use.names = FALSE))
       rm(df_h, df_o); gc(verbose = FALSE)
@@ -150,50 +154,54 @@ sem_deltaX_get <- function(markers = NULL) {
 
     } else {
       core_log_event("WARNING: ", Sys.time(),
-                " [deltaX_get_polars] marker ", mar,
+                " [deltaX_get] marker ", mar,
                 " doesn't end in P or Q - skipping")
       next
     }
 
     core_log_event("INFO: ", Sys.time(),
-              " [deltaX_get_polars] ", mar,
+              " [deltaX_get] ", mar,
               " breaks=[", paste(signif(breaks_full, 4), collapse = ", "), "]")
 
-    # Inner breakpoints (polars cut takes cut points, not endpoints).
+    # Inner breakpoints: the cut compares with the points between the bins, not the endpoints.
     inner_breaks <- breaks_full[-c(1L, length(breaks_full))]
     if (length(inner_breaks) == 0L) {
       core_log_event("WARNING: ", Sys.time(),
-                " [deltaX_get_polars] no inner breakpoints for ", mar,
+                " [deltaX_get] no inner breakpoints for ", mar,
                 " - skip")
       next
     }
 
     # ---------------------------------------------------------------------
-    # Apply cut wide: 0→null, then polars cut → int label 1..N.
+    # Apply the cut: 0 and NULL give NULL; otherwise the label is 1 plus the
+    # number of inner breaks the value exceeds, which makes the intervals
+    # (a, b] as in polars' cut and R's cut. The breaks enter the SQL as text
+    # cast to DOUBLE with 17 significant digits, so each is the same double
+    # R computed.
     # ---------------------------------------------------------------------
+    break_sql <- sprintf("CAST('%s' AS DOUBLE)", sprintf("%.17g", inner_breaks))
+    # col_name: a sample column; returns its label expression, aliased to it.
     make_cut_expr <- function(col_name) {
-      zero_to_null(col_name)$
-        cut(breaks = inner_breaks)$
-        to_physical()$
-        cast(polars::pl$Int32)$
-        add(1L)$
-        alias(col_name)
+      quoted <- quote_name(col_name)
+      exceeded <- paste(sprintf("CASE WHEN %s > %s THEN 1 ELSE 0 END", quoted, break_sql), collapse = " + ")
+      sprintf("CASE WHEN %1$s IS NULL OR %1$s = 0 THEN NULL ELSE CAST(1 + %2$s AS INTEGER) END AS %1$s", quoted, exceeded)
     }
 
-    write_one <- function(lf_src, cols, dest_path) {
-      exprs <- lapply(cols, make_cut_expr)
-      out <- do.call(lf_src$with_columns, exprs)$
-        sort(c("CHR", "START"), descending = FALSE)
+    # Writes the labels of one figure, sorted on CHR and START. source_path:
+    # the source pivot; cols: its sample columns; dest_path: the derived pivot.
+    write_one <- function(source_path, cols, dest_path) {
       dir.create(dirname(dest_path), recursive = TRUE, showWarnings = FALSE)
-      out$sink_parquet(dest_path)
+      DBI::dbExecute(connection, sprintf('COPY (SELECT CHR, START, "END", %s FROM read_parquet(%s) ORDER BY CHR, START) TO %s (FORMAT parquet, COMPRESSION zstd)',
+                                         paste(vapply(cols, make_cut_expr, character(1)), collapse = ", "),
+                                         quote_text(source_path), quote_text(dest_path)))
     }
 
-    write_one(lf_h, cols_h, dest_h)
-    write_one(lf_o, cols_o, dest_o)
+    write_one(src_h, cols_h, dest_h)
+    write_one(src_o, cols_o, dest_o)
 
     dt <- as.numeric(difftime(Sys.time(), t_start, units = "secs"))
     core_log_event("INFO: ", Sys.time(),
-              " [deltaX_get_polars] wrote ", mar,
+              " [deltaX_get] wrote ", mar,
               " HYPER+HYPO in ", round(dt, 1), " sec")
   }
 

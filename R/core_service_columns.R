@@ -30,12 +30,14 @@ core_service_columns <- function() {
 
 # The data columns of a table: every column that is not a service column.
 #
-# @param x a data.frame, a polars frame or a character vector of column names.
+# @param x a data.frame, a lazy table of the data engine or a character vector of column names.
 # @param also further names to exclude (the independent variable and the
 #   covariates of a model, for instance).
 # @return character vector of column names, in the table's order.
 # @keywords internal
 core_data_columns <- function(x, also = character(0)) {
-  nm <- if (is.character(x)) x else names(x)
+  # colnames(), not names(): names() of a lazy table lists the fields of the
+  # query object, not the columns of the table.
+  nm <- if (is.character(x)) x else colnames(x)
   setdiff(nm, c(core_service_columns(), also))
 }

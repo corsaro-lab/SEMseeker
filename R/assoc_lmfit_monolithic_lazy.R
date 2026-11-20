@@ -14,7 +14,7 @@
 
 #' Run a single monolithic lmFit (optionally with voom) on a lazy pivot
 #'
-#' @param pivot_lazy `polars_lazy_frame` already filtered for
+#' @param pivot_lazy lazy table of the data engine (`tbl_lazy`) already filtered for
 #'   `area_to_remove` and transformed by `io_data_preparation_lazy()`.
 #'   First column MUST be `AREA` (probe / position identifier); the
 #'   remaining columns are samples.
@@ -43,9 +43,9 @@ assoc_lmfit_monolithic_lazy <- function(pivot_lazy,
   # Subset the lazy pivot to the kept sample columns (+ AREA) before
   # materialising. With monolithic + lazy + already-filtered rows, this
   # is the canonical place to allocate y_mat.
-  pivot_lazy <- pivot_lazy$select(c("AREA", sample_cols_kept))
-  pivot_df   <- pivot_lazy$collect()
-  n_genes    <- pivot_df$height
+  pivot_lazy <- dplyr::select(pivot_lazy, dplyr::all_of(c("AREA", sample_cols_kept)))
+  pivot_df   <- as.data.frame(dplyr::collect(pivot_lazy))
+  n_genes    <- nrow(pivot_df)
   if (n_genes == 0L) {
     core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
               " assoc_lmfit_monolithic_lazy: empty pivot after filter [",
@@ -54,17 +54,18 @@ assoc_lmfit_monolithic_lazy <- function(pivot_lazy,
     return(NULL)
   }
 
-  gene_names <- as.character(pivot_df$select("AREA")$to_series())
-  pivot_vals <- pivot_df$drop("AREA")
-  sample_cols <- names(pivot_vals)
-  rm(pivot_df)
+  gene_names <- as.character(pivot_df$AREA)
+  sample_cols <- setdiff(colnames(pivot_df), "AREA")
 
+  # Filled column by column, each column dropped from the frame once
+  # copied, so the frame and the matrix are not both whole in memory.
   y_mat <- matrix(NA_real_, nrow = n_genes, ncol = length(sample_cols),
                    dimnames = list(gene_names, sample_cols))
   for (i in seq_along(sample_cols)) {
-    y_mat[, i] <- as.vector(pivot_vals$select(sample_cols[i])$to_series())
+    y_mat[, i] <- as.numeric(pivot_df[[sample_cols[i]]])
+    pivot_df[[sample_cols[i]]] <- NULL
   }
-  rm(pivot_vals)
+  rm(pivot_df)
   gc(verbose = FALSE)
   y_mat <- util_absent_as_zero(y_mat, key$MARKER)
 

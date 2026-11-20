@@ -118,7 +118,7 @@ diagnostic_performance <-
             #   show_col_types=FALSE, progress=FALSE)
             # read via unified dispatcher.
             ss_pivot_lazy <- io_read_pivot(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
-            tempDataFrame <- as.data.frame(ss_pivot_lazy$collect())
+            tempDataFrame <- as.data.frame(dplyr::collect(ss_pivot_lazy))
             row.names(tempDataFrame) <- tempDataFrame$AREA
             if (length(areas_selection) > 0)
               tempDataFrame <-tempDataFrame[tempDataFrame[, 1] %in% areas_selection,]

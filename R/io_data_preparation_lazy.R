@@ -1,5 +1,5 @@
-#' Polars-native equivalent of `io_data_preparation()` for the lazy
-#' lazy batch path. Two responsibilities:
+#' Data-engine equivalent of `io_data_preparation()` for the lazy
+#' batch path. Two responsibilities:
 #'
 #'   1. **Apply `transformation_y` on every sample column** of the pivot,
 #'      so the lazy path produces statistically equivalent CSVs
@@ -26,7 +26,8 @@
 #'     well in lazy mode on a wide-format pivot). They raise an
 #'     explicit error directing the caller to the per-area path.
 #'
-#' @param pivot_lazy A `polars_lazy_frame` whose rows are probes/areas
+#' @param pivot_lazy A lazy table of the data engine (`tbl_lazy`), or a
+#'   data.frame that is registered with the engine, whose rows are probes/areas
 #'   and whose columns are: optional `AREA` (carrier of the probe ID,
 #'   passed through untouched) + one column per sample.
 #' @param sample_cols Character vector. The column names in
@@ -47,9 +48,8 @@
 #' @param family_test Optional character - passed through to the log
 #'   line, same purpose as `key`.
 #'
-#' @return The transformed and filtered `polars_lazy_frame`. The schema
-#'   is unchanged (same column names; new helper columns `__min_y` /
-#'   `__max_y` are dropped before return).
+#' @return The transformed and filtered lazy table. The schema is
+#'   unchanged (same column names, same order), with fewer rows.
 #'
 #' @keywords internal
 #' @noRd
@@ -60,13 +60,11 @@ io_data_preparation_lazy <- function(pivot_lazy,
                                    key = NULL,
                                    family_test = NULL) {
 
-  if (!inherits(pivot_lazy, "polars_lazy_frame")) {
-    if (inherits(pivot_lazy, "polars_data_frame")) {
-      pivot_lazy <- pivot_lazy$lazy()
-    } else {
-      stop("io_data_preparation_lazy: pivot_lazy must be a polars LazyFrame or DataFrame.",
-           call. = FALSE)
-    }
+  if (is.data.frame(pivot_lazy) && !inherits(pivot_lazy, "tbl_lazy")) {
+    pivot_lazy <- io_register_frame(pivot_lazy)
+  } else if (!inherits(pivot_lazy, "tbl_lazy")) {
+    stop("io_data_preparation_lazy: pivot_lazy must be a lazy table of the data engine or a data.frame.",
+         call. = FALSE)
   }
   if (!is.character(sample_cols) || length(sample_cols) == 0L) {
     stop("io_data_preparation_lazy: sample_cols must be a non-empty character vector.",
@@ -113,7 +111,9 @@ io_data_preparation_lazy <- function(pivot_lazy,
   }
 
   # ---- Step 1: transformation_y on every sample column --------------
-  # Polars 1.x expression API: `pl$col(c)` × native math methods.
+  # One SQL expression per sample column. DuckDB follows IEEE semantics
+  # on doubles as polars did: ln(0) is -Inf, ln of a negative value is
+  # NaN, a division by a zero standard deviation is Inf or NaN.
   # Note: `log` on negative or zero values yields NaN; the R-side
   # `io_data_preparation()` guards by adding `min(burden_values[burden_values>0])`,
   # which would require a scan over the full pivot. We use a tiny
@@ -121,48 +121,43 @@ io_data_preparation_lazy <- function(pivot_lazy,
   # input (DELTARP, DELTARQ, MUTATIONS). On signed input like
   # M-values (SIGNAL), `log` doesn't apply semantically anyway -
   # the caller should choose `transformation_y = "none"` there.
-  EPS <- 1e-9
+  # `scale` uses the sample standard deviation (n - 1), as polars' std().
+  connection <- dbplyr::remote_con(pivot_lazy)
+  quoted_cols <- vapply(sample_cols, function(column_name) as.character(DBI::dbQuoteIdentifier(connection, column_name)), character(1))
   if (trans_y != "none") {
     core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
               " io_data_preparation_lazy", fam_str, key_str,
               ": applying transformation_y='", trans_y,
               "' to ", length(sample_cols), " sample columns.")
 
-    trans_exprs <- lapply(sample_cols, function(c) {
-      expr <- switch(trans_y,
-        "log"   = polars::pl$col(c)$add(EPS)$log(),
-        "log2"  = polars::pl$col(c)$add(EPS)$log(base = 2),
-        "log10" = polars::pl$col(c)$add(EPS)$log10(),
-        "exp"   = polars::pl$col(c)$exp(),
-        "scale" = polars::pl$col(c)$sub(polars::pl$col(c)$mean())$
-                    truediv(polars::pl$col(c)$std())
-      )
-      expr$alias(c)
-    })
-    # Polars 1.x: `$with_columns()` takes `...` Expr args, NOT a list.
-    # Same do.call unpacking pattern as `analyze_population_bulk.R:112`.
-    pivot_lazy <- do.call(pivot_lazy$with_columns, trans_exprs)
+    sql_template <- switch(trans_y,
+      "log"   = "ln(CAST({col} AS DOUBLE) + 1e-9)",
+      "log2"  = "log2(CAST({col} AS DOUBLE) + 1e-9)",
+      "log10" = "log10(CAST({col} AS DOUBLE) + 1e-9)",
+      "exp"   = "exp(CAST({col} AS DOUBLE))",
+      "scale" = "(CAST({col} AS DOUBLE) - avg({col}) OVER ()) / stddev_samp({col}) OVER ()"
+    )
+    trans_exprs <- lapply(quoted_cols, function(quoted_col) dbplyr::sql(gsub("{col}", quoted_col, sql_template, fixed = TRUE)))
+    names(trans_exprs) <- sample_cols
+    pivot_lazy <- dplyr::mutate(pivot_lazy, !!!trans_exprs)
   }
 
   # ---- Step 2: universal degenerate-burden filter -----------
   # A row is "degenerate" iff every sample column carries the same
   # value (var(Y) == 0). We detect this lazily via:
-  #   min_horizontal(sample_cols) != max_horizontal(sample_cols)
+  #   least(sample_cols) != greatest(sample_cols)
   # which is equivalent to checking variance > 0 without materialising
-  # the full row. The two helper columns are dropped immediately so
-  # the output schema matches the input (just fewer rows).
+  # the full row. least() and greatest() skip NULLs as polars'
+  # min_horizontal() and max_horizontal() did, and a row of NULLs gives
+  # NULL, which the filter drops.
+  # The filter wraps the query as a subquery written out: given as raw SQL
+  # to dplyr::filter(), dbplyr cannot see that it reads the transformed
+  # columns and may place it in the WHERE of the same SELECT, where it
+  # would read the values before the transformation.
   if (apply_degenerate_filter) {
-    # Polars 1.x R bindings: `pl$min_horizontal()` / `pl$max_horizontal()`
-    # take `...` exprs as individual args, NOT a list. Wrap via `do.call`
-    # to unpack the per-sample column expressions. The same `do.call`
-    # pattern is used by `analyze_population_bulk.R` for `pl$concat()`
-    # on per-chr chunks - kept consistent for readability.
-    col_exprs <- lapply(sample_cols, function(c) polars::pl$col(c))
-    min_h <- do.call(polars::pl$min_horizontal, col_exprs)$alias("__min_y")
-    max_h <- do.call(polars::pl$max_horizontal, col_exprs)$alias("__max_y")
-    pivot_lazy <- pivot_lazy$with_columns(min_h, max_h)$filter(
-      polars::pl$col("__min_y") != polars::pl$col("__max_y")
-    )$drop(c("__min_y", "__max_y"))
+    column_list <- paste(quoted_cols, collapse = ", ")
+    pivot_lazy <- dplyr::tbl(connection, dbplyr::sql(sprintf("SELECT * FROM (%s) AS prepared WHERE least(%s) <> greatest(%s)",
+                                                             dbplyr::sql_render(pivot_lazy), column_list, column_list)))
   }
 
   pivot_lazy

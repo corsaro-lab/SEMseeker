@@ -1,3 +1,26 @@
+# semseeker 0.99.7 (development)
+
+## Breaking changes
+
+- **SEMseeker no longer depends on `polars`.** Every query over the pivots, the
+  population markers and the association batch path now runs in DuckDB, which
+  is on CRAN; `polars` and the extra repository it needed are gone from
+  DESCRIPTION, and SEMseeker installs with `remotes::install_github()` alone.
+  The files on disk are unchanged: pivots are still parquet, so results written
+  by earlier versions are read as they are.
+
+## Bug fixes
+
+- **bedMethyl input reads the 5mC rows only.** `modkit pileup` writes one row
+  per modification at the same position, 5mC (`m`) and 5hmC (`h`). Every row
+  was read, so a file holding both gave a position two values, and joining
+  several such files multiplied the rows. SEMseeker measures methylation: the
+  reader now keeps the rows with code `m` and ignores the others, so a standard
+  `modkit pileup` output is read as it is. A file with no 5mC row, a 5mC
+  position repeated within one file, and two files given the same sample id
+  now stop the run with a message naming the sample. Results computed from
+  bedMethyl files that contained 5hmC rows must be run again.
+
 # semseeker 0.99.6
 
 ## Breaking changes

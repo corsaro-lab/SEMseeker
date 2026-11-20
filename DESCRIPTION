@@ -23,9 +23,9 @@ BugReports: https://github.com/corsaro-lab/SEMseeker/issues
 biocViews: Epigenetics, DNAMethylation, MethylationArray, DifferentialMethylation,
         GeneExpression, Pathways, MultipleComparison, Normalization,
         StatisticalMethod, Software, Coverage, Sequencing
-Imports: caret, dplyr, methods, doFuture, doRNG, fastDummies, foreach, future,
+Imports: caret, DBI, dbplyr (>= 2.6.0), dplyr, duckdb, methods, doFuture, doRNG, fastDummies, foreach, future,
         GenomicRanges, ggplot2, ggvenn, graphics, grDevices, gtools,
-        jsonlite, lqmm, matrixStats, plyr, polars (< 2.0.0), progressr,
+        jsonlite, lqmm, matrixStats, plyr, progressr,
         reshape2, R.utils, rlang, stats, stringr, tools, utils, withr,
         VennDiagram, effsize, pwr, combinat, philentropy, parallelly,
         knitr, lmtest, glmnet, sqldf, readr, tidyr, readxl, xtable
@@ -39,7 +39,8 @@ Suggests: ctdR, pathfindR, GEOquery, OpenCL, stringi, testthat,
         IlluminaHumanMethylation27kanno.ilmn12.hg19, IRanges, S4Vectors,
         GenomicFeatures, GenomeInfoDb, AnnotationHub,
         TxDb.Hsapiens.UCSC.hg19.knownGene,
-        TxDb.Hsapiens.UCSC.hg38.knownGene, limma, ggrepel, memuse
+        TxDb.Hsapiens.UCSC.hg38.knownGene, limma, ggrepel, memuse,
+        nanoparquet
 Depends: R (>= 4.6.0)
 SystemRequirements: libuv (>= 1) for the 'fs' package build on Linux
         when not using bundled libuv (set USE_BUNDLED_LIBUV=1 to skip),
@@ -47,7 +48,6 @@ SystemRequirements: libuv (>= 1) for the 'fs' package build on Linux
         against which R's base tcltk package is linked at install time
         (without XQuartz, loading tcltk segfaults on macOS arm64, see
         'brew install --cask xquartz').
-Additional_repositories: https://community.r-multiverse.org
 LazyData: true
 LazyDataCompression: xz
 Config/testthat/edition: 3

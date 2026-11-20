@@ -8,7 +8,7 @@
 #'
 #' @section What this used to do, and why none of it worked:
 #' Through 0.99.5 this function could not return anything. It called
-#' `io_read_pivot()`, which returns a **lazy polars frame**, and then used the
+#' `io_read_pivot()`, which returns a **lazy frame**, and then used the
 #' result as if it were a data.frame: `subset(area_pivot, area_pivot$SAMPLEID ==
 #' ...)` on a lazy frame raises `SAMPLEID is not a member of this polars object`,
 #' and `area_pivot[-1, ]` raises `Cannot subset rows of a LazyFrame`. The second
@@ -94,7 +94,7 @@ io_pivot_to_long_format <- function(marker, figure, area, subarea,
   if (is.null(area_pivot_lazy))
     return(NULL)
 
-  area_pivot <- as.data.frame(area_pivot_lazy$collect())
+  area_pivot <- as.data.frame(dplyr::collect(area_pivot_lazy))
   if (nrow(area_pivot) == 0L || ncol(area_pivot) < 2L)
     return(NULL)
 

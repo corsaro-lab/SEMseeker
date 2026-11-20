@@ -55,7 +55,7 @@ sem_cluster_analysis <- function(cluster_variables,ellipsis=TRUE, sql_sample_sel
       pivot_lazy <- io_read_pivot(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
       if (is.null(pivot_lazy))
         next
-      pivot_data <- as.data.frame(pivot_lazy$collect())
+      pivot_data <- as.data.frame(dplyr::collect(pivot_lazy))
       pivot_data <- pivot_data[, study_summary$Sample_ID]
       pivot_data[is.na(pivot_data)] <- 0
 

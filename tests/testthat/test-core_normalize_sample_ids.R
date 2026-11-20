@@ -124,7 +124,7 @@ test_that("util_exploratory_analysis keeps sample columns with non-alphanumeric 
                              full.names = TRUE, ignore.case = TRUE)
   expect_length(parquet_path, 1)
 
-  cleaned <- as.data.frame(polars::pl$read_parquet(parquet_path[1]))
+  cleaned <- as.data.frame(SEMseeker:::io_read_parquet_frame(parquet_path[1]))
   sample_cols <- setdiff(colnames(cleaned), "PROBE")
 
   # THE regression: before the fix this parquet held the PROBE column only

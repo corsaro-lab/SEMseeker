@@ -285,7 +285,7 @@ test_that("a region scope reaches the sibling and the collapsed inference", {
   expect_lt(nrow(mask_df), nrow(SEMseeker:::anno_probe_features_get("GENE_TSS1500")))
 
   pivot <- SEMseeker:::io_read_pivot("MUTATIONS", "HYPER", "POSITION", "WHOLE")
-  pivot_df <- as.data.frame(pivot$collect())
+  pivot_df <- as.data.frame(dplyr::collect(pivot))
   pivot_df$CHR   <- sub("^(?i)chr", "", as.character(pivot_df$CHR), perl = TRUE)
   pivot_df$START <- as.integer(pivot_df$START)
   pivot_df$END   <- as.integer(pivot_df$END)

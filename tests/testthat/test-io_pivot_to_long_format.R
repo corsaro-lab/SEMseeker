@@ -20,8 +20,8 @@
                                                 "GENE", "WHOLE",
                                                 aggregation = aggregation)
   dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
-  polars::as_polars_df(data.frame(AREA = areas, ..., stringsAsFactors = FALSE)
-                       )$write_parquet(path)
+  SEMseeker:::io_write_frame_parquet(data.frame(AREA = areas, ..., stringsAsFactors = FALSE)
+                       , path)
   path
 }
 

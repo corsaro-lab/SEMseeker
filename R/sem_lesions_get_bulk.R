@@ -2,7 +2,7 @@
 #'
 #' Versione **multi-sample (bulk)** di sem_lesions_get, usata dal path
 #' `sem_analyze_population_bulk()` per processare N sample in parallelo via
-#' polars+R-side matrix ops. La versione single-sample (per il path legacy
+#' data engine + R-side matrix ops. La versione single-sample (per il path legacy
 #' `sem_analyze_population()` per-sample loop) e' in `R/lesions_get.R`. Pattern:
 #' `<funzione_single_sample>` + `<funzione_single_sample>_bulk` come
 #' altri sites del package (io_signal_save, sem_deltaX_get).

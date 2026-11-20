@@ -14,11 +14,12 @@
 #      carry chromosome in the coord-encoded AREA string ("chr1_<pos>").
 #
 # Filtering strategy (tech-aware, no pivot schema change required):
-#   Illumina    : `pl$col("AREA")$is_in(probes_in_chr)`  (lookup via
+#   Illumina    : `AREA IN (probes_in_chr)`  (lookup via
 #                 probe_features data.frame, ~12 MB R)
-#   WGBS/LONGREAD: `pl$col("AREA")$str$starts_with("chr<i>_")` - chromosome
+#   WGBS/LONGREAD: `starts_with(AREA, 'chr<i>_')` - chromosome
 #                 parsed lazily from AREA string prefix, no manifest
 #                 lookup needed.
+# Both are filters, not joins, so each chunk keeps the order of the rows.
 #
 # The cross-gene eBayes shrinkage is applied by the dispatcher AFTER
 # `assoc_concat_lmfit_objects()` glues the per-chr fits together. Doing eBayes
@@ -31,7 +32,7 @@
 
 #' Fit limma::lmFit one chromosome at a time on a lazy pivot
 #'
-#' @param pivot_lazy `polars_lazy_frame` already filtered for
+#' @param pivot_lazy lazy table of the data engine (`tbl_lazy`) already filtered for
 #'   `area_to_remove` and transformed by `io_data_preparation_lazy()`.
 #'   First column MUST be `AREA` (probe / position identifier); the
 #'   remaining columns are samples.
@@ -53,7 +54,7 @@
 #'   Pass `NULL` for WGBS/LONGREAD where the AREA string is
 #'   coord-encoded.
 #' @param tech_is_longread Logical - TRUE for WGBS / LONGREAD, FALSE
-#'   for Illumina. Decides the filter strategy (`is_in` vs
+#'   for Illumina. Decides the filter strategy (`IN` vs
 #'   `starts_with`).
 #'
 #' @return The concatenated pre-eBayes `MArrayLM` fit object across
@@ -82,13 +83,11 @@ assoc_lmfit_chunked_by_chr <- function(pivot_lazy,
 
   # ---- enumerate chromosomes -----------------------------------------
   if (tech_is_longread) {
-    # AREA is coord-encoded like "chr1_12345_12346". Extract CHR via
-    # lazy string split (Rust-native, no R-side allocation).
-    chrs <- as.character(as.data.frame(
-      pivot_lazy$select(
-        polars::pl$col("AREA")$str$split("_")$list$get(0L)$alias("CHR")
-      )$unique()$collect()
-    )$CHR)
+    # AREA is coord-encoded like "chr1_12345_12346". Extract CHR in the
+    # engine, so only the distinct chromosomes reach R.
+    chrs <- as.character(dplyr::pull(dplyr::collect(dplyr::distinct(
+      dplyr::transmute(pivot_lazy, CHR = dbplyr::sql("split_part(AREA, '_', 1)"))
+    )), "CHR"))
     # Sort canonical: numeric chrs first, then X/Y/M.
     chr_key <- function(ch) {
       cl <- sub("^chr", "", ch)
@@ -118,22 +117,18 @@ assoc_lmfit_chunked_by_chr <- function(pivot_lazy,
             tech_is_longread, ").")
 
   # ---- per-chr loop --------------------------------------------------
+  connection <- dbplyr::remote_con(pivot_lazy)
   fit_list <- vector("list", length(chrs))
   for (i in seq_along(chrs)) {
     ch <- chrs[i]
     t0 <- Sys.time()
     pivot_chunk <- if (tech_is_longread) {
-      pivot_lazy$filter(
-        polars::pl$col("AREA")$str$starts_with(paste0(ch, "_"))
-      )
+      chr_prefix <- DBI::dbQuoteString(connection, paste0(ch, "_"))
+      dplyr::filter(pivot_lazy, dbplyr::sql(sprintf("starts_with(AREA, %s)", chr_prefix)))
     } else {
       probes_chr <- probes_by_chr[[ch]]
       if (length(probes_chr) == 0L) next
-      pivot_lazy$filter(
-        polars::pl$col("AREA")$is_in(
-          polars::pl$lit(probes_chr)$implode()
-        )
-      )
+      dplyr::filter(pivot_lazy, .data$AREA %in% !!probes_chr)
     }
     fit_list[[i]] <- assoc_lmfit_monolithic_lazy(pivot_chunk, sample_cols_kept,
                                             design, engine, key, family_test)

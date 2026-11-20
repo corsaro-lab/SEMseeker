@@ -15,8 +15,8 @@
   path <- SEMseeker:::io_pivot_file_name_parquet("DELTAS", figure,
                                                "PROBE", "WHOLE")
   dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
-  polars::as_polars_df(data.frame(AREA = probes, ..., stringsAsFactors = FALSE)
-                       )$write_parquet(path)
+  SEMseeker:::io_write_frame_parquet(data.frame(AREA = probes, ..., stringsAsFactors = FALSE)
+                       , path)
   path
 }
 

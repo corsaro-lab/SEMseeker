@@ -1,3 +1,24 @@
+#' Save the signal matrix as the SIGNAL pivots, by probe and by position
+#'
+#' Every later step reads the signal from these two parquet files and not
+#' from the matrix in memory: the PROBE pivot keeps the probe ids, the
+#' POSITION pivot the genomic coordinates the markers are computed on. The
+#' POSITION pivot is sorted by chromosome in natural order (1, 2, ..., 22,
+#' X, Y, M) and then by START and END, so each chromosome is one contiguous
+#' block: the per-chromosome model fit relies on it. Nothing is written when
+#' the POSITION pivot already exists.
+#'
+#' @param signal_data data.frame of signal values, probes in the rows (probe
+#'   ids as row names) and samples in the columns
+#' @param sample_sheet data.frame with a Sample_ID column; only its samples
+#'   are saved, in its order
+#' @param batch_id identifier of the batch; kept for the callers, not used
+#' @param probe_features data.frame with PROBE, CHR, START and END, the
+#'   coordinates of the probes; NULL takes the attribute "probe_features" of
+#'   signal_data and, failing that, the annotation of the technology
+#' @return NULL, invisibly; the side effect is the two parquet files
+#' @keywords internal
+#' @noRd
 io_signal_save <- function(signal_data, sample_sheet, batch_id,
                         probe_features = NULL)
 {
@@ -41,7 +62,7 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
     signal_probe           <- signal_probe[, c(ncol(signal_probe),
                                                seq_len(ncol(signal_probe) - 1))]
     pivot_file_name_probe  <- io_pivot_file_name_parquet("SIGNAL", io_signal_figure(), "PROBE", "WHOLE")
-    polars::as_polars_df(signal_probe)$write_parquet(pivot_file_name_probe)
+    io_write_frame_parquet(signal_probe, pivot_file_name_probe)
     rm(signal_probe)
 
     # Build position-indexed parquet directly from synthetic probe IDs
@@ -62,7 +83,7 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
       signal_pos$START
     )
     signal_pos   <- signal_pos[chr_order, ]
-    polars::as_polars_df(signal_pos)$write_parquet(pivot_file_name_pos)
+    io_write_frame_parquet(signal_pos, pivot_file_name_pos)
     core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), "Saved signal data (", ssEnv$tech, ").")
     gc()
     return()
@@ -75,91 +96,133 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
   signal_data      <- signal_data[, c(ncol(signal_data), seq_len(ncol(signal_data) - 1))]
 
   pivot_file_name_probe <- io_pivot_file_name_parquet("SIGNAL", io_signal_figure(), "PROBE", "WHOLE")
-  polars::as_polars_df(signal_data)$write_parquet(pivot_file_name_probe)
+  io_write_frame_parquet(signal_data, pivot_file_name_probe)
   core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), "Signal data saved with probe.")
 
   rm(signal_data)
   gc()
   core_log_event("DEBUG_MEM_SS: ", format(Sys.time(), "%a %b %d %X %Y"), " post-probe-write+gc  mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
 
-  # read via unified dispatcher. The PROBE pivot was just
-  # written above (line 62), so CASE 1 (cached parquet) is always taken.
-  # Per-chromosome sort+sink (era sort+sink globale → Jetsam OOM kill silenzioso
-  # su 64GB Mac quando la lazy chain join+sort+collect superava soglie macOS
-  # memorystatus). Polars 1.11 R bindings non hanno streaming-mode + projection
-  # pushdown attraverso join è incompleta, quindi gestiamo le chr dal lato R
-  # (probe_features è già una data.frame piccola in RAM) e iteriamo ognuna come
-  # query lazy indipendente filtrata sul subset di PROBE corrispondente.
   pf <- if (!is.null(probe_features)) probe_features
         else anno_probe_features_get("PROBE")  # legacy fallback (test path)
-  # Slim pf to the 4 join-relevant cols. probe_features carries the full
-  # annotation set (GENE_*, ISLAND_*, DMR_*, CHR_CYTOBAND, CHR_WHOLE,
-  # PROBE_WHOLE) for downstream association lookup, but those columns
-  # would survive the chunked join below and bleed into the POSITION
-  # pivot, corrupting its schema (sample columns must come right after
-  # CHR/START/END). Subset here is cheap (~370k × 4 in RAM).
-  pf <- pf[, c("CHR", "START", "END", "PROBE"), drop = FALSE]
-  chrs_all <- as.character(pf$CHR)
-  chr_order_key <- function(ch) {
-    cl <- sub("^chr", "", ch)
-    n  <- suppressWarnings(as.integer(cl))
-    ifelse(!is.na(n), n,
-           ifelse(cl == "X", 23L,
-                  ifelse(cl == "Y", 24L,
-                         ifelse(cl %in% c("M", "MT"), 25L, 99L))))
+  # Only the coordinates and the probe id: probe_features also carries the
+  # annotation columns (GENE_*, ISLAND_*, ...), which must not reach the
+  # POSITION pivot, whose sample columns come right after CHR, START, END.
+  pf <- data.frame(CHR   = as.character(pf$CHR),
+                   START = pf$START,
+                   END   = pf$END,
+                   PROBE = as.character(pf$PROBE),
+                   stringsAsFactors = FALSE)
+  # Natural chromosome order; chromosomes outside 1-22, X, Y, M keep the
+  # order in which they first appear, after the others.
+  chr_order_key <- function(chromosomes) {
+    # chromosomes: CHR values, with or without a leading "chr"; returns the
+    # rank of each: its number, 23 for X, 24 for Y, 25 for M or MT, 99 else.
+    bare <- sub("^chr", "", chromosomes)
+    number <- suppressWarnings(as.integer(bare))
+    ifelse(!is.na(number), number,
+           ifelse(bare == "X", 23L,
+                  ifelse(bare == "Y", 24L,
+                         ifelse(bare %in% c("M", "MT"), 25L, 99L))))
   }
-  chrs <- unique(chrs_all)
-  chrs <- chrs[order(chr_order_key(chrs))]
-  core_log_event("DEBUG_MEM_SS: ", format(Sys.time(), "%a %b %d %X %Y"),
-            " pre-chunked-sort mem_MB=", round(sum(gc()[, "(Mb)"]), 1),
-            " (chromosomes: ", length(chrs), ")")
+  chromosomes <- unique(pf$CHR)
+  chromosomes <- chromosomes[order(chr_order_key(chromosomes))]
+  pf$CHR_RANK <- match(pf$CHR, chromosomes)
 
-  tmp_dir <- tempfile("signal_chr_chunks_")
-  dir.create(tmp_dir, recursive = TRUE, showWarnings = FALSE)
-  on.exit(unlink(tmp_dir, recursive = TRUE), add = TRUE)
-
-  pp_lazy <- polars::as_polars_df(pf)$lazy()
-  # Scan parquet UNA SOLA VOLTA fuori dal loop: la lazy frame è immutabile,
-  # ogni $filter/$join in iterazione produce una nuova lazy frame senza
-  # ri-aprire il parquet. Riduce overhead per iter su big matrix.
-  sd_lazy <- io_read_pivot("SIGNAL", io_signal_figure(), "PROBE", "WHOLE")$
-              with_columns(polars::pl$col("AREA")$alias("PROBE"))
-
-  for (i in seq_along(chrs)) {
-    ch <- chrs[i]
-    chunk_file <- file.path(tmp_dir, sprintf("%03d_%s.parquet", i, ch))
-    # Lazy chain per chunk: pp filtered → join sd_lazy → drop → sort → sink.
-    # Il pushdown del filter `pp_lazy$filter(CHR == ch)` (~25k sonde) attraverso
-    # l'inner join restringe sd_lazy alle sole righe di quel chr.
-    # NON usiamo `is_in(probes_chr)` su sd_chr: in polars R 1.11 il vettore R
-    # viene interpretato come nomi di colonna invece che valori → "not found".
-    sd_chr <- pp_lazy$filter(polars::pl$col("CHR") == ch)$
-                      join(sd_lazy, on = "PROBE", how = "inner")$
-                      drop(c("PROBE", "AREA"))$  # pf already slim to CHR/START/END/PROBE - no PROBE_WHOLE to strip here
-                      sort(c("START", "END"), descending = FALSE)
-    sd_chr$sink_parquet(chunk_file)
-    # Defensive cleanup: rilascia R-side reference, forza gc() per evitare
-    # accumulo di stato Polars (mmap, cache, plan) fra iterazioni su big matrix.
-    rm(sd_chr); invisible(gc(verbose = FALSE))
-  }
-  core_log_event("DEBUG_MEM_SS: ", format(Sys.time(), "%a %b %d %X %Y"),
-            " post-chunked-sort mem_MB=", round(sum(gc()[, "(Mb)"]), 1),
-            " (wrote ", length(chrs), " chunks)")
-
-  # Libera pp_lazy + sd_lazy + pf prima del concat - la lazy frame del concat
-  # streamerà i chunk dal filesystem, non serve mantenere queste references.
-  rm(sd_lazy, pp_lazy, pf); invisible(gc(verbose = FALSE))
-
-  chunk_paths <- list.files(tmp_dir, pattern = "\\.parquet$", full.names = TRUE)
-  # pl$concat() vuole `...` varargs di LazyFrame, NON una lista, quindi do.call
-  # per unpack-are. Output finale = concat di chunk già pre-ordinati per chr
-  # (ordine canonico via chr_order_key) → equivalente al sort globale CHR/START/END.
-  do.call(polars::pl$concat,
-          lapply(chunk_paths, polars::pl$scan_parquet))$
-    sink_parquet(pivot_file_name_pos)
-  core_log_event("DEBUG_MEM_SS: ", format(Sys.time(), "%a %b %d %X %Y"), " post-sink-position mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
+  # io_signal_position_write() sorts in one query and falls back on one
+  # chromosome at a time when the sort does not fit in the memory limit.
+  connection <- io_engine_connection()
+  coordinates_view <- paste0("signal_coordinates_", gsub("[^A-Za-z0-9]", "", basename(tempfile(""))))
+  duckdb::duckdb_register(connection, coordinates_view, pf)
+  on.exit(duckdb::duckdb_unregister(connection, coordinates_view), add = TRUE)
+  io_signal_position_write(connection, coordinates_view, length(chromosomes), pivot_file_name_probe, pivot_file_name_pos)
+  rm(pf)
 
   gc()
   core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), "Saved signal data.")
-  core_log_event("DEBUG_MEM_SS: ", format(Sys.time(), "%a %b %d %X %Y"), " post-rm-lazyframes   mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
+  core_log_event("DEBUG_MEM_SS: ", format(Sys.time(), "%a %b %d %X %Y"), " post-position-write  mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
+}
+
+#' Write the POSITION pivot of the signal, falling back on one chromosome at a time
+#'
+#' One query joins the coordinates to the PROBE pivot, sorts and writes: the
+#' fast way. Under a memory limit the sort of the whole pivot can run out of
+#' memory (it did under 8 GB on 400 000 probes x 1 000 samples, see the
+#' engine migration notes), so an out-of-memory error switches to one sort
+#' per chromosome, about three times slower. Any other error stops as
+#' before. A partial pivot left by the failed query is removed first, or the
+#' next run would find it and skip the save.
+#'
+#' @param connection the engine connection, from io_engine_connection()
+#' @param coordinates_view name of a registered view with CHR, START, END,
+#'   PROBE and CHR_RANK, the rank of the chromosome in natural order, from 1
+#' @param chromosome_count number of distinct CHR_RANK values in the view
+#' @param probe_path path of the SIGNAL PROBE pivot, keyed on AREA
+#' @param position_path path of the POSITION pivot to write
+#' @return NULL, invisibly; the side effect is the file at position_path
+#' @keywords internal
+#' @noRd
+io_signal_position_write <- function(connection, coordinates_view, chromosome_count, probe_path, position_path) {
+  tryCatch(io_signal_position_single(connection, coordinates_view, probe_path, position_path), error = function(e) {
+    if (!grepl("Out of Memory", conditionMessage(e), fixed = TRUE)) stop(e)
+    unlink(position_path)
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+                   " the POSITION pivot did not fit in the engine's memory limit in one sort; writing it one chromosome at a time.")
+    io_signal_position_per_chromosome(connection, coordinates_view, chromosome_count, probe_path, position_path)
+  })
+  invisible(NULL)
+}
+
+#' Write the POSITION pivot of the signal with a single join, sort and copy
+#'
+#' The fast way, used whenever the sort fits in the engine's memory limit.
+#'
+#' @inheritParams io_signal_position_write
+#' @return NULL, invisibly
+#' @keywords internal
+#' @noRd
+io_signal_position_single <- function(connection, coordinates_view, probe_path, position_path) {
+  DBI::dbExecute(connection, sprintf("
+    COPY (
+      SELECT coordinates.CHR, coordinates.START, coordinates.\"END\", signal.* EXCLUDE (AREA)
+      FROM %s AS coordinates JOIN read_parquet(%s) AS signal ON coordinates.PROBE = signal.AREA
+      ORDER BY coordinates.CHR_RANK, coordinates.START, coordinates.\"END\"
+    ) TO %s (FORMAT parquet, COMPRESSION zstd)",
+    coordinates_view, DBI::dbQuoteString(connection, probe_path), DBI::dbQuoteString(connection, position_path)))
+  invisible(NULL)
+}
+
+#' Write the POSITION pivot of the signal one chromosome at a time
+#'
+#' The fallback when one sort does not fit: each chromosome is joined,
+#' sorted on START and END and written to its own file, then the pieces are
+#' copied in chromosome order into the pivot, a copy and not a sort. The
+#' pieces are read in the order of the list, and preserve_insertion_order
+#' (on by default) keeps it in the copy. Each piece rereads the whole PROBE
+#' pivot, hence the cost.
+#'
+#' @inheritParams io_signal_position_write
+#' @return NULL, invisibly
+#' @keywords internal
+#' @noRd
+io_signal_position_per_chromosome <- function(connection, coordinates_view, chromosome_count, probe_path, position_path) {
+  piece_folder <- tempfile("signal_chr_pieces_")
+  dir.create(piece_folder, recursive = TRUE, showWarnings = FALSE)
+  on.exit(unlink(piece_folder, recursive = TRUE), add = TRUE)
+  piece_paths <- file.path(piece_folder, sprintf("%03d.parquet", seq_len(chromosome_count)))
+  for (chromosome_rank in seq_len(chromosome_count)) {
+    DBI::dbExecute(connection, sprintf("
+      COPY (
+        SELECT coordinates.CHR, coordinates.START, coordinates.\"END\", signal.* EXCLUDE (AREA)
+        FROM (SELECT * FROM %s WHERE CHR_RANK = %d) AS coordinates
+        JOIN read_parquet(%s) AS signal ON coordinates.PROBE = signal.AREA
+        ORDER BY coordinates.START, coordinates.\"END\"
+      ) TO %s (FORMAT parquet, COMPRESSION zstd)",
+      coordinates_view, chromosome_rank, DBI::dbQuoteString(connection, probe_path),
+      DBI::dbQuoteString(connection, piece_paths[chromosome_rank])))
+  }
+  DBI::dbExecute(connection, sprintf("COPY (SELECT * FROM read_parquet([%s])) TO %s (FORMAT parquet, COMPRESSION zstd)",
+                                     paste(DBI::dbQuoteString(connection, piece_paths), collapse = ", "),
+                                     DBI::dbQuoteString(connection, position_path)))
+  invisible(NULL)
 }

@@ -42,7 +42,6 @@ sem_coverage_analysis_report <- function (signal_data, result_folder, maxResourc
   #   core_close_env()
   #   stop()
   # }
-  # signal_data <- polars::pl$read_parquet(signal_data_path)$to_data_frame()
   signal_data <- io_source_data_get(signal_data)
   ssEnv <- core_get_meth_tech(signal_data)
   if (ssEnv$tech=="WGBS")

@@ -34,7 +34,7 @@ Expected bedmethyl schema (modkit, tab-separated, no header):
   \item \code{chrom}
   \item \code{start_position}
   \item \code{end_position}
-  \item \code{modified_base_code} (e.g. \code{m} for 5mC)
+  \item \code{modified_base_code} (\code{m} for 5mC, \code{h} for 5hmC)
   \item \code{score}
   \item \code{strand}
   \item \code{start_code}
@@ -44,5 +44,14 @@ Expected bedmethyl schema (modkit, tab-separated, no header):
   \item \code{fraction_modified} (percent, 0-100)
   \item ... remaining modkit columns (ignored)
 }
+
+Only the 5mC rows (code \code{m}) are read. \code{modkit pileup} writes
+one row per modification at the same position, 5mC and 5hmC, and SEMseeker
+measures methylation: keeping both would give a position two values in the
+same sample. A file with no 5mC row is refused, because its sample would
+enter the analysis as a column with no value. A position that still
+appears twice in one sample after the filter is refused too, because the
+wide table has one cell per position and sample and keeping either value
+would be a silent choice.
 }
 \keyword{internal}

@@ -6,7 +6,7 @@
 # kill on 64 GB Macs (v18, v21 confirmed). This refactor:
 #
 #   - In RESUME mode (POSITION pivot in cache): keep signal_data as a
-#     Polars LazyFrame end-to-end. Extract schema (colnames, nrow) lazily.
+#     lazy table of the data engine end-to-end. Extract schema (colnames, nrow) lazily.
 #     Reference population thresholds use a lazy column subset materialised
 #     ONLY for the ~10% reference samples → 1-2 GB peak instead of 12.
 #     io_signal_save call is skipped entirely (would have early-returned).
@@ -21,9 +21,23 @@
 #     row order doesn't matter.
 #
 # Sort gate policy: there is exactly ONE canonical sort in the pipeline,
-# inside `io_signal_save()`, chunked per-chr by START → sink_parquet. Every
+# inside `io_signal_save()`, by chromosome, START and END. Every
 # downstream consumer reads from disk and trusts that order. No re-sort.
 
+#' Run the SEM detection on one batch: thresholds from the Reference, then
+#' every population against them
+#'
+#' The entry point of the batch for sem_core(). It saves the signal pivots
+#' when they do not exist yet (fresh mode) or reads them back lazily when
+#' they do (resume mode), as the header of this file explains.
+#'
+#' @param signal_data data.frame of signal values, probes in the rows and
+#'   samples in the columns; used in fresh mode only
+#' @param sample_sheet data.frame with Sample_ID and Sample_Group; the
+#'   Reference group defines the thresholds
+#' @return NULL, invisibly; the side effects are the pivots and bed files
+#' @keywords internal
+#' @noRd
 sem_analyze_batch <- function(signal_data, sample_sheet)
 {
 
@@ -37,49 +51,31 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
   # read via unified dispatcher. CASE 2 (streaming merge) lets
   # the SEM step pick up raw bed/bedgraph files when the SIGNAL
   # pivot has not been materialised yet.
-  signal_pivot <- io_read_pivot("SIGNAL", io_signal_figure(), "POSITION", "WHOLE")
-  resume_mode  <- !is.null(signal_pivot)
+  signal_pivot_path <- io_pivot_ensure("SIGNAL", io_signal_figure(), "POSITION", "WHOLE")
+  resume_mode  <- !is.null(signal_pivot_path)
 
   if (resume_mode) {
     # ----------------------------------------------------------------
     # RESUME PATH - lazy passthrough
     # ----------------------------------------------------------------
-    # 2026-06-09: extract schema + row count from the RAW
-    # POSITION pivot (signal_pivot) BEFORE the anno_position_pivot_to_probe
-    # join. Reason: signal_pivot is a direct scan_parquet LazyFrame, so
-    # collect_schema() and select(pl$len())$collect() resolve from the
-    # parquet footer (O(1) metadata read). After anno_position_pivot_to_probe
-    # builds the join LazyFrame, those same calls FORCE the join to
-    # execute - Polars cannot infer the post-join schema/count without
-    # running the join, which on ewas-scale (367k × 4014 cols) allocates
-    # ~12 GB of Rust heap and triggers jetsam silently (v18, v21, v25-v30).
-    # Sample columns are the SAME pre/post join (only CHR/START/END are
-    # dropped and PROBE is added), so taking them from the raw pivot is
-    # equivalent and cheap.
-    schema_cols_position <- names(signal_pivot$collect_schema())
-    # polars 1.x R bindings: $to_data_frame() does NOT exist; coerce via
-    # as.data.frame() instead. (Pattern was inherited from older polars 0.x
-    # samples and silently broke when this code path was finally exercised.)
-    n_probes    <- as.integer(
-      as.data.frame(signal_pivot$select(polars::pl$len())$collect())$len[1]
-    )
+    # Columns and row count come from the parquet footer of the POSITION
+    # pivot, before the join with the probe annotation: the sample columns
+    # are the same on both sides of the join, and counting after it would
+    # run the join.
+    connection <- io_engine_connection()
+    pivot_source <- sprintf("read_parquet(%s)", DBI::dbQuoteString(connection, signal_pivot_path))
+    schema_cols_position <- DBI::dbGetQuery(connection, paste("DESCRIBE SELECT * FROM", pivot_source))$column_name
+    n_probes <- as.integer(DBI::dbGetQuery(connection, paste("SELECT count(*) AS row_count FROM", pivot_source))$row_count)
     sample_cols <- setdiff(schema_cols_position,
                            c("CHR", "START", "END", "PROBE"))
 
-    # anno_position_pivot_to_probe returns a LazyFrame since the lazy passthrough; the PROBE
-    # column is the probe identifier, sample columns follow.
+    signal_pivot <- io_scan_parquet(signal_pivot_path)
     if ("CHR" %in% schema_cols_position) {
       signal_lazy <- anno_position_pivot_to_probe(signal_pivot)
     } else {
       signal_lazy <- signal_pivot
     }
     rm(signal_pivot)
-
-    # If anno_position_pivot_to_probe (legacy or another caller) returned a
-    # DataFrame instead of LazyFrame, coerce.
-    if (inherits(signal_lazy, "polars_data_frame")) {
-      signal_lazy <- signal_lazy$lazy()
-    }
 
     core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
               " working on batch:", batch_id, " of ", n_probes,
@@ -92,7 +88,7 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
     # to a tiny lazy collect of first 10k rows + 1 column.
     if (is.null(ssEnv$tech) || !nzchar(ssEnv$tech)) {
       probe_ids <- as.character(
-        as.data.frame(signal_lazy$select("PROBE")$head(10000L)$collect())$PROBE
+        dplyr::collect(utils::head(dplyr::select(signal_lazy, "PROBE"), 10000L))$PROBE
       )
       tech_signal <- data.frame(
         PROBE = probe_ids,
@@ -114,7 +110,7 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
     core_log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),
               " pre-probe_ids_collect mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
     probe_ids_vec <- as.character(
-      as.data.frame(signal_lazy$select("PROBE")$collect())$PROBE
+      dplyr::collect(dplyr::select(signal_lazy, "PROBE"))$PROBE
     )
     core_log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),
               " post-probe_ids_collect mem_MB=", round(sum(gc()[, "(Mb)"]), 1),
@@ -168,7 +164,7 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
               " pre-ref-collect mem_MB=", round(sum(gc()[, "(Mb)"]), 1),
               " n_ref=", length(ref_sample_ids))
     referencePopulationMatrix <- as.data.frame(
-      signal_lazy$select(c("PROBE", ref_sample_ids))$collect()
+      dplyr::collect(dplyr::select(signal_lazy, dplyr::all_of(c("PROBE", ref_sample_ids))))
     )
     rownames(referencePopulationMatrix) <- referencePopulationMatrix$PROBE
     referencePopulationMatrix$PROBE     <- NULL
@@ -205,8 +201,8 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
         probe_features    = probe_features
       )
       # 2026-06-09: release the thresholds R data.frame after
-      # the bulk pass - sem_analyze_population_bulk copied the data into
-      # polars (Rust heap) and rm()'d its own local binding, but R
+      # the bulk pass - sem_analyze_population_bulk registered the data with
+      # the data engine and rm()'d its own local binding, but R
       # would otherwise keep this parent-frame reference alive for the
       # rest of sem_analyze_batch's body (which we are about to return from
       # anyway, but make the intent explicit so future edits don't
@@ -236,7 +232,7 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
                 " Working on population ", sample_group, " with ",
                 n_probes, " probes (lazy resume).")
       population_signal <- as.data.frame(
-        signal_lazy$select(c("PROBE", populationMatrixColumns))$collect()
+        dplyr::collect(dplyr::select(signal_lazy, dplyr::all_of(c("PROBE", populationMatrixColumns))))
       )
       rownames(population_signal) <- population_signal$PROBE
       population_signal$PROBE     <- NULL

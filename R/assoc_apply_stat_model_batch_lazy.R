@@ -3,28 +3,26 @@
 # Why a separate function: apply_stat_model_batch.R receives a fully
 # materialised, transposed, sample-merged tempDataFrame that the caller
 # (assoc_run_marker) builds with the standard
-#   tempDataFrame <- as.data.frame(pivot_lazy$collect())
+#   tempDataFrame <- as.data.frame(dplyr::collect(pivot_lazy))
 #   ... t() ... merge(sample_sheet, ...)
 # pipeline. Even at GENE/WHOLE scale (~17 k genes × ~500 samples
 # ≈ 70 MB raw) that path peaks around 4×-5× the raw size in R memory
-# alone, plus the polars Rust DataFrame that stays alive in parallel,
-# plus Arrow IPC buffers from the collect step.  Smoke SIGNAL@PROBE
-# (366 k × 500 ≈ 1.4 GB raw) ran to 45 GB before lmFit was even
-# called and was OOM-killed at ~60 GB.
+# alone, plus the engine-side frame that stays alive in parallel.
+# Smoke SIGNAL@PROBE (366 k × 500 ≈ 1.4 GB raw) ran to 45 GB before
+# lmFit was even called and was OOM-killed at ~60 GB.
 #
-# This function takes the pivot's polars LazyFrame directly, applies
-# the area_to_remove filter LAZILY, materialises only ONE
-# R matrix (genes × samples) without an intervening data.frame, and
-# explicitly rm()+gc()'s the polars-side artifacts before lmFit so
-# the peak working set drops to roughly:
-#   polars collect      ≈ 1×  raw  (in Rust heap, drops after rm+gc)
+# This function takes the pivot as a lazy table of the data engine,
+# applies the area_to_remove filter LAZILY, materialises only ONE
+# R matrix (genes × samples), and explicitly rm()+gc()'s the collected
+# frame before lmFit so the peak working set drops to roughly:
+#   collected frame     ≈ 1×  raw  (released column by column)
 #   R y_mat             ≈ 1×  raw  (the single matrix lmFit sees)
 #   design + lmFit work  small
 # i.e. ~3×-4× the raw size at peak vs ~30× on the legacy path.
 
-#' Polars-lazy batch fit for limma_<N> and voom_<N>.
+#' Lazy batch fit for limma_<N> and voom_<N>.
 #'
-#' @param pivot_lazy polars LazyFrame. The annotated AREA-level pivot
+#' @param pivot_lazy lazy table of the data engine (`tbl_lazy`). The annotated AREA-level pivot
 #'   for one (MARKER, FIGURE, AREA, SUBAREA) key, with at least an
 #'   AREA column and one column per sample.
 #' @param sample_sheet data.frame. Per-sample metadata returned by
@@ -76,29 +74,22 @@ assoc_apply_stat_model_batch_lazy <- function(pivot_lazy,
 
   # Drop genomic-coord and probe-metadata columns LAZILY - no
   # materialisation yet.
-  schema_names <- names(pivot_lazy$collect_schema())
+  schema_names <- colnames(pivot_lazy)
   drop_cols <- intersect(schema_names,
                           c("CHR", "START", "END", "PROBE",
                             "K27", "K450", "K850"))
   if (length(drop_cols) > 0L) {
-    pivot_lazy <- pivot_lazy$drop(drop_cols)
+    pivot_lazy <- dplyr::select(pivot_lazy, -dplyr::all_of(drop_cols))
   }
 
   # resume: filter out areas already in the on-disk CSV.
   # 2026-06-09: no more gsub("-","_") normalisation on either
   # side - names stay pass-through from the upstream annotation. The
   # downstream CSV and the pivot AREA column carry identical raw names,
-  # so $is_in() matches exactly.
-  # NB: $is_in() must receive a polars Expression / Series, NOT a bare R
-  # character vector - otherwise polars 1.x parses each string as a column
-  # reference and fails with "Column(s) not found: '<first value>' not found".
-  # Wrap via pl$lit()$implode() so the values are treated as a literal set.
+  # so the match is exact. A filter, not an anti-join: the engine keeps
+  # the order of the rows through a filter, and a join does not.
   if (length(area_to_remove) > 0L) {
-    pivot_lazy <- pivot_lazy$filter(
-      !polars::pl$col("AREA")$is_in(
-        polars::pl$lit(area_to_remove)$implode()
-      )
-    )
+    pivot_lazy <- dplyr::filter(pivot_lazy, !(.data$AREA %in% !!as.character(area_to_remove)))
   }
 
   # 2026-06-09: apply transformation_y + universal
@@ -107,10 +98,10 @@ assoc_apply_stat_model_batch_lazy <- function(pivot_lazy,
   # so any `transformation_y` ≠ "none" on a limma_/voom_ inference_detail
   # produced a CSV with UN-transformed values (silent bug), and rows with
   # var(Y) == 0 made it through to lmFit producing NaN t-stats. See
-  # `io_data_preparation_lazy()` for the polars-native equivalent of the
+  # `io_data_preparation_lazy()` for the data-engine equivalent of the
   # R-side `io_data_preparation()` Y-side transformations + filter.
   # Unifying the two paths into one API is still to be done.
-  schema_pre <- names(pivot_lazy$collect_schema())
+  schema_pre <- colnames(pivot_lazy)
   sample_cols_pre <- setdiff(schema_pre, c("AREA", "PROBE", "CHR", "START", "END",
                                             "K27", "K450", "K850"))
   pivot_lazy <- io_data_preparation_lazy(
@@ -125,13 +116,12 @@ assoc_apply_stat_model_batch_lazy <- function(pivot_lazy,
   # 2026-06-09: SEPARATE LAZY PREP FROM FIT.
   # We need n_genes + sample_cols BEFORE materialising y_mat so the
   # memory gate can decide monolithic vs chunked. Both pieces are
-  # discoverable lazily - schema gives us sample columns, $select($len)
-  # gives us a row count without ever pulling values into R.
-  schema_post <- names(pivot_lazy$collect_schema())
+  # discoverable lazily - the column names give us the sample columns, a
+  # count gives us the row count without ever pulling values into R.
+  schema_post <- colnames(pivot_lazy)
   sample_cols_all <- setdiff(schema_post, c("AREA", "PROBE", "CHR", "START", "END",
                                               "K27", "K450", "K850"))
-  n_genes <- as.integer(as.data.frame(
-    pivot_lazy$select(polars::pl$len()$alias("n"))$collect())$n[1])
+  n_genes <- as.integer(dplyr::pull(dplyr::collect(dplyr::summarise(pivot_lazy, n = dplyr::n())), "n")[1])
   if (is.na(n_genes) || n_genes == 0L) {
     core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
               " assoc_apply_stat_model_batch_lazy: nothing left after resume",
