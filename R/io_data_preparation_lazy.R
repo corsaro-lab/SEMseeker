@@ -98,11 +98,10 @@ io_data_preparation_lazy <- function(pivot_lazy,
         "or pre-transform the pivot before scan if you must keep limma/voom."
       ) else
       paste0(" Use one of: ", paste(supported, collapse = ", "), ".")
-    warning(sprintf(paste0(
-      "io_data_preparation_lazy: transformation_y='%s' is NOT supported by ",
-      "the lazy batch path. Continuing with transformation_y='none'.",
-      "%s"),
-      trans_y, explain_alt), call. = FALSE)
+    warning("io_data_preparation_lazy: transformation_y='", trans_y,
+            "' is NOT supported by the lazy batch path. ",
+            "Continuing with transformation_y='none'.", explain_alt,
+            call. = FALSE)
     core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
               " io_data_preparation_lazy", fam_str, key_str,
               ": unsupported transformation_y='", trans_y,

@@ -35,7 +35,7 @@ sem_deltar_single_sample <- function(values, thresholds, sample_detail) {
   dividend <- high_thresholds - low_thresholds
 
   if (any(is.na(dividend)) || any(dividend < 0))
-    stop("ERROR: I'm stopping here - dividend has NA or negative values!")
+    stop("Dividend has NA or negative values!")
 
   # Avoid division by zero
   dividend[dividend == 0] <- 0.000000001
@@ -85,6 +85,6 @@ sem_deltar_single_sample <- function(values, thresholds, sample_detail) {
     if (min(deltar_to_check) < 0) {
       core_log_event(min(deltar_hypo$DELTA))
       core_log_event(min(deltar_hyper$DELTA))
-      stop("ERROR: I'm stopping here - deltar have negative values!")
+      stop("Deltar have negative values!")
     }
 }

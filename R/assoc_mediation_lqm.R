@@ -73,7 +73,7 @@ assoc_mediation_lqm <- function(family_test,tempDataFrame, sig.formula, transfor
   } else
     res$collinearity_mediator <- FALSE
 
-  for ( p in 1:2)
+  for ( p in seq_len(2))
   {
     permutations <- perms[p]
     res$permutations <- permutations

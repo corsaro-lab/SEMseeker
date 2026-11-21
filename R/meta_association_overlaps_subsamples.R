@@ -74,7 +74,7 @@ meta_association_overlaps_subsamples <- function(inference_details,alpha = 0.05,
   localKeys <- unique(ssEnv$keys_areas_subareas_markers_figures[,c("MARKER","AREA")])
 
   aggregated_results <- data.frame()
-  for (a in 1:nrow(localKeys))
+  for (a in seq_len(nrow(localKeys)))
   {
     MARKER <- localKeys[a, "MARKER"]
     AREA <- localKeys[a, "AREA"]

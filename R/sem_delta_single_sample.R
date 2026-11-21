@@ -29,7 +29,7 @@ sem_delta_single_sample <- function(values, thresholds, sample_detail) {
   low_thresholds  <- joined$signal_inferior_thresholds
 
   if (any(high_thresholds < low_thresholds))
-    stop("ERROR: I'm stopping here - some high thresholds have values less than low thresholds!")
+    stop("Some high thresholds have values less than low thresholds!")
 
   ### get deltas HYPER ###########################################################
   deltas_hyper <- data.frame(
@@ -74,5 +74,5 @@ sem_delta_single_sample <- function(values, thresholds, sample_detail) {
   deltas_to_check <- c(deltas_hypo$DELTA, deltas_hyper$DELTA)
   if (length(deltas_to_check) > 0)
     if (min(deltas_to_check) < 0)
-      stop("ERROR: I'm stopping here - deltas have negative values!")
+      stop("Deltas have negative values!")
 }

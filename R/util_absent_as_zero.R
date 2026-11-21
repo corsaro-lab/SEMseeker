@@ -21,7 +21,7 @@ util_absent_as_zero <- function(values, marker) {
   if (!anyNA(values))
     return(values)
   if (identical(toupper(as.character(marker)), "SIGNAL"))
-    stop("ERROR: I'm stopping here, the SIGNAL pivot has missing values: a ",
+    stop("The SIGNAL pivot has missing values: a ",
          "missing measurement cannot be read as 0. Impute the signal (inpute) ",
          "or remove the missing positions before the association.",
          call. = FALSE)

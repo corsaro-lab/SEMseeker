@@ -26,7 +26,7 @@ sem_analyze_single_sample_both <- function( sample_detail, marker) {
 
   figure <- "BOTH"
   folder_to_save <- io_dir_check_and_create(ssEnv$result_folderData,c(as.character(sample_detail$Sample_Group),paste0(marker,"_", figure, sep = "")))
-  fileName = io_file_path_build(folder_to_save,c(sample_detail$Sample_ID,marker,figure),"bed")
+  fileName <- io_file_path_build(folder_to_save,c(sample_detail$Sample_ID,marker,figure),"bed")
 
   io_dump_sample_as_bed_file(
     data_to_dump = data_to_save,

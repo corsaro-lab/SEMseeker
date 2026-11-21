@@ -96,7 +96,7 @@ io_data_preparation <- function(family_test,transformation_y,tempDataFrame, inde
   lead_cols <- c(independent_variable, covariates)
   absent <- setdiff(lead_cols, colnames(tempDataFrame))
   if (length(absent) > 0)
-    stop("ERROR: I'm stopping here, the data to associate lack the column(s) ",
+    stop("The data to associate lack the column(s) ",
          paste(absent, collapse = ", "), ".", call. = FALSE)
   # Service columns (core_service_columns()) identify the row and are neither a
   # predictor nor a burden; they travel in the head, untouched.
@@ -105,7 +105,7 @@ io_data_preparation <- function(family_test,transformation_y,tempDataFrame, inde
   burden_cols <- core_data_columns(tempDataFrame, also = lead_cols)
   by_position <- if (g_end >= g_start) colnames(tempDataFrame)[g_start:g_end] else character(0)
   if (!identical(by_position, burden_cols))
-    stop("ERROR: I'm stopping here, g_start:g_end points at ",
+    stop("g_start:g_end points at ",
          length(by_position), " column(s) but ", length(burden_cols),
          " burden column(s) are found by name; the table is not laid out as ",
          "independent variable, covariates, burdens.", call. = FALSE)
@@ -200,7 +200,7 @@ io_data_preparation <- function(family_test,transformation_y,tempDataFrame, inde
   df_colnames <- c(colnames(df_head), colnames(burden_values))
   tempDataFrame <- data.frame(df_head, burden_values)
   if(ncol(tempDataFrame)!=length(df_colnames))
-    stop("ERROR: I'm stopping here data are not the same size, file a bug!")
+    stop("Data are not the same size, file a bug!")
 
   colnames(tempDataFrame) <- df_colnames
   burden_cols <- colnames(burden_values)

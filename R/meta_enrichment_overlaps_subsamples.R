@@ -73,7 +73,7 @@ meta_enrichment_overlaps_subsamples <- function(inference_details,pathways_sql_s
     column_of_enrichment <- key_enrichment_format[pt,"column_of_enrichment"]
     enrichment_package <- key_enrichment_format[pt,"label"]
     signal_suffixes <-c("","with_signal","without_signal")
-    for (s in 1:3)
+    for (s in seq_len(3))
     {
       for (z in seq_along(association_results_sql_conditions))
       {

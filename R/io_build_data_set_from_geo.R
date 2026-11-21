@@ -85,7 +85,7 @@ io_build_data_set_from_geo <-  function(GEOgse, downloadFiles = 0,result_folder,
         fileName <-  gsub("_Grn.idat.gz", "_COLOR.idat.gz", fileName)
         fileName <-  gsub("_Red.idat.gz", "_COLOR.idat.gz", fileName)
 
-        for (i in 1:2)
+        for (i in seq_len(2))
         {
 
           color <- c("_Grn.idat.gz","_Red.idat.gz")[i]

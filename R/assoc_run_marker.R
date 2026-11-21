@@ -187,12 +187,12 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
     # column; taking the first column instead dropped the first sample and
     # the merge below brought it back as a zero.
     if (!("AREA" %in% colnames(tempDataFrame)))
-      stop("ERROR: I'm stopping here, the pivot ", pivot_filename,
+      stop("The pivot ", pivot_filename,
            " has no AREA column.", call. = FALSE)
     value_cols <- setdiff(colnames(tempDataFrame), "AREA")
     not_numeric <- value_cols[!vapply(tempDataFrame[value_cols], is.numeric, logical(1))]
     if (length(not_numeric) > 0)
-      stop("ERROR: I'm stopping here, the pivot ", pivot_filename,
+      stop("The pivot ", pivot_filename,
            " has non-numeric columns besides AREA: ",
            paste(not_numeric, collapse = ", "), ".", call. = FALSE)
     tempDataFrame[value_cols] <- util_absent_as_zero(tempDataFrame[value_cols], key$MARKER)
@@ -251,7 +251,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
       # missing one is a lost sample, not a zero.
       lost_samples <- setdiff(prep$sample_names$Sample_ID, batch_df$Sample_ID)
       if (length(lost_samples) > 0)
-        stop("ERROR: I'm stopping here, ", length(lost_samples),
+        stop(length(lost_samples),
              " sample(s) of the request have no column in ", pivot_filename,
              ": ", paste(utils::head(lost_samples, 10), collapse = ", "),
              if (length(lost_samples) > 10) ", ..." else "", ".", call. = FALSE)
@@ -264,7 +264,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
       clash <- intersect(c("Sample_ID", lead_cols),
                          setdiff(colnames(batch_df), "Sample_ID"))
       if (length(clash) > 0)
-        stop("ERROR: I'm stopping here, area name(s) in ", pivot_filename,
+        stop("Area name(s) in ", pivot_filename,
              " collide with sample-sheet columns: ",
              paste(clash, collapse = ", "), ".", call. = FALSE)
 

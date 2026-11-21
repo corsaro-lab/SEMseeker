@@ -51,7 +51,7 @@ sem_sample_group_check <- function(sample_sheet, signal_data)
 
   if (sum(colnames(signal_data) %in% sample_sheet$Sample_ID)!=ncol(signal_data))
   {
-    result <- paste(result, "\n", "Have a look: the methylation data first columns:", colnames(signal_data)[1:4], "... some Sample_ID:", sample_sheet$Sample_ID[1:4], "\n" )
+    result <- paste(result, "\n", "Have a look: the methylation data first columns:", utils::head(colnames(signal_data), 4), "... some Sample_ID:", utils::head(sample_sheet$Sample_ID, 4), "\n" )
     lost_column <- colnames(signal_data)[!(colnames(signal_data) %in% sample_sheet$Sample_ID)]
     result <- paste(result, "\n","Lost column:", lost_column, "\n" )
     result <- paste(result, "\n", (" The methylation data has not the column's names as expected from the sample sheet in column Sample_ID!"))

@@ -157,7 +157,7 @@ assoc_mediation_ridge_model <-  function(family_test,tempDataFrame, sig.formula,
       (sum(abs(bootstrapped) >= abs(observed)) + 1) / (length(bootstrapped) + 1)
     }
 
-    p_values <- vapply(1:4, function(i) p_value(c(treatment_on_mediator_effect, mediator_on_outcome_effect, direct_effect, indirect_effect)[i], boot_results$t[, i]), numeric(1))
+    p_values <- vapply(seq_len(4), function(i) p_value(c(treatment_on_mediator_effect, mediator_on_outcome_effect, direct_effect, indirect_effect)[i], boot_results$t[, i]), numeric(1))
     p_values <- as.data.frame(matrix(p_values, nrow = 1))
     colnames(p_values) <- c("Treatment_on_Mediator_Pvalue", "Mediator_on_Outcome_Pvalue", "Direct_Effect_Pvalue", "Indirect_Effect_Pvalue")
 

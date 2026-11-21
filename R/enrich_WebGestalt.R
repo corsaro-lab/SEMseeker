@@ -172,7 +172,7 @@ enrich_WebGestalt <- function(study,
 
         # format FDR to use scientific notation
 
-        enrichResultToPlot <- enrichResult[1:15,]
+        enrichResultToPlot <- utils::head(enrichResult, 15)
         # # browser
         # if(min(enrichResultToPlot$FDR) < as.numeric((ssEnv$alpha)))
         # {
