@@ -76,18 +76,12 @@ jobs:
       - uses: r-lib/actions/setup-pandoc@v2
 
       # gdtools (transitive dep via ctdR → clusterProfiler) requires cairo + fontconfig.
-      # XQuartz is installed only on macOS to provide /opt/X11/lib/libX11.6.dylib,
-      # which R 4.6's tcltk was linked against at install time. Without XQuartz,
-      # loading tcltk segfaults at first use (the cause of the test_check crash
-      # root cause not yet found). This is the test that confirms whether the
-      # segfault is actually in tcltk/X11 or somewhere else.
       - name: Install system libraries (macOS)
         if: runner.os == 'macOS'
         run: |
           brew install cairo fontconfig pkg-config libomp
           # libomp is keg-only → symlink so dyld finds it when loading Rfast.so
           sudo ln -sf "$(brew --prefix libomp)/lib/libomp.dylib" "$(brew --prefix)/lib/libomp.dylib"
-          brew install --cask xquartz
 
       - name: Install system libraries (Linux)
         if: runner.os == 'Linux'

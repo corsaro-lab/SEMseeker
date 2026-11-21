@@ -101,22 +101,6 @@ remotes::install_github("corsaro-lab/SEMseeker")
 
 ### System dependencies
 
-**macOS — XQuartz.** R 4.6's base `tcltk` package is linked against
-`/opt/X11/lib/libX11.6.dylib` at install time. Plain SEMseeker usage
-(`library(SEMseeker)`, `semseeker(...)`, `association_analysis(...)`)
-does not load tcltk. However, some Bioconductor optional features
-that transitively pull `minfi` or `GEOquery` (e.g. running the
-annotation-concordance checks) load tcltk and segfault if XQuartz is
-not installed. Install XQuartz once via:
-
-```sh
-brew install --cask xquartz
-```
-
-or download from <https://www.xquartz.org/>. You may need to log out
-and back in for the path to be picked up. Linux and Windows users do
-not need XQuartz.
-
 **Linux — libuv.** Building from source on Linux pulls `fs` which
 needs `libuv` ≥ 1 at compile time. Install via
 `sudo apt-get install libuv1-dev` (Debian/Ubuntu) or

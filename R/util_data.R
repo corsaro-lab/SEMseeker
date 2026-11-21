@@ -88,9 +88,7 @@
 #' regions are guaranteed to be represented) while preserving statistical
 #' validity (20k probes is the minimum size used by the test suite for IQR
 #' robustness).  Because the fixture ships with real EPIC probe IDs, the
-#' Bioconductor annotation package is not required at test-setup time --
-#' eliminating the macOS \code{tcltk}/XQuartz segfault path triggered by
-#' \code{requireNamespace("IlluminaHumanMethylationEPICanno.ilm10b4.hg19")}.
+#' Bioconductor annotation package is not required at test-setup time.
 #'
 #' @format A data frame with 20,000 rows and 6 columns:
 #' \describe{

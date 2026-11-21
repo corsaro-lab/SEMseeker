@@ -12,8 +12,7 @@
 ##
 ## Re-run only when the curated DMR list (data/dmr_annotation.rda) or the EPIC
 ## annotation package changes.  Requires
-## `IlluminaHumanMethylationEPICanno.ilm10b4.hg19` installed (needs XQuartz on
-## macOS).
+## `IlluminaHumanMethylationEPICanno.ilm10b4.hg19` installed.
 ##
 ## Run from the package root:
 ##     Rscript data-raw/build_test_master_features.R

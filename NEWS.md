@@ -25,7 +25,8 @@
   (`Sample_Group = 'Case'`), and a condition holding double quotes stops with
   a message saying so; `LIKE` is case-sensitive, and `ILIKE` ignores case; and
   dividing two integers keeps the fraction (`5 / 2` is 2.5, not 2). `sqldf` is
-  no longer a dependency.
+  no longer a dependency, and with it XQuartz is no longer needed on macOS:
+  it was required only because `sqldf` loaded `tcltk`.
 
 - **`meta_enrichment_compare_studies()` is removed.** It stopped on its first
   line in every call: it read the enrichment results to compare from an object

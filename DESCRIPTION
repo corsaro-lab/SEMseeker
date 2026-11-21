@@ -43,11 +43,7 @@ Suggests: ctdR, pathfindR, GEOquery, OpenCL, stringi, testthat,
         nanoparquet
 Depends: R (>= 4.6.0)
 SystemRequirements: libuv (>= 1) for the 'fs' package build on Linux
-        when not using bundled libuv (set USE_BUNDLED_LIBUV=1 to skip),
-        and XQuartz on macOS to provide the libX11 implementation
-        against which R's base tcltk package is linked at install time
-        (without XQuartz, loading tcltk segfaults on macOS arm64, see
-        'brew install --cask xquartz').
+        when not using bundled libuv (set USE_BUNDLED_LIBUV=1 to skip).
 LazyData: true
 LazyDataCompression: xz
 Config/testthat/edition: 3
