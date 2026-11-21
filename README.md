@@ -85,7 +85,7 @@ install.packages(c(
   "Hmisc", "lqmm", "progressr", "reshape2", "zoo",
   "VennDiagram", "effsize", "pwr", "combinat", "philentropy",
   "parallelly", "knitr", "lmtest", "usethis", "wordcloud",
-  "WebGestaltR", "sqldf", "caret", "openai", "glmnet"
+  "WebGestaltR", "caret", "openai", "glmnet"
 ))
 ```
 

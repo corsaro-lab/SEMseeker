@@ -5,7 +5,7 @@
 #  - io_file_path_build()        path construction helper
 #  - io_name_composer()          filename fragment assembler
 #  - util_data_frame_add_column()  safe column add/update on data.frames
-#  - assoc_filter_sql()             SQL-condition row filter (requires sqldf)
+#  - assoc_filter_sql()             SQL-condition row filter (runs in DuckDB)
 
 # ---------------------------------------------------------------------------
 # 1. util_boolean_check
@@ -147,13 +147,11 @@ test_that("util_data_frame_add_column preserves existing columns", {
 # ---------------------------------------------------------------------------
 # 5. assoc_filter_sql
 # ---------------------------------------------------------------------------
-# assoc_filter_sql uses sqldf internally and calls core_log_event (requires a session).
-# Tests that exercise the sqldf path are wrapped with core_init_env / close_env.
+# assoc_filter_sql runs the condition in DuckDB and calls core_log_event (requires
+# a session). Tests that reach the query are wrapped with core_init_env / close_env.
 #
-# sqldf looks its tables up by name in the environment it is handed, and the
-# function hands it one of its own holding nothing but the table. No wrapper is
-# needed here: an earlier version of this comment described one, from when the
-# table was registered in the caller's frame.
+# The table is registered on the engine connection under a name of its own and
+# removed when the query ends, so nothing is written to the caller's frame.
 
 test_that("assoc_filter_sql returns data unchanged for empty conditions", {
   df <- data.frame(x = 1:5, g = c("a","b","a","b","a"))
@@ -288,4 +286,93 @@ test_that("a condition carrying a sub-statement finds the table", {
   result <- SEMseeker:::assoc_filter_sql("x IN (SELECT x FROM TABLE WHERE x > 6)", df)
 
   expect_equal(sort(result$x), 7:10)
+})
+
+# ---------------------------------------------------------------------------
+# assoc_filter_sql in the DuckDB dialect
+#
+# Expected rows are written by hand from the input. Cases 'LIKE' and 'division'
+# give a different answer in SQLite, the engine sqldf used, so they also tell
+# which engine ran the query.
+# ---------------------------------------------------------------------------
+
+filter_sql_session <- function(env = parent.frame()) {
+  tempFolder <- sem_test_folder()
+  SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
+                            showprogress = showprogress, verbosity = verbosity)
+  withr::defer({ SEMseeker:::core_close_env(); unlink(tempFolder, recursive = TRUE) },
+               envir = env)
+}
+
+test_that("AND and OR combine comparisons", {
+  filter_sql_session()
+  df <- data.frame(x = 1:10, g = rep(c("a", "b"), 5), stringsAsFactors = FALSE)
+  expect_identical(SEMseeker:::assoc_filter_sql("x > 2 AND g = 'a'", df)$x, c(3L, 5L, 7L, 9L))
+  expect_identical(SEMseeker:::assoc_filter_sql("x < 2 OR x > 9", df)$x, c(1L, 10L))
+})
+
+test_that("IN keeps the rows whose value is in the list", {
+  filter_sql_session()
+  df <- data.frame(id = 1:4, g = c("a", "b", "c", "a"), stringsAsFactors = FALSE)
+  expect_identical(SEMseeker:::assoc_filter_sql("g IN ('a', 'c')", df)$id, c(1L, 3L, 4L))
+})
+
+test_that("LIKE is case-sensitive", {
+  filter_sql_session()
+  # SQLite's LIKE ignores case and kept both "case" and "Case".
+  df <- data.frame(g = c("case", "Case", "control"), stringsAsFactors = FALSE)
+  expect_identical(SEMseeker:::assoc_filter_sql("g LIKE 'ca%'", df)$g, "case")
+})
+
+test_that("IS NULL matches the missing values", {
+  filter_sql_session()
+  df <- data.frame(id = 1:4, y = c(1, NA, 3, NA))
+  expect_identical(SEMseeker:::assoc_filter_sql("y IS NULL", df)$id, c(2L, 4L))
+  expect_identical(SEMseeker:::assoc_filter_sql("y IS NOT NULL", df)$id, c(1L, 3L))
+})
+
+test_that("dividing two integers keeps the fraction", {
+  filter_sql_session()
+  # 5 / 2 is 2.5 > 2 here; SQLite truncated it to 2 and dropped the row.
+  df <- data.frame(x = 1:10)
+  expect_identical(SEMseeker:::assoc_filter_sql("x / 2 > 2", df)$x, 5:10)
+})
+
+test_that("a condition with double quotes is refused before it runs", {
+  filter_sql_session()
+  df <- data.frame(grp = c("case", "control"), stringsAsFactors = FALSE)
+  expect_error(SEMseeker:::assoc_filter_sql('grp = "case"', df), "single quotes")
+})
+
+test_that("rows come back in input order, sub-statement included", {
+  filter_sql_session()
+  df <- data.frame(x = c(5L, 1L, 9L, 3L, 7L))
+  expect_identical(SEMseeker:::assoc_filter_sql("x IN (SELECT x FROM TABLE WHERE x > 2)", df)$x,
+                   c(5L, 9L, 3L, 7L))
+  expect_identical(SEMseeker:::assoc_filter_sql("x > 2", df)$x, c(5L, 9L, 3L, 7L))
+})
+
+test_that("column types survive the filter", {
+  filter_sql_session()
+  df <- data.frame(chr = c("a", "b"), int = 1:2, dbl = c(0.5, 1.5), lgl = c(TRUE, FALSE),
+                   stringsAsFactors = FALSE)
+  result <- SEMseeker:::assoc_filter_sql("int > 0", df)
+  expect_identical(vapply(result, class, character(1)), vapply(df, class, character(1)))
+  expect_identical(result, df)
+})
+
+test_that("the filter does not load tcltk", {
+  filter_sql_session()
+  skip_if("tcltk" %in% loadedNamespaces(), "tcltk was loaded before the filter ran")
+  SEMseeker:::assoc_filter_sql("x > 1", data.frame(x = 1:3))
+  expect_false("tcltk" %in% loadedNamespaces())
+})
+
+test_that("the filter leaves no table registered on the engine", {
+  filter_sql_session()
+  connection <- SEMseeker:::io_engine_connection()
+  tables_before <- DBI::dbListTables(connection)
+  SEMseeker:::assoc_filter_sql("x > 1", data.frame(x = 1:3))
+  try(SEMseeker:::assoc_filter_sql("no_such_column > 1", data.frame(x = 1:3)), silent = TRUE)
+  expect_identical(DBI::dbListTables(connection), tables_before)
 })

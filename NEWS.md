@@ -18,6 +18,15 @@
   any folder containing them are always refused. The examples in the help
   pages write under `tempdir()`.
 
+- **SQL conditions run in DuckDB, not SQLite.** The WHERE fragments given in
+  the inference details and in the sample, area and pathway selections used to
+  run through `sqldf`. Three things now behave differently: double quotes name
+  a column, so a string must be written in single quotes
+  (`Sample_Group = 'Case'`), and a condition holding double quotes stops with
+  a message saying so; `LIKE` is case-sensitive, and `ILIKE` ignores case; and
+  dividing two integers keeps the fraction (`5 / 2` is 2.5, not 2). `sqldf` is
+  no longer a dependency.
+
 - **`meta_enrichment_compare_studies()` is removed.** It stopped on its first
   line in every call: it read the enrichment results to compare from an object
   nothing supplied, and four of the arguments it used were not in its

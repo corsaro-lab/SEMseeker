@@ -28,7 +28,7 @@ Imports: caret, DBI, dbplyr (>= 2.6.0), dplyr, duckdb, methods, doFuture, doRNG,
         jsonlite, lqmm, matrixStats, plyr, progressr,
         reshape2, R.utils, rlang, stats, stringr, tools, utils, withr,
         VennDiagram, effsize, pwr, combinat, philentropy, parallelly,
-        knitr, lmtest, glmnet, sqldf, readr, tidyr, readxl, xtable
+        knitr, lmtest, glmnet, readr, tidyr, readxl, xtable
 VignetteBuilder: knitr
 Suggests: ctdR, pathfindR, GEOquery, OpenCL, stringi, testthat,
         WebGestaltR, rmarkdown, STRINGdb, AnnotationDbi, KMEANS.KNN,
