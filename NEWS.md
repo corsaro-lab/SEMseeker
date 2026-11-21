@@ -35,6 +35,19 @@
   function once the enrichment backends are settled;
   `meta_enrichment_overlaps_subsamples()` is unchanged.
 
+## New features
+
+- **Charts and readers reopen a previous run with `result_folder`.**
+  `sem_marker_heatmap_plot()`, `sem_marker_value_per_area_plot()`,
+  `sem_marker_value_per_probe_plot()`, `sem_marker_value_per_sample_plot()`,
+  `sem_signal_threshold_per_sample_plot()`, `sem_probe_select_by_statistic()`,
+  `enrich_term_lollipop_plot()` and `enrich_circos_plot()` used the session
+  left in memory by `semseeker()`, so in a new R session they stopped with
+  "called without result folder!". Naming the folder opens its session; the
+  folder may have been moved or copied, and the options of the run, such as
+  the plot format, are kept. A folder SEMseeker did not write is refused.
+  Without the argument they behave as before.
+
 ## Bug fixes
 
 - **An object called `existing_db` in the workspace no longer stops the

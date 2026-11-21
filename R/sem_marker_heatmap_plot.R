@@ -62,6 +62,11 @@
 #' @param aggregation character. The sixth coordinate of the pivot, as in
 #'   [sem_marker_value_per_area_plot()].
 #' @param overwrite logical. Redraw when the file exists.
+#' @param result_folder character. The folder a previous `semseeker()` run
+#'   wrote, to reopen its results in a new R session; the chart is written
+#'   under its `Chart/` folder. `NULL` (the default) uses the session already
+#'   open, as right after `semseeker()`. A folder without
+#'   `Log/session_info.rds` is refused.
 #'
 #' @return Invisibly the path of the file written, or `NULL` when there was
 #'   nothing to draw.
@@ -86,8 +91,11 @@ sem_marker_heatmap_plot <- function(marker, figure, area, subarea,
                                     phenotype_column, sample_sheet,
                                     areas_selection = NULL,
                                     aggregation = NULL,
-                                    overwrite = FALSE) {
+                                    overwrite = FALSE,
+                                    result_folder = NULL) {
 
+  if (core_results_open(result_folder))
+    on.exit(core_close_env(), add = TRUE)
   ssEnv <- core_get_session_info()
 
   chart_folder <- io_dir_check_and_create(ssEnv$result_folderChart,

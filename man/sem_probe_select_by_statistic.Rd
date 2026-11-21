@@ -7,7 +7,8 @@
 sem_probe_select_by_statistic(
   marker,
   figure,
-  statistics = c("MIN", "Q1", "MEDIAN", "Q3", "MAX")
+  statistics = c("MIN", "Q1", "MEDIAN", "Q3", "MAX"),
+  result_folder = NULL
 )
 }
 \arguments{
@@ -17,6 +18,11 @@ sem_probe_select_by_statistic(
 
 \item{statistics}{character vector. Any of `"MIN"`, `"Q1"`, `"MEDIAN"`,
 `"Q3"`, `"MAX"`. All five by default.}
+
+\item{result_folder}{character. The folder a previous `semseeker()` run
+wrote, to read its probe pivots in a new R session. `NULL` (the
+default) uses the session already open, as right after `semseeker()`.
+A folder without `Log/session_info.rds` is refused.}
 }
 \value{
 A data.frame with `STATISTIC`, `PROBE` and `VALUE`, one row per

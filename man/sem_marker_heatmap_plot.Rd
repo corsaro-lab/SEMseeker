@@ -13,7 +13,8 @@ sem_marker_heatmap_plot(
   sample_sheet,
   areas_selection = NULL,
   aggregation = NULL,
-  overwrite = FALSE
+  overwrite = FALSE,
+  result_folder = NULL
 )
 }
 \arguments{
@@ -35,6 +36,12 @@ A heatmap of every gene is a stripe, so naming the areas is the normal case.}
 [sem_marker_value_per_area_plot()].}
 
 \item{overwrite}{logical. Redraw when the file exists.}
+
+\item{result_folder}{character. The folder a previous `semseeker()` run
+wrote, to reopen its results in a new R session; the chart is written
+under its `Chart/` folder. `NULL` (the default) uses the session already
+open, as right after `semseeker()`. A folder without
+`Log/session_info.rds` is refused.}
 }
 \value{
 Invisibly the path of the file written, or `NULL` when there was

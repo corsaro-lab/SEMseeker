@@ -59,6 +59,11 @@
 #'   pivot.
 #' @param probes_selection character vector of probe names, or `NULL` for all.
 #' @param overwrite logical. Redraw when the file exists.
+#' @param result_folder character. The folder a previous `semseeker()` run
+#'   wrote, to reopen its results in a new R session; the chart is written
+#'   under its `Chart/` folder. `NULL` (the default) uses the session already
+#'   open, as right after `semseeker()`. A folder without
+#'   `Log/session_info.rds` is refused.
 #'
 #' @return Invisibly the path of the file written, or `NULL` when there was
 #'   nothing to draw.
@@ -76,8 +81,11 @@
 #' @export
 sem_marker_value_per_probe_plot <- function(marker, figure, sample_name,
                                            probes_selection = NULL,
-                                           overwrite = FALSE) {
+                                           overwrite = FALSE,
+                                           result_folder = NULL) {
 
+  if (core_results_open(result_folder))
+    on.exit(core_close_env(), add = TRUE)
   ssEnv <- core_get_session_info()
 
   chart_folder <- io_dir_check_and_create(ssEnv$result_folderChart,

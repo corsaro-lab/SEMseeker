@@ -50,6 +50,11 @@
 #' @param pvalue_column character. Likewise.
 #' @param significance logical. Likewise.
 #' @param overwrite logical. Redraw when the file exists.
+#' @param result_folder character. The folder a previous `semseeker()` run
+#'   wrote, to reopen its results in a new R session; the chart is written
+#'   under its `Chart/` folder. `NULL` (the default) uses the session already
+#'   open, as right after `semseeker()`. A folder without
+#'   `Log/session_info.rds` is refused.
 #'
 #' @return Invisibly a character vector of the files written, which is empty
 #'   when no report of that enricher was found.
@@ -78,8 +83,11 @@ enrich_circos_plot <- function(enricher, inference_details,
                                statistic_parameter = "",
                                pvalue_column = "PVALUE_ADJ_ALL_BH",
                                significance = TRUE,
-                               overwrite = FALSE) {
+                               overwrite = FALSE,
+                               result_folder = NULL) {
 
+  if (core_results_open(result_folder))
+    on.exit(core_close_env(), add = TRUE)
   ssEnv <- core_get_session_info()
   rules <- .enrich_rules_for(enricher, ssEnv)
   # Checked here, before any file is read: an enricher whose genes are not

@@ -29,6 +29,10 @@
 #' @param figure character. Figure to sum: `"HYPER"`, `"HYPO"` or `"BOTH"`.
 #' @param statistics character vector. Any of `"MIN"`, `"Q1"`, `"MEDIAN"`,
 #'   `"Q3"`, `"MAX"`. All five by default.
+#' @param result_folder character. The folder a previous `semseeker()` run
+#'   wrote, to read its probe pivots in a new R session. `NULL` (the
+#'   default) uses the session already open, as right after `semseeker()`.
+#'   A folder without `Log/session_info.rds` is refused.
 #'
 #' @return A data.frame with `STATISTIC`, `PROBE` and `VALUE`, one row per
 #'   statistic asked for, or `NULL` when the pivot does not exist.
@@ -51,7 +55,8 @@
 #' @export
 sem_probe_select_by_statistic <- function(marker, figure,
                                          statistics = c("MIN", "Q1", "MEDIAN",
-                                                        "Q3", "MAX")) {
+                                                        "Q3", "MAX"),
+                                          result_folder = NULL) {
 
   known <- c("MIN", "Q1", "MEDIAN", "Q3", "MAX")
   unknown <- setdiff(toupper(statistics), known)
@@ -59,6 +64,9 @@ sem_probe_select_by_statistic <- function(marker, figure,
     stop("unknown statistic: ", paste(unknown, collapse = ", "),
          ". Known: ", paste(known, collapse = ", "))
   statistics <- toupper(statistics)
+
+  if (core_results_open(result_folder))
+    on.exit(core_close_env(), add = TRUE)
 
   pivot_lazy <- io_read_pivot(marker, figure, area = "PROBE", subarea = "WHOLE")
   if (is.null(pivot_lazy))

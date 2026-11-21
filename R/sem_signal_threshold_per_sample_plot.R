@@ -32,6 +32,11 @@
 #'   are drawn either way: they are the content, not a decoration.
 #' @param label_font_size numeric. Size of the delta labels.
 #' @param overwrite logical. Redraw when the file exists.
+#' @param result_folder character. The folder a previous `semseeker()` run
+#'   wrote, to reopen its results in a new R session; the chart is written
+#'   under its `Chart/` folder. `NULL` (the default) uses the session already
+#'   open, as right after `semseeker()`. A folder without
+#'   `Log/session_info.rds` is refused.
 #'
 #' @return Invisibly the path of the file written, or `NULL` when the signal
 #'   pivot or the thresholds of that probe are not there.
@@ -54,8 +59,11 @@ sem_signal_threshold_per_sample_plot <- function(probe, sample_sheet,
                                                 samples_selection = NULL,
                                                 show_labels = TRUE,
                                                 label_font_size = 3,
-                                                overwrite = FALSE) {
+                                                overwrite = FALSE,
+                                                result_folder = NULL) {
 
+  if (core_results_open(result_folder))
+    on.exit(core_close_env(), add = TRUE)
   ssEnv <- core_get_session_info()
 
   chart_folder <- io_dir_check_and_create(ssEnv$result_folderChart,

@@ -13,7 +13,8 @@ enrich_term_lollipop_plot(
   statistic_parameter = "",
   pvalue_column = "PVALUE_ADJ_ALL_BH",
   significance = TRUE,
-  overwrite = FALSE
+  overwrite = FALSE,
+  result_folder = NULL
 )
 }
 \arguments{
@@ -37,6 +38,12 @@ run that produced the report, because they are part of the name of the file
 to read.}
 
 \item{overwrite}{logical. Redraw when the file exists.}
+
+\item{result_folder}{character. The folder a previous `semseeker()` run
+wrote, to reopen its results in a new R session; the chart is written
+under its `Chart/` folder. `NULL` (the default) uses the session already
+open, as right after `semseeker()`. A folder without
+`Log/session_info.rds` is refused.}
 }
 \value{
 Invisibly a character vector of the files written, empty when no
