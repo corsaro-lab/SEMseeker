@@ -19,7 +19,9 @@ sem_marker_value_per_sample_plot(
 
 \item{figure}{character. The figure whose values go on the y axis.}
 
-\item{probe}{character. The probe held fixed, e.g. `"cg11680158"`.}
+\item{probe}{character. The probe held fixed, by its position, as `CHR_START` (e.g. `"11_2721619"`), the AREA of the PROBE
+pivots. SEMseeker indexes its results by coordinates only; a probe id of a
+manufacturer (`"cg..."`) is refused.}
 
 \item{sample_sheet}{data.frame carrying `Sample_ID` and `Sample_Group`.}
 

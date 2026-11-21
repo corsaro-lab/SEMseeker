@@ -32,7 +32,7 @@
 
 test_that("the delta labels are drawn, one per excursion", {
   built <- ggplot2::ggplot_build(
-    .build(.signal(), .envelope(), .sheet4(), "CG1", .palette))
+    .build(.signal(), .envelope(), .sheet4(), "1_1001", .palette))
 
   labels <- unlist(lapply(built$data, function(layer) layer$label))
   labels <- labels[!is.na(labels)]
@@ -46,7 +46,7 @@ test_that("the delta labels are drawn, one per excursion", {
 
 test_that("the delta is the distance outside the envelope, in the right direction", {
   built <- ggplot2::ggplot_build(
-    .build(.signal(), .envelope(), .sheet4(), "CG1", .palette))
+    .build(.signal(), .envelope(), .sheet4(), "1_1001", .palette))
   labels <- unlist(lapply(built$data, function(layer) layer$label))
   deltas <- labels[!is.na(labels) & grepl("\u03B4", labels)]
 
@@ -62,7 +62,7 @@ test_that("the delta is the distance outside the envelope, in the right directio
 
 test_that("the segment runs from the crossed threshold, so its length is the excursion", {
   built <- ggplot2::ggplot_build(
-    .build(.signal(), .envelope(), .sheet4(), "CG1", .palette))
+    .build(.signal(), .envelope(), .sheet4(), "1_1001", .palette))
   segments <- built$data[[1]]
 
   # the hyper sample starts at the upper limit, the hypo one at the lower.
@@ -77,7 +77,7 @@ test_that("the segment runs from the crossed threshold, so its length is the exc
 
 test_that("the five envelope lines render, and their labels can be turned off", {
   with_labels <- ggplot2::ggplot_build(
-    .build(.signal(), .envelope(), .sheet4(), "CG1", .palette,
+    .build(.signal(), .envelope(), .sheet4(), "1_1001", .palette,
            show_labels = TRUE))
   yintercepts <- unlist(lapply(with_labels$data,
                                function(layer) layer$yintercept))
@@ -92,7 +92,7 @@ test_that("the five envelope lines render, and their labels can be turned off", 
   # without them the lines stay and the names go, and the deltas stay: they are
   # the content of the chart, not a decoration.
   without <- ggplot2::ggplot_build(
-    .build(.signal(), .envelope(), .sheet4(), "CG1", .palette,
+    .build(.signal(), .envelope(), .sheet4(), "1_1001", .palette,
            show_labels = FALSE))
   bare_labels <- unlist(lapply(without$data, function(layer) layer$label))
   bare_labels <- bare_labels[!is.na(bare_labels)]
@@ -107,7 +107,7 @@ test_that("a reference sample is marked as one even outside the envelope it defi
   signal$VALUE[signal$SAMPLE == "REF_1"] <- 0.99
 
   built <- ggplot2::ggplot_build(
-    .build(signal, .envelope(), .sheet4(), "CG1", .palette))
+    .build(signal, .envelope(), .sheet4(), "1_1001", .palette))
   fills <- built$data[[2]]$fill
 
   # three points would be blue if the direction won; the reference colour is
@@ -125,7 +125,7 @@ test_that("a non-finite threshold drops its line instead of breaking the chart",
   envelope$inferior <- -Inf
 
   built <- ggplot2::ggplot_build(
-    .build(.signal(), envelope, .sheet4(), "CG1", .palette))
+    .build(.signal(), envelope, .sheet4(), "1_1001", .palette))
   yintercepts <- unlist(lapply(built$data, function(layer) layer$yintercept))
   yintercepts <- yintercepts[!is.na(yintercepts)]
 
@@ -141,27 +141,27 @@ test_that("the thresholds are read and not recomputed, and a missing probe is NU
           add = TRUE)
 
   # no file at all
-  expect_null(SEMseeker:::.sem_probe_thresholds_get("CG1"))
+  expect_null(SEMseeker:::.sem_probe_thresholds_get("1_1001"))
 
   thresholds_path <- SEMseeker:::io_file_path_build(
     SEMseeker:::core_get_session_info()$result_folderData,
     "1_signal_thresholds", "parquet")
   SEMseeker:::io_write_frame_parquet(data.frame(
-    PROBE = c("CG1", "CG2"),
+    CHR = c("1", "1"), START = c(1001L, 1002L),
     signal_inferior_thresholds = c(0.2, 0.1),
     signal_superior_thresholds = c(0.8, 0.9),
     signal_median_values = c(0.5, 0.5),
     iqr = c(0.2, 0.3), q1 = c(0.4, 0.35), q3 = c(0.6, 0.65),
     stringsAsFactors = FALSE), thresholds_path)
 
-  envelope <- SEMseeker:::.sem_probe_thresholds_get("CG1")
+  envelope <- SEMseeker:::.sem_probe_thresholds_get("1_1001")
   expect_equal(envelope$superior, 0.8)
   expect_equal(envelope$inferior, 0.2)
   expect_equal(envelope$q1, 0.4)
-  # the case of the name is not the caller's problem.
-  expect_equal(SEMseeker:::.sem_probe_thresholds_get("cg2")$superior, 0.9)
+  # the row is found by its coordinates.
+  expect_equal(SEMseeker:::.sem_probe_thresholds_get("1_1002")$superior, 0.9)
   # a probe with no thresholds is nothing to draw.
-  expect_null(SEMseeker:::.sem_probe_thresholds_get("CG_ABSENT"))
+  expect_null(SEMseeker:::.sem_probe_thresholds_get("1_9999"))
 })
 
 test_that("the door writes a file and refuses to invent an envelope", {
@@ -173,7 +173,7 @@ test_that("the door writes a file and refuses to invent an envelope", {
   signal_path <- SEMseeker:::io_pivot_file_name_parquet(
     "SIGNAL", SEMseeker:::io_signal_figure(), "PROBE", "WHOLE")
   dir.create(dirname(signal_path), recursive = TRUE, showWarnings = FALSE)
-  SEMseeker:::io_write_frame_parquet(data.frame(AREA = c("CG1", "CG2"),
+  SEMseeker:::io_write_frame_parquet(data.frame(AREA = c("1_1001", "1_1002"),
                                   CASE_1 = c(0.95, 0.5), REF_1 = c(0.52, 0.5),
                                   stringsAsFactors = FALSE)
                        , signal_path)
@@ -184,17 +184,17 @@ test_that("the door writes a file and refuses to invent an envelope", {
 
   # the signal is there and the thresholds are not: nothing is drawn, because a
   # threshold recomputed from the samples at hand is a different threshold.
-  expect_null(SEMseeker::sem_signal_threshold_per_sample_plot("CG1", sheet))
+  expect_null(SEMseeker::sem_signal_threshold_per_sample_plot("1_1001", sheet))
 
   thresholds_path <- SEMseeker:::io_file_path_build(
     SEMseeker:::core_get_session_info()$result_folderData,
     "1_signal_thresholds", "parquet")
   SEMseeker:::io_write_frame_parquet(data.frame(
-    PROBE = "CG1", signal_inferior_thresholds = 0.2,
+    CHR = "1", START = 1001L, signal_inferior_thresholds = 0.2,
     signal_superior_thresholds = 0.8, signal_median_values = 0.5,
     iqr = 0.2, q1 = 0.4, q3 = 0.6), thresholds_path)
 
-  written <- SEMseeker::sem_signal_threshold_per_sample_plot("CG1", sheet)
+  written <- SEMseeker::sem_signal_threshold_per_sample_plot("1_1001", sheet)
   expect_true(file.exists(written))
   expect_gt(file.size(written), 1000)
   expect_match(dirname(written), "SIGNAL_THRESHOLD_PER_SAMPLE")

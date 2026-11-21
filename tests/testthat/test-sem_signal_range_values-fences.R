@@ -47,7 +47,9 @@ test_that("for beta values the fences are capped at 0 and 1", {
                cg_high = c(0.80, 0.85, 0.90, 0.95, 0.98, 0.99))
   colnames(ref) <- paste0("R", 1:6)
   th <- SEMseeker:::sem_signal_range_values(ref, "fences_cap", .fence_features(rownames(ref)))
-  th <- th[match(rownames(ref), th$PROBE), ]
+  # The thresholds are indexed by position: .fence_features() puts the probes at
+  # START 100 and 200, in the order of the rows.
+  th <- th[match(c(100L, 200L), th$START), ]
 
   # Tukey goes below 0 for the first probe and above 1 for the second
   expect_equal(th$signal_inferior_thresholds[1], 0)

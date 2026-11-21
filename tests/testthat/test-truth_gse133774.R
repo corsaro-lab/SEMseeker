@@ -46,12 +46,16 @@ test_that("GSE133774: the affected siblings are found and the father is not", {
   reference <- beta[, paste0("CTRL0", 1:6)]
   th <- SEMseeker:::sem_signal_range_values(reference, "gse133774_truth",
                                             features[features$PROBE %in% rownames(beta), ])
-  low <- stats::setNames(th$signal_inferior_thresholds, th$PROBE)
+  # The thresholds are indexed by position, the beta matrix by probe id: the
+  # fixture's own coordinates link the two.
+  low <- stats::setNames(th$signal_inferior_thresholds, paste0(th$CHR, "_", th$START))
+  position_of <- stats::setNames(paste0(features$CHR, "_", features$START), features$PROBE)
 
   region <- function(label) features$PROBE[which(features$DMR_LABEL == label)]
   lom <- function(sample, label) {
-    p <- intersect(region(label), names(low))
-    mean(beta[p, sample] < low[p])
+    p <- region(label)
+    p <- p[p %in% rownames(beta) & position_of[p] %in% names(low)]
+    mean(beta[p, sample] < low[position_of[p]])
   }
 
   # found: the share of the region's probes below the threshold

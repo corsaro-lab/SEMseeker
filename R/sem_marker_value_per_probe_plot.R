@@ -57,7 +57,9 @@
 #'   `"HYPO"` or `"BOTH"`.
 #' @param sample_name character. The sample held fixed. Must be a column of the
 #'   pivot.
-#' @param probes_selection character vector of probe names, or `NULL` for all.
+#' @param probes_selection character vector of probe positions as `CHR_START`
+#'   (e.g. `"11_2721619"`), or `NULL` for all. A probe id of a manufacturer
+#'   (`"cg..."`) is refused: SEMseeker indexes its results by coordinates only.
 #' @param overwrite logical. Redraw when the file exists.
 #' @param result_folder character. The folder a previous `semseeker()` run
 #'   wrote, to reopen its results in a new R session; the chart is written
@@ -84,6 +86,7 @@ sem_marker_value_per_probe_plot <- function(marker, figure, sample_name,
                                            overwrite = FALSE,
                                            result_folder = NULL) {
 
+  .sem_position_ids_check(probes_selection, "probes_selection")
   if (core_results_open(result_folder))
     on.exit(core_close_env(), add = TRUE)
   ssEnv <- core_get_session_info()

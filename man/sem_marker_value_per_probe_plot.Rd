@@ -22,7 +22,9 @@ sem_marker_value_per_probe_plot(
 \item{sample_name}{character. The sample held fixed. Must be a column of the
 pivot.}
 
-\item{probes_selection}{character vector of probe names, or `NULL` for all.}
+\item{probes_selection}{character vector of probe positions as `CHR_START`
+(e.g. `"11_2721619"`), or `NULL` for all. A probe id of a manufacturer
+(`"cg..."`) is refused: SEMseeker indexes its results by coordinates only.}
 
 \item{overwrite}{logical. Redraw when the file exists.}
 

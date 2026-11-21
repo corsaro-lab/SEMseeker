@@ -25,7 +25,9 @@
 #' zero length rather than a line down to the axis, because it has no excursion
 #' to show.
 #'
-#' @param probe character. The probe held fixed, e.g. `"cg11680158"`.
+#' @param probe character. The probe held fixed, by its position, as `CHR_START` (e.g. `"11_2721619"`), the AREA of the PROBE
+#'   pivots. SEMseeker indexes its results by coordinates only; a probe id of a
+#'   manufacturer (`"cg..."`) is refused.
 #' @param sample_sheet data.frame carrying `Sample_ID` and `Sample_Group`.
 #' @param samples_selection character vector of sample names, or `NULL` for all.
 #' @param show_labels logical. Draw the names of the envelope lines. The deltas
@@ -62,6 +64,7 @@ sem_signal_threshold_per_sample_plot <- function(probe, sample_sheet,
                                                 overwrite = FALSE,
                                                 result_folder = NULL) {
 
+  .sem_position_ids_check(probe, "probe")
   if (core_results_open(result_folder))
     on.exit(core_close_env(), add = TRUE)
   ssEnv <- core_get_session_info()
@@ -117,7 +120,9 @@ sem_signal_threshold_per_sample_plot <- function(probe, sample_sheet,
     return(NULL)
 
   thresholds <- io_read_parquet_frame(thresholds_file)
-  row_index <- which(toupper(as.character(thresholds$PROBE)) == toupper(probe))
+  # The thresholds are indexed by coordinates, like every other result.
+  position <- io_probe_id_to_coord(probe)
+  row_index <- which(as.character(thresholds$CHR) == position$CHR & as.integer(thresholds$START) == position$START)
   if (length(row_index) == 0L)
     return(NULL)
 

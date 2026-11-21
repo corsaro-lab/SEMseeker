@@ -28,6 +28,17 @@
   no longer a dependency, and with it XQuartz is no longer needed on macOS:
   it was required only because `sqldf` loaded `tcltk`.
 
+- **Results are indexed by coordinates only.** The SIGNAL pivot at PROBE level
+  and the signal thresholds (`1_SIGNAL_THRESHOLDS.parquet`) kept the Illumina
+  probe id, while every marker pivot at PROBE level was already keyed by the
+  position `CHR_START`: a probe picked on one could not be looked up on the
+  other. Both are now keyed by position and the thresholds no longer carry a
+  `PROBE` column, so nothing SEMseeker writes depends on how a manufacturer
+  names its probes. `sem_marker_value_per_sample_plot()`,
+  `sem_signal_threshold_per_sample_plot()` and the `probes_selection` of
+  `sem_marker_value_per_probe_plot()` take positions such as `11_2721619`, and
+  refuse a probe id such as `cg11680158` instead of drawing nothing.
+
 - **`meta_enrichment_compare_studies()` is removed.** It stopped on its first
   line in every call: it read the enrichment results to compare from an object
   nothing supplied, and four of the arguments it used were not in its

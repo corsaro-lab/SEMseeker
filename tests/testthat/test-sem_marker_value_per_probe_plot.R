@@ -20,13 +20,13 @@
   path
 }
 
-# One sample hyper at cg1, hypo at cg3, nothing at cg2.
+# One sample hyper at 1_1001, hypo at 1_1003, nothing at 1_1002.
 .write_three <- function() {
-  .write_probe_pivot("BOTH",  c("cg1", "cg2", "cg3"), CASE_1 = c(4, 0, 7),
+  .write_probe_pivot("BOTH",  c("1_1001", "1_1002", "1_1003"), CASE_1 = c(4, 0, 7),
                      REF_1 = c(0, 0, 0))
-  .write_probe_pivot("HYPER", c("cg1", "cg2", "cg3"), CASE_1 = c(4, 0, 0),
+  .write_probe_pivot("HYPER", c("1_1001", "1_1002", "1_1003"), CASE_1 = c(4, 0, 0),
                      REF_1 = c(0, 0, 0))
-  .write_probe_pivot("HYPO",  c("cg1", "cg2", "cg3"), CASE_1 = c(0, 0, 7),
+  .write_probe_pivot("HYPO",  c("1_1001", "1_1002", "1_1003"), CASE_1 = c(0, 0, 7),
                      REF_1 = c(0, 0, 0))
 }
 
@@ -60,13 +60,13 @@ test_that("the direction of each probe comes from HYPER and HYPO", {
   # is on the data that reaches the drawing rather than on a PNG.
   hyper <- SEMseeker:::.sem_probe_column_get("DELTAS", "HYPER", "CASE_1")
   hypo  <- SEMseeker:::.sem_probe_column_get("DELTAS", "HYPO",  "CASE_1")
-  expect_equal(hyper$AREA[hyper$VALUE != 0], "cg1")
-  expect_equal(hypo$AREA[hypo$VALUE != 0], "cg3")
+  expect_equal(hyper$AREA[hyper$VALUE != 0], "1_1001")
+  expect_equal(hypo$AREA[hypo$VALUE != 0], "1_1003")
 
   both <- SEMseeker:::.sem_probe_column_get("DELTAS", "BOTH", "CASE_1")
   expect_equal(both$VALUE, c(4, 0, 7))
   # the row order of the pivot is the order of the axis, so it is preserved.
-  expect_equal(both$AREA, c("cg1", "cg2", "cg3"))
+  expect_equal(both$AREA, c("1_1001", "1_1002", "1_1003"))
 })
 
 test_that("a sample with no events still produces a chart", {
@@ -90,8 +90,8 @@ test_that("probes_selection names the probes instead of indexing a row order", {
   .write_three()
 
   kept <- SEMseeker:::.sem_probe_column_get("DELTAS", "BOTH", "CASE_1",
-                                           probes_selection = c("cg1", "cg3"))
-  expect_equal(kept$AREA, c("cg1", "cg3"))
+                                           probes_selection = c("1_1001", "1_1003"))
+  expect_equal(kept$AREA, c("1_1001", "1_1003"))
   expect_equal(kept$VALUE, c(4, 7))
 
   # a selection naming nothing present is nothing to draw, not an error.

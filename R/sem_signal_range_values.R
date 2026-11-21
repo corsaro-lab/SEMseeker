@@ -5,7 +5,9 @@
 #' @param probe_features data.frame of probe annotations (from anno_probe_features_get) with columns PROBE, CHR, START, END
 #'
 #' @return data.frame of per-probe thresholds with columns signal_inferior_thresholds,
-#'   signal_superior_thresholds, signal_median_values, iqr, q1, q3, PROBE, CHR, START, END
+#'   signal_superior_thresholds, signal_median_values, iqr, q1, q3, CHR, START, END
+#'   and the annotation columns; the probe id is used for the join and not kept,
+#'   because results are indexed by coordinates only
 #' @importFrom doRNG %dorng%
 
 sem_signal_range_values <- function(populationMatrix, batch_id, probe_features) {
@@ -92,7 +94,9 @@ sem_signal_range_values <- function(populationMatrix, batch_id, probe_features) 
   connection <- io_engine_connection()
   annotation_lazy <- io_register_frame(as_text(probe_features))
   thresholds_lazy <- io_register_frame(as_text(result))
-  result <- DBI::dbGetQuery(connection, sprintf('SELECT * FROM (%s) AS annotation JOIN (%s) AS thresholds USING (PROBE) ORDER BY CHR, START, "END"',
+  # The probe id joins the two and is then dropped: what SEMseeker writes is
+  # indexed by coordinates, never by the name a manufacturer gave the probe.
+  result <- DBI::dbGetQuery(connection, sprintf('SELECT * EXCLUDE (PROBE) FROM (%s) AS annotation JOIN (%s) AS thresholds USING (PROBE) ORDER BY CHR, START, "END"',
                                                 dbplyr::sql_render(annotation_lazy), dbplyr::sql_render(thresholds_lazy)))
   io_write_frame_parquet(result, thresholds_file_name)
 

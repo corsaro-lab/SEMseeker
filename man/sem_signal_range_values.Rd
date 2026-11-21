@@ -15,7 +15,9 @@ sem_signal_range_values(populationMatrix, batch_id, probe_features)
 }
 \value{
 data.frame of per-probe thresholds with columns signal_inferior_thresholds,
-  signal_superior_thresholds, signal_median_values, iqr, q1, q3, PROBE, CHR, START, END
+  signal_superior_thresholds, signal_median_values, iqr, q1, q3, CHR, START, END
+  and the annotation columns; the probe id is used for the join and not kept,
+  because results are indexed by coordinates only
 }
 \description{
 calculate the range of signal values to define the outlier

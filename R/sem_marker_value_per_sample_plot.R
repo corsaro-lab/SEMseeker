@@ -36,7 +36,9 @@
 #'
 #' @param marker character. Marker name, e.g. `"MUTATIONS"`, `"DELTAS"`.
 #' @param figure character. The figure whose values go on the y axis.
-#' @param probe character. The probe held fixed, e.g. `"cg11680158"`.
+#' @param probe character. The probe held fixed, by its position, as `CHR_START` (e.g. `"11_2721619"`), the AREA of the PROBE
+#'   pivots. SEMseeker indexes its results by coordinates only; a probe id of a
+#'   manufacturer (`"cg..."`) is refused.
 #' @param sample_sheet data.frame carrying `Sample_ID` and `Sample_Group`.
 #' @param samples_selection character vector of sample names, or `NULL` for all
 #'   the samples the pivot carries.
@@ -71,6 +73,7 @@ sem_marker_value_per_sample_plot <- function(marker, figure, probe,
                                             overwrite = FALSE,
                                             result_folder = NULL) {
 
+  .sem_position_ids_check(probe, "probe")
   if (core_results_open(result_folder))
     on.exit(core_close_env(), add = TRUE)
   ssEnv <- core_get_session_info()
@@ -131,6 +134,22 @@ sem_marker_value_per_sample_plot <- function(marker, figure, probe,
 # One probe's row of one pivot, as SAMPLE / VALUE, or NULL when the pivot or the
 # probe is not there. The transpose of .sem_probe_column_get(): same read, the
 # other axis.
+# Refuse probe names that are not positions, before anything is read. The PROBE
+# pivots are keyed by CHR_START whatever the technology, so a manufacturer's
+# probe id would match no row and the chart would come back empty without a
+# word. position_ids: the values given; argument_name: the argument they came
+# in, for the message. Returns NULL invisibly, or stops.
+.sem_position_ids_check <- function(position_ids, argument_name) {
+  if (is.null(position_ids))
+    return(invisible(NULL))
+  not_positions <- position_ids[!grepl("^[^_]+_[0-9]+$", as.character(position_ids))]
+  if (length(not_positions) > 0L)
+    stop(argument_name, " must name positions as CHR_START, e.g. 11_2721619; not a position: ",
+         paste(utils::head(not_positions, 5L), collapse = ", "), ". SEMseeker indexes its results by ",
+         "coordinates, not by the probe ids of a manifest.", call. = FALSE)
+  invisible(NULL)
+}
+
 .sem_probe_row_get <- function(marker, figure, probe,
                                samples_selection = NULL) {
 

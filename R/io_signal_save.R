@@ -1,8 +1,11 @@
 #' Save the signal matrix as the SIGNAL pivots, by probe and by position
 #'
 #' Every later step reads the signal from these two parquet files and not
-#' from the matrix in memory: the PROBE pivot keeps the probe ids, the
-#' POSITION pivot the genomic coordinates the markers are computed on. The
+#' from the matrix in memory. Both are indexed by coordinates: the POSITION
+#' pivot by CHR, START and END, the PROBE pivot by the position id
+#' CHR_START, the AREA every marker pivot at PROBE level carries. The probe
+#' ids of the input are used to place each row and are not written, so the
+#' results do not depend on how a manufacturer names its probes. The
 #' POSITION pivot is sorted by chromosome in natural order (1, 2, ..., 22,
 #' X, Y, M) and then by START and END, so each chromosome is one contiguous
 #' block: the per-chromosome model fit relies on it. Nothing is written when
@@ -95,9 +98,15 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
   signal_data$AREA <- rownames(signal_data)
   signal_data      <- signal_data[, c(ncol(signal_data), seq_len(ncol(signal_data) - 1))]
 
+  # The matrix keyed by probe id is only the input of the join that places
+  # each row on its coordinates, so it goes to the temporary folder.
   pivot_file_name_probe <- io_pivot_file_name_parquet("SIGNAL", io_signal_figure(), "PROBE", "WHOLE")
-  io_write_frame_parquet(signal_data, pivot_file_name_probe)
-  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), "Signal data saved with probe.")
+  staging_folder <- if (!is.null(ssEnv$temp_folder)) ssEnv$temp_folder else tempdir()
+  dir.create(staging_folder, recursive = TRUE, showWarnings = FALSE)
+  probe_id_staging <- tempfile("signal_by_probe_id_", tmpdir = staging_folder, fileext = ".parquet")
+  on.exit(unlink(probe_id_staging), add = TRUE)
+  io_write_frame_parquet(signal_data, probe_id_staging)
+  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), "Signal data staged by probe id.")
 
   rm(signal_data)
   gc()
@@ -135,8 +144,12 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
   coordinates_view <- paste0("signal_coordinates_", gsub("[^A-Za-z0-9]", "", basename(tempfile(""))))
   duckdb::duckdb_register(connection, coordinates_view, pf)
   on.exit(duckdb::duckdb_unregister(connection, coordinates_view), add = TRUE)
-  io_signal_position_write(connection, coordinates_view, length(chromosomes), pivot_file_name_probe, pivot_file_name_pos)
+  io_signal_position_write(connection, coordinates_view, length(chromosomes), probe_id_staging, pivot_file_name_pos)
   rm(pf)
+
+  # The PROBE pivot is the POSITION pivot keyed as every other PROBE pivot is.
+  DBI::dbExecute(connection, sprintf("COPY (SELECT CHR || '_' || CAST(START AS VARCHAR) AS AREA, * EXCLUDE (CHR, START, \"END\") FROM read_parquet(%s)) TO %s (FORMAT parquet, COMPRESSION zstd)",
+                                     DBI::dbQuoteString(connection, pivot_file_name_pos), DBI::dbQuoteString(connection, pivot_file_name_probe)))
 
   gc()
   core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), "Saved signal data.")
@@ -157,7 +170,8 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
 #' @param coordinates_view name of a registered view with CHR, START, END,
 #'   PROBE and CHR_RANK, the rank of the chromosome in natural order, from 1
 #' @param chromosome_count number of distinct CHR_RANK values in the view
-#' @param probe_path path of the SIGNAL PROBE pivot, keyed on AREA
+#' @param probe_path path of the signal keyed by probe id on AREA, the staging
+#'   file io_signal_save() writes before the join
 #' @param position_path path of the POSITION pivot to write
 #' @return NULL, invisibly; the side effect is the file at position_path
 #' @keywords internal
