@@ -159,16 +159,16 @@ test_that("the pivot name carries the aggregation, and the scale for SIGNAL", {
                             areas = c("POSITION"), markers = c("MUTATIONS"),
                             start_fresh = TRUE, showprogress = FALSE, verbosity = 1)
 
-  burden <- SEMseeker:::io_pivot_file_name_parquet("MUTATIONS", "HYPER", "CHR",
-                                                   "CYTOBAND", aggregation = "SUM")
+  burden <- SEMseeker:::io_pivot_file_name_parquet("MUTATIONS", "HYPER", "ISLAND",
+                                                   "N_SHORE", aggregation = "SUM")
   expect_match(basename(burden),
-               "^MUTATIONS_HYPER_INSTANCE_CHR_CYTOBAND_SUM_HG19\\.parquet$",
+               "^MUTATIONS_HYPER_INSTANCE_ISLAND_N_SHORE_SUM_HG19\\.parquet$",
                ignore.case = TRUE)
 
   beta_mean <- SEMseeker:::io_pivot_file_name_parquet("SIGNAL", "BETA", "CHR",
-                                                      "CYTOBAND", aggregation = "MEAN")
+                                                      "WHOLE", aggregation = "MEAN")
   mval_mean <- SEMseeker:::io_pivot_file_name_parquet("SIGNAL", "MVALUE", "CHR",
-                                                      "CYTOBAND", aggregation = "MEAN")
+                                                      "WHOLE", aggregation = "MEAN")
   # the two scales must not overwrite each other in the same folder
   expect_false(identical(beta_mean, mval_mean))
 
@@ -207,15 +207,15 @@ test_that("the artefact key is injective over the closed vocabularies", {
   # The key is the identity of a row, so two different coordinate tuples must
   # never compose to the same string. It is not obvious that they cannot:
   # core_name_cleaning() maps every separator to "_", and two vocabularies carry
-  # an underscore inside their values (N_SHORE, and CHR_CYTOBAND read as three
-  # tokens for two coordinates). This is the test that fails loudly the day
+  # an underscore inside their values (N_SHORE and S_SHELF read as two tokens
+  # for one coordinate). This is the test that fails loudly the day
   # someone adds a subarea called LOW or a marker called MODE.
   grid <- expand.grid(
     marker      = c("SIGNAL", "MUTATIONS", "DELTAS", "DELTAR", "DELTARP"),
     figure      = c("HYPER", "HYPO", "BETA", "MVALUE"),
     scope       = SEMseeker:::io_scope_vocabulary(),
-    area        = c("PROBE", "POSITION", "GENE", "ISLAND", "CHR", "DMR"),
-    subarea     = c("WHOLE", "TSS200", "TSS1500", "BODY", "OPENSEA", "CYTOBAND",
+    area        = c("PROBE", "POSITION", "GENE", "ISLAND", "CHR"),
+    subarea     = c("WHOLE", "TSS200", "TSS1500", "BODY", "OPENSEA",
                     "N_SHORE", "S_SHORE", "N_SHELF", "S_SHELF"),
     aggregation = SEMseeker:::util_aggregation_vocabulary(),
     stringsAsFactors = FALSE)

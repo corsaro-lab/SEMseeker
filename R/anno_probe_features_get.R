@@ -8,8 +8,8 @@
 #' and cached in the session environment.
 #'
 #' For \strong{WGBS} and \strong{LONGREAD} data, coordinates are read directly
-#' from the saved POSITION pivot parquet; semantic areas (GENE_*, ISLAND_*,
-#' CHR_CYTOBAND, DMR_*) are resolved via \code{\link{anno_area_granges_build}} and
+#' from the saved POSITION pivot parquet; semantic areas (GENE_*, ISLAND_*)
+#' are resolved via \code{\link{anno_area_granges_build}} and
 #' \code{GenomicRanges::findOverlaps()}.
 #'
 #' @section PROBE_WHOLE vs POSITION_WHOLE - technology semantics:
@@ -74,7 +74,7 @@ anno_probe_features_get <- function(area_subarea) {
   # -----------------------------------------------------------------------
   # WGBS / LONGREAD path
   # Coordinate-only areas (CHR_WHOLE, PROBE_WHOLE) are handled inline.
-  # All semantic areas (GENE_*, ISLAND_*, CHR_CYTOBAND, DMR_*) are built
+  # All semantic areas (GENE_*, ISLAND_*) are built
   # via anno_area_granges_build() and CpG assignments resolved with findOverlaps().
   # -----------------------------------------------------------------------
   if (ssEnv$tech %in% c("WGBS", "LONGREAD")) {
@@ -101,7 +101,7 @@ anno_probe_features_get <- function(area_subarea) {
       # Canonical (AREA, SUBAREA) columns: PROBE_WHOLE and CHR_WHOLE are
       # required by association/enrichment code that does dynamic
       # `probe_features[[area_subarea]]` lookup (same shape as GENE_BODY,
-      # ISLAND_N_SHORE, CHR_CYTOBAND, DMR_*).
+      # ISLAND_N_SHORE).
       if (grepl("CHR", area_subarea)) probe_features$CHR_WHOLE   <- paste0("chr", probe_features$CHR)
       if (grepl("PROBE", area_subarea)) probe_features$PROBE_WHOLE <- probe_features$PROBE
       if (isTRUE(ssEnv$sex_chromosome_remove))
@@ -170,8 +170,7 @@ anno_probe_features_get <- function(area_subarea) {
     !is.na(probe_features[[ssEnv$tech]]) & probe_features[[ssEnv$tech]], ]
   probe_features$END <- probe_features$START
 
-  if ((grepl("CHR", area_subarea) || grepl("PROBE", area_subarea)) &&
-      !grepl("CHR_CYTOBAND", area_subarea)) {
+  if (grepl("CHR", area_subarea) || grepl("PROBE", area_subarea)) {
     probe_features <- dplyr::distinct(
       probe_features[, c(ssEnv$tech, "PROBE", "CHR", "START", "END")])
   } else {
@@ -192,8 +191,8 @@ anno_probe_features_get <- function(area_subarea) {
   # Canonical (AREA, SUBAREA) columns required by downstream
   # association/enrichment code that iterates over area_subarea names
   # and does dynamic `probe_features[[area_subarea]]` lookup (same shape
-  # as GENE_BODY, ISLAND_N_SHORE, CHR_CYTOBAND, DMR_*).
-  if (grepl("CHR", area_subarea) && !grepl("CHR_CYTOBAND", area_subarea))
+  # as GENE_BODY, ISLAND_N_SHORE).
+  if (grepl("CHR", area_subarea))
     probe_features$CHR_WHOLE <- paste0("chr", probe_features$CHR)
 
   if (grepl("PROBE", area_subarea))

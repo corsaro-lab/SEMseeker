@@ -3,15 +3,12 @@
 #' Validates \code{\link{anno_area_granges_build}} (the WGBS / long-read annotation
 #' path) against the Illumina manifest annotation used by
 #' \code{\link{anno_probe_annotation_build}}. The two pipelines are expected to
-#' assign CpGs to the same semantic areas (\code{GENE_*}, \code{ISLAND_*},
-#' \code{CHR_CYTOBAND}, \code{DMR_*}). This function takes a subset of Illumina
+#' assign CpGs to the same semantic areas (\code{GENE_*}, \code{ISLAND_*}). This function takes a subset of Illumina
 #' probes of known annotation, runs the WGBS pipeline on the same coordinates,
 #' and reports the concordance rate per area.
 #'
 #' Concordance categories (informational, returned in the \code{category} column):
 #' \itemize{
-#'   \item \code{"bundled"} - both pipelines use the same bundled data
-#'     (\code{cytoband_hg19.rda}, \code{dmr_annotation.rda}). Expected rate: 1.0.
 #'   \item \code{"txdb"} - WGBS path uses \code{TxDb} UCSC \code{knownGene}
 #'     while the Illumina manifest uses RefSeq. Some probes map to different
 #'     gene symbols between the two sources.
@@ -70,8 +67,7 @@ anno_concordance_report <- function(tech         = "K850",
       "GENE_5UTR", "GENE_3UTR",
       "ISLAND_WHOLE", "ISLAND_ISLAND",
       "ISLAND_N_SHORE", "ISLAND_S_SHORE",
-      "ISLAND_N_SHELF", "ISLAND_S_SHELF", "ISLAND_OPENSEA",
-      "CHR_CYTOBAND", "DMR_WHOLE", "DMR_DMR"
+      "ISLAND_N_SHELF", "ISLAND_S_SHELF", "ISLAND_OPENSEA"
     )
   }
 
@@ -88,7 +84,7 @@ anno_concordance_report <- function(tech         = "K850",
 
   # The CpG GRanges is rebuilt per area because different area_gr builders use
   # different seqname styles ("chr1" vs "1") depending on their data source
-  # (AnnotationHub uses "chr1"; bundled cytoband/dmr tables use "1").
+  # (AnnotationHub and TxDb use "chr1"; the manifest uses "1").
   # .anno_wgbs_labels_for_area() aligns seqnames to match the area's style.
 
   # --- Per-area comparison -----------------------------------------------
@@ -173,7 +169,7 @@ anno_concordance_report <- function(tech         = "K850",
     return(rep(list(character(0)), nrow(subset_df)))
 
   # Align seqname style ("chr1" vs "1") to the area_gr's own style.
-  # bundled cytoband / dmr tables use "1"; AnnotationHub + TxDb use "chr1".
+  # the manifest uses "1"; AnnotationHub + TxDb use "chr1".
   area_seqs <- as.character(GenomicRanges::seqnames(area_gr))
   use_chr_prefix <- length(area_seqs) > 0L && any(grepl("^chr", area_seqs))
   probe_chr <- if (use_chr_prefix) paste0("chr", subset_df$CHR) else subset_df$CHR
@@ -224,8 +220,6 @@ anno_concordance_report <- function(tech         = "K850",
   switch(area,
     GENE   = "txdb",
     ISLAND = "annotationhub",
-    CHR    = "bundled",        # CHR_CYTOBAND uses bundled cytoband table
-    DMR    = "bundled",        # DMR_* uses bundled dmr_annotation table
     "unknown"
   )
 }

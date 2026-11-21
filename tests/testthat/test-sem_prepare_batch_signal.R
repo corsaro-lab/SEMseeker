@@ -5,7 +5,7 @@
 # These tests pin down its 4 contracts:
 #
 #   1. Illumina path: builds probe_features from Bioconductor manifest,
-#      collapses dmr_annotation duplicates, intersects with input, removes
+#      collapses duplicate probes, intersects with input, removes
 #      X/Y, aligns signal_data to probe_features.
 #   2. WGBS / LONGREAD path: builds probe_features from synthetic
 #      "{CHR}_{START}" rownames via io_coord_probe_features().

@@ -280,7 +280,7 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
   # alignment. sem_prepare_batch_signal() centralises:
   #   - tech-specific probe_features build (manifest for Illumina,
   #     io_coord_probe_features for WGBS / LONGREAD)
-  #   - dmr_annotation duplicate-PROBE collapse
+  #   - duplicate-PROBE collapse
   #   - intersection with input rownames
   #   - uniform sex-chromosome removal across all techs
   #   - signal_data ⇔ probe_features alignment with strict invariant

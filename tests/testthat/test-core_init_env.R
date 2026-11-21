@@ -18,7 +18,7 @@ test_that("test_init_env", {
   testthat::expect_true(ssEnv$maxResources == "10")
   SEMseeker:::core_close_env()
 
-  ssEnv <- SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,areas = c("GENE","DMR"), showprogress=TRUE, start_fresh=TRUE)
+  ssEnv <- SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,areas = c("GENE","ISLAND"), showprogress=TRUE, start_fresh=TRUE)
   testthat::expect_true(length(unique(ssEnv$keys_areas_subareas[,"AREA"]))!=1)
 
   unlink(tempFolder,recursive = TRUE)

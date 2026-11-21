@@ -20,7 +20,8 @@ A data frame with 20,000 rows and 6 columns:
 }
 }
 \source{
-Built from \code{\link{dmr_annotation}} and the
+Built from the curated probe-to-DMR table in
+  \code{data-raw/dmr_annotation.rda} and the
   \code{IlluminaHumanMethylationEPICanno.ilm10b4.hg19} Bioconductor
   annotation package with \code{set.seed(20210713)} (date of the v.0.1.9
   Zenodo software-archive release, DOI
@@ -40,7 +41,9 @@ H19/IGF2, MEG3/DLK1, GNAS, PEG3, SNURF, PLAGL1, NNAT, MEST, ...).
 \details{
 Construction strategy (see \code{data-raw/build_test_master_features.R}):
 \enumerate{
-  \item All unique probe IDs in \code{\link{dmr_annotation}} are kept as
+  \item All unique probe IDs of a curated probe-to-DMR table
+    (\code{data-raw/dmr_annotation.rda}, a dataset of the package until
+    0.99.6) are kept as
     the biological \emph{signal} layer (~820 probes labelled with their
     parent DMR in \code{DMR_LABEL}).
   \item Each imprinting DMR is expanded into a genomic window of

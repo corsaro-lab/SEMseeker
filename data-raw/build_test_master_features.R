@@ -10,7 +10,7 @@
 ##   - tests/testthat/setup.R  (automated tests)
 ##   - vignettes/getting-started.Rmd  (runnable example, subset to BWS loci)
 ##
-## Re-run only when the curated DMR list (data/dmr_annotation.rda) or the EPIC
+## Re-run only when the curated DMR list (data-raw/dmr_annotation.rda) or the EPIC
 ## annotation package changes.  Requires
 ## `IlluminaHumanMethylationEPICanno.ilm10b4.hg19` installed.
 ##
@@ -25,8 +25,10 @@ suppressPackageStartupMessages({
   library(usethis)
 })
 
-stopifnot(file.exists("data/dmr_annotation.rda"))
-load("data/dmr_annotation.rda")
+## The DMR list was a dataset of the package until 0.99.6, when the DMR area
+## was removed; it stays here only as the source of this fixture.
+stopifnot(file.exists("data-raw/dmr_annotation.rda"))
+load("data-raw/dmr_annotation.rda")
 
 ## ── 1. Load EPIC manifest ──────────────────────────────────────────────────
 data("Locations", package = "IlluminaHumanMethylationEPICanno.ilm10b4.hg19",

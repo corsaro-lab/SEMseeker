@@ -85,11 +85,9 @@ sem_prepare_batch_signal <- function(signal_data,
   }
 
   # ---- 3. Collapse duplicate PROBE rows --------------------------------
-  # anno_probe_annotation_build() does a left-join with dmr_annotation, and
-  # dmr_annotation has ~744 duplicate PROBE entries (one CpG can belong
-  # to multiple DMRs). Without collapsing, the merge inflates
-  # probe_features and the downstream `nrow(signal_data) ==
-  # nrow(probe_features)` invariant fails by coincidence.
+  # The annotation is one row per probe, but a duplicate PROBE row would
+  # break the downstream `nrow(signal_data) == nrow(probe_features)`
+  # invariant by coincidence, so duplicates are collapsed defensively.
   if (anyDuplicated(probe_features$PROBE) > 0L) {
     probe_features <- probe_features[!duplicated(probe_features$PROBE),
                                       , drop = FALSE]
@@ -128,7 +126,7 @@ sem_prepare_batch_signal <- function(signal_data,
   # ---- 8. Convenience AREA_SUBAREA columns -----------------------------
   # PROBE_WHOLE and CHR_WHOLE are the canonical (AREA, SUBAREA) names
   # for the PROBE-level and CHR-level baselines (same pattern as
-  # GENE_BODY, ISLAND_N_SHORE, CHR_CYTOBAND, etc.). Downstream code
+  # GENE_BODY, ISLAND_N_SHORE, etc.). Downstream code
   # iterates over (AREA, SUBAREA) combinations and does dynamic lookup
   # via `probe_features[[area_subarea]]`, so these columns must exist
   # even when their value is a 1:1 alias of PROBE / "chr"+CHR.

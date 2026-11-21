@@ -47,20 +47,6 @@ test_that("anno_area_granges_build appends _WHOLE when no underscore", {
 })
 
 # ---------------------------------------------------------------------------
-# DMR area — uses bundled data, no external packages needed
-# ---------------------------------------------------------------------------
-
-test_that("anno_area_granges_build DMR_WHOLE returns GRanges with label", {
-  skip_if_not_installed("GenomicRanges")
-  skip_if_not_installed("IRanges")
-  gr <- SEMseeker:::anno_area_granges_build("DMR_WHOLE", genome_build = "hg19")
-  expect_s4_class(gr, "GRanges")
-  expect_true(length(gr) > 0)
-  expect_true("label" %in% names(GenomicRanges::mcols(gr)))
-  expect_false(any(is.na(GenomicRanges::mcols(gr)$label)))
-})
-
-# ---------------------------------------------------------------------------
 # GENE areas — require TxDb
 # ---------------------------------------------------------------------------
 
@@ -111,21 +97,6 @@ test_that("anno_area_granges_build result is cached on second call", {
   gr1 <- SEMseeker:::anno_area_granges_build("GENE_BODY", genome_build = "hg19")
   gr2 <- SEMseeker:::anno_area_granges_build("GENE_BODY", genome_build = "hg19")
   expect_identical(gr1, gr2)  # exact same object from cache
-})
-
-# ---------------------------------------------------------------------------
-# CHR_CYTOBAND — uses bundled data
-# ---------------------------------------------------------------------------
-
-test_that("anno_area_granges_build CHR_CYTOBAND returns GRanges with label", {
-  skip_if_not_installed("GenomicRanges")
-  skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
-  gr <- SEMseeker:::anno_area_granges_build("CHR_CYTOBAND", genome_build = "hg19")
-  expect_s4_class(gr, "GRanges")
-  expect_true(length(gr) > 100L)
-  expect_true("label" %in% names(GenomicRanges::mcols(gr)))
-  # Labels should look like cytoband names (e.g. "p11.1", "q21.3")
-  expect_true(any(grepl("[pq]", GenomicRanges::mcols(gr)$label)))
 })
 
 # ---------------------------------------------------------------------------

@@ -15,8 +15,6 @@
 #'   \code{START / END}       \tab \code{pos} column (single-base CpG probes)  \cr
 #'   \code{GENE_*}            \tab parsed from \code{UCSC_RefGene_Group}       \cr
 #'   \code{ISLAND_*}          \tab recoded from \code{Relation_to_Island}      \cr
-#'   \code{CHR_CYTOBAND}      \tab \code{UCSC_CpG_Islands_Name} or similar     \cr
-#'   \code{DMR_WHOLE/DMR_DMR} \tab from bundled \code{dmr_annotation} table    \cr
 #' }
 #'
 #' @param tech Character scalar: one of \code{"K27"}, \code{"K450"}, or
@@ -26,8 +24,7 @@
 #'
 #' @return A \code{data.frame} with one row per probe and columns
 #'   \code{PROBE}, \code{CHR}, \code{START}, \code{END}, the technology flag,
-#'   gene body region columns, CpG island context columns, cytoband, and DMR
-#'   annotations.
+#'   gene body region columns and CpG island context columns.
 #'
 #' Build the eight GENE_* annotation columns from the UCSC RefGene manifest.
 #'
@@ -80,36 +77,6 @@
   out
 }
 
-#' Assign each probe its cytoband by range overlap against \code{cytoband_hg19}.
-#'
-#' Pure: one \code{findInterval} per chromosome (O(n log m)), no package access.
-#'
-#' @param chr Character vector: chromosome WITHOUT the "chr" prefix.
-#' @param start Integer vector: CpG position.
-#' @param cytoband Cytoband table (CHR/START/END/CYTOBAND); defaults to the
-#'   bundled \code{cytoband_hg19} (injectable for testing).
-#' @return Named list with a single \code{CHR_CYTOBAND} character vector.
-#' @keywords internal
-#' @noRd
-.anno_chr_columns <- function(chr, start, cytoband = NULL) {
-  if (is.null(cytoband)) cytoband <- SEMseeker::cytoband_hg19
-  cb <- cytoband[!is.na(cytoband$CHR) & cytoband$CHR != "", , drop = FALSE]
-  chr_vec   <- as.character(chr)
-  start_vec <- as.integer(start)
-  cytoband_vec <- rep(NA_character_, length(chr_vec))
-
-  for (chr_val in unique(chr_vec[!is.na(chr_vec)])) {
-    cb_chr <- cb[cb$CHR == chr_val, , drop = FALSE]
-    if (nrow(cb_chr) == 0L) next
-    cb_chr <- cb_chr[order(cb_chr$START), ]
-    idx <- which(chr_vec == chr_val)
-    band_idx <- findInterval(start_vec[idx], cb_chr$START)
-    valid <- band_idx > 0L & start_vec[idx] <= cb_chr$END[band_idx]
-    cytoband_vec[idx[valid]] <- cb_chr$CYTOBAND[band_idx[valid]]
-  }
-  list(CHR_CYTOBAND = cytoband_vec)
-}
-
 # ---------------------------------------------------------------------------
 # Where the probe annotation is cached, and why it is not in ssEnv
 #
@@ -159,8 +126,7 @@
     "GENE_5UTR", "GENE_3UTR", "GENE_EXONBND", "GENE_WHOLE", "GENE_PROMOTER",
     "ISLAND_WHOLE", "ISLAND_ISLAND",
     "ISLAND_N_SHORE", "ISLAND_S_SHORE",
-    "ISLAND_N_SHELF", "ISLAND_S_SHELF", "ISLAND_OPENSEA",
-    "CHR_CYTOBAND", "DMR_WHOLE", "DMR_DMR")
+    "ISLAND_N_SHELF", "ISLAND_S_SHELF", "ISLAND_OPENSEA")
 }
 
 .anno_probe_cache_file <- function(key) {
@@ -242,9 +208,8 @@
 #' Build the Illumina probe annotation table
 #'
 #' Internal helper. Assembles the per-probe annotation (genomic position,
-#' cytoband and DMR/area membership) for an Illumina methylation array
-#' platform, joining the bundled \code{\link{cytoband_hg19}} and
-#' \code{\link{dmr_annotation}} reference data.
+#' gene and CpG island context) for an Illumina methylation array platform,
+#' from its Bioconductor manifest alone.
 #'
 #' The result is cached on disk under \code{tools::R_user_dir("SEMseeker",
 #' "cache")}, keyed by technology and genome build, and memoised in the package
@@ -288,27 +253,18 @@ anno_probe_annotation_build <- function(tech, force = FALSE) {
   anno_df[[tech]] <- TRUE
 
   # ---- Semantic area columns (one row per probe) ----
-  # GENE / ISLAND / CHR are 1:1 mappings: each pure helper returns a NAMED LIST
+  # GENE / ISLAND are 1:1 mappings: each pure helper returns a NAMED LIST
   # of columns for ALL probes. They are independent column-groups, NOT a
   # mutually-exclusive dispatch - every probe gets its gene context AND its
-  # island context AND its cytoband. The helpers are pure (no annotation-package
-  # access), so each area's recoding is unit-tested without an Illumina package.
+  # island context. The helpers are pure (no annotation-package access), so
+  # each area's recoding is unit-tested without an Illumina package. CHR needs
+  # no column: its region is the chromosome, which every row already carries.
   col_groups <- c(
     .anno_gene_columns(anno_df$UCSC_RefGene_Group, anno_df$UCSC_RefGene_Name),
     .anno_island_columns(anno_df$Relation_to_Island, anno_df$Islands_Name,
-                    anno_df$CHR, anno_df$START),
-    .anno_chr_columns(anno_df$CHR, anno_df$START)
+                    anno_df$CHR, anno_df$START)
   )
   for (nm in names(col_groups)) anno_df[[nm]] <- col_groups[[nm]]
-
-  # ---- DMR columns (1:many membership - NOT a 1:1 column) ----
-  # A probe can belong to several DMRs, so this is a row-EXPANDING join, not a
-  # per-probe column like GENE/ISLAND/CHR. The duplication is intentional and
-  # required: anno_probe_features_get() selects [tech, PROBE, CHR, START, END,
-  # area_subarea] and dplyr::distinct()s - for DMR_* this preserves every
-  # membership, while for the other areas the duplicate rows collapse back.
-  dmr <- SEMseeker::dmr_annotation
-  anno_df <- merge(anno_df, dmr, by = "PROBE", all.x = TRUE)
 
   # ---- Select final columns ----
   keep <- .anno_probe_schema(tech)

@@ -16,9 +16,8 @@ A data frame of per-probe annotation columns.
 }
 \description{
 Internal helper. Assembles the per-probe annotation (genomic position,
-cytoband and DMR/area membership) for an Illumina methylation array
-platform, joining the bundled \code{\link{cytoband_hg19}} and
-\code{\link{dmr_annotation}} reference data.
+gene and CpG island context) for an Illumina methylation array platform,
+from its Bioconductor manifest alone.
 }
 \details{
 The result is cached on disk under \code{tools::R_user_dir("SEMseeker",

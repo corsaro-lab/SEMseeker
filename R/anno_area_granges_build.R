@@ -26,12 +26,11 @@
 # Supported area/subarea values:
 #   GENE:    TSS200, TSS1500, 1STEXON, 5UTR, 3UTR, BODY, EXONBND, PROMOTER, WHOLE
 #   ISLAND:  WHOLE, ISLAND, N_SHORE, S_SHORE, N_SHELF, S_SHELF, OPENSEA
-#   CHR:     WHOLE, CYTOBAND
-#   DMR:     WHOLE, DMR
+#   CHR:     WHOLE
 #   PROBE:   WHOLE  (coordinate-only, handled by anno_probe_features_get())
 #
 # All returned GRanges carry mcols()$label - the subarea identifier used
-# downstream to group CpGs (gene symbol, island coordinate, cytoband name ...).
+# downstream to group CpGs (gene symbol, island coordinate, chromosome name ...).
 
 # ---------------------------------------------------------------------------
 # Package-level in-memory cache (survives the R session, cleared on restart)
@@ -394,86 +393,7 @@
     return(gr)
   }
 
-  if (subarea == "CYTOBAND") {
-    # Use bundled cytoband_hg19 data (available in data/)
-    cb_obj <- tryCatch(
-      get("cytoband_hg19", envir = asNamespace("SEMseeker")),
-      error = function(e) NULL
-    )
-    if (is.null(cb_obj) || !is.data.frame(cb_obj))
-      stop("cytoband_hg19 data object not found in SEMseeker package.")
-    # cytoband_hg19$CHR is stored as factor with an empty level (""); convert
-    # to character and drop rows with missing/empty seqnames - GenomicRanges
-    # refuses GRanges construction if any seqlevel is NA or "".
-    cb_chr <- as.character(cb_obj$CHR)
-    valid  <- !is.na(cb_chr) & nzchar(cb_chr)
-    cb_obj <- cb_obj[valid, , drop = FALSE]
-    cb_chr <- cb_chr[valid]
-    gr <- GenomicRanges::GRanges(
-      seqnames = cb_chr,
-      ranges   = IRanges::IRanges(cb_obj$START, cb_obj$END)
-    )
-    GenomicRanges::mcols(gr)$label <- as.character(cb_obj$CYTOBAND)
-    return(gr)
-  }
-
-  stop("Unknown CHR subarea: '", subarea, "'. Supported: WHOLE, CYTOBAND")
-}
-
-.anno_build_dmr_area <- function(subarea) {
-  # dmr_annotation maps Illumina probe IDs to DMR names (PROBE, DMR_WHOLE, DMR_DMR).
-  # To get genomic coordinates we join with the K850 "Locations" table.
-  dmr_obj <- tryCatch(
-    get("dmr_annotation", envir = asNamespace("SEMseeker")),
-    error = function(e) NULL
-  )
-  if (is.null(dmr_obj) || !is.data.frame(dmr_obj))
-    stop("dmr_annotation data object not found in SEMseeker package.")
-
-  label_col <- if (subarea %in% c("WHOLE", "DMR_WHOLE")) "DMR_WHOLE"
-               else if (subarea == "DMR") "DMR_DMR"
-               else colnames(dmr_obj)[ncol(dmr_obj)]
-
-  # Load probe coordinates from K850 Locations table
-  k850_pkg <- "IlluminaHumanMethylationEPICanno.ilm10b4.hg19"
-  if (!requireNamespace(k850_pkg, quietly = TRUE))
-    stop("DMR area coordinates require the K850 annotation package.\n",
-         "Install: BiocManager::install('", k850_pkg, "')")
-
-  locs <- .anno_pkg_load_table(k850_pkg, "Locations")
-  locs$PROBE <- rownames(locs)
-
-  # Join DMR labels with probe coordinates
-  merged <- merge(
-    dmr_obj[, c("PROBE", label_col)],
-    locs[, c("PROBE", "chr", "pos")],
-    by = "PROBE", all.x = FALSE
-  )
-  if (nrow(merged) == 0)
-    stop("No probe coordinates found for DMR annotation. ",
-         "Check that K850 annotation package is installed.")
-
-  # Aggregate: DMR genomic extent = min-to-max of probe positions per DMR name
-  merged$chr_clean <- sub("^chr", "", merged$chr)
-  dmr_ranges <- do.call(rbind, lapply(
-    split(merged, merged[[label_col]]),
-    function(d) {
-      data.frame(
-        label = d[[label_col]][1],
-        chr   = d$chr_clean[1],
-        start = min(d$pos, na.rm = TRUE),
-        end   = max(d$pos, na.rm = TRUE),
-        stringsAsFactors = FALSE
-      )
-    }
-  ))
-
-  gr <- GenomicRanges::GRanges(
-    seqnames = paste0("chr", dmr_ranges$chr),
-    ranges   = IRanges::IRanges(dmr_ranges$start, dmr_ranges$end)
-  )
-  GenomicRanges::mcols(gr)$label <- dmr_ranges$label
-  gr
+  stop("Unknown CHR subarea: '", subarea, "'. Supported: WHOLE")
 }
 
 # ---------------------------------------------------------------------------
@@ -492,14 +412,14 @@
 #' are also cached on disk in \code{tools::R_user_dir("SEMseeker", "cache")}.
 #'
 #' @param area_subarea Character scalar: area and subarea joined by \code{"_"}
-#'   (e.g. \code{"GENE_BODY"}, \code{"ISLAND_N_SHORE"}, \code{"CHR_CYTOBAND"}).
+#'   (e.g. \code{"GENE_BODY"}, \code{"ISLAND_N_SHORE"}, \code{"CHR_WHOLE"}).
 #' @param genome_build Character scalar: reference assembly.  Defaults to
 #'   \code{ssEnv$genome_build} (set by \code{\link{core_init_env}}), or
 #'   \code{"hg19"} if the session is not initialised.
 #'
 #' @return A \code{GRanges} object.  \code{mcols(gr)$label} contains the
 #'   subarea identifier used downstream to group CpGs (gene symbol, island
-#'   coordinate, cytoband name, etc.).
+#'   coordinate, chromosome name).
 #'
 #' @section PROBE_WHOLE semantics by technology:
 #' \code{PROBE_WHOLE} is \strong{not} handled by this function.  It is resolved
@@ -526,7 +446,7 @@
 #'     failing, but the result is not comparable across backends.}
 #'   \item{ISLAND areas}{\code{AnnotationHub} (downloads track on first use,
 #'     then caches locally).}
-#'   \item{CHR / DMR areas}{no extra packages needed.}
+#'   \item{CHR areas}{the chromosome lengths of the TxDb package of the build.}
 #' }
 #'
 #' @importFrom GenomicRanges GRanges
@@ -570,11 +490,8 @@ anno_area_granges_build <- function(area_subarea, genome_build = NULL) {
       txdb <- .anno_get_txdb(genome_build)
       .anno_build_chr_area(subarea, genome_build, txdb)
     },
-    DMR = {
-      .anno_build_dmr_area(subarea)
-    },
     stop("Unknown area '", area, "' in area_subarea = '", area_subarea, "'.\n",
-         "Supported areas: GENE, ISLAND, CHR, DMR")
+         "Supported areas: GENE, ISLAND, CHR")
   )
 
   assign(cache_key, gr, envir = .area_gr_cache)

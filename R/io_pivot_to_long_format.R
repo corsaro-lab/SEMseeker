@@ -56,7 +56,7 @@
 #'
 #' @param marker character. Marker name, e.g. `"MUTATIONS"`, `"DELTAS"`.
 #' @param figure character. `"HYPER"`, `"HYPO"` or `"BOTH"`.
-#' @param area character. Area class, e.g. `"GENE"`, `"PROBE"`, `"DMR"`.
+#' @param area character. Area class, e.g. `"GENE"`, `"PROBE"`, `"ISLAND"`.
 #' @param subarea character. Subarea, e.g. `"WHOLE"`, `"TSS1500"`.
 #' @param phenotype_column character. Column of the sample sheet to pair to each
 #'   sample. Must exist in `sample_sheet`.

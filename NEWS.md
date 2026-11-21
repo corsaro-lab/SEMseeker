@@ -18,6 +18,18 @@
   any folder containing them are always refused. The examples in the help
   pages write under `tempdir()`.
 
+- **The DMR area and the CYTOBAND subarea of CHR are gone.** Both were built
+  from data bundled in the package and fixed on hg19, whatever the assembly of
+  the run: the DMR labels were tied to EPIC probe ids and took their
+  coordinates from the hg19 manifest, and the band boundaries were
+  approximated from EPIC probe positions. A run on hg38 crossed hg38
+  positions with hg19 regions. The datasets `dmr_annotation` and
+  `cytoband_hg19` are removed with them. Asking for either area, or for any
+  area or subarea SEMseeker does not build, now stops before the result
+  folder is created, naming the values allowed; it used to stop at the end of
+  the session setup with an "unrecognised argument" message, after the
+  folder had been created.
+
 - **The genome assembly is fixed once per result folder.** `genome_build`
   has no default any more. For coordinate input (bedmethyl files, WGBS or
   long-read data frames) it must be given, because only whoever aligned the

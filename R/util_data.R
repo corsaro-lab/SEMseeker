@@ -1,42 +1,3 @@
-#' dmr_annotation
-#'
-#' Differentially methylated region (DMR) annotations for CpG probes on
-#' Illumina methylation arrays.  Contains only probes that overlap at least one
-#' known imprinted or disease-associated DMR.  This lightweight table
-#' (~1,600 rows) supplements the Bioconductor array annotation packages used by
-#' \code{\link{anno_probe_annotation_build}}, which do not carry DMR-level
-#' annotations.
-#'
-#' @format A data frame with three columns:
-#' \describe{
-#'   \item{PROBE}{Illumina probe identifier (e.g. \code{"cg00000924"}).}
-#'   \item{DMR_WHOLE}{Genomic region label of the enclosing DMR
-#'     (e.g. \code{"KCNQ1OT1:TSS-DMR"}).}
-#'   \item{DMR_DMR}{Fine-grained DMR label, identical to \code{DMR_WHOLE} for
-#'     most probes.}
-#' }
-"dmr_annotation"
-
-
-#' cytoband_hg19
-#'
-#' Cytogenetic band coordinates for the hg19 human genome assembly.
-#' Used by \code{\link{anno_probe_annotation_build}} to assign a \code{CHR_CYTOBAND}
-#' label (e.g. \code{"q12.2"}) to each CpG probe based on its chromosomal
-#' position.  Band boundaries are derived from probe positions in the full
-#' Illumina EPIC annotation and cover all autosomes and sex chromosomes.
-#'
-#' @format A data frame with 829 rows and four columns:
-#' \describe{
-#'   \item{CHR}{Chromosome identifier without \code{"chr"} prefix
-#'     (e.g. \code{"1"}, \code{"X"}).}
-#'   \item{START}{Approximate start position of the cytogenetic band (bp).}
-#'   \item{END}{Approximate end position of the cytogenetic band (bp).}
-#'   \item{CYTOBAND}{ISCN band label (e.g. \code{"q12.2"}, \code{"p36.33"}).}
-#' }
-"cytoband_hg19"
-
-
 #' metrics_properties
 #'
 #' Metadata table describing the statistical properties of each SEM metric.
@@ -73,7 +34,9 @@
 #'
 #' Construction strategy (see \code{data-raw/build_test_master_features.R}):
 #' \enumerate{
-#'   \item All unique probe IDs in \code{\link{dmr_annotation}} are kept as
+#'   \item All unique probe IDs of a curated probe-to-DMR table
+#'     (\code{data-raw/dmr_annotation.rda}, a dataset of the package until
+#'     0.99.6) are kept as
 #'     the biological \emph{signal} layer (~820 probes labelled with their
 #'     parent DMR in \code{DMR_LABEL}).
 #'   \item Each imprinting DMR is expanded into a genomic window of
@@ -104,7 +67,8 @@
 #'     \code{NA} for flanking and background probes.}
 #' }
 #'
-#' @source Built from \code{\link{dmr_annotation}} and the
+#' @source Built from the curated probe-to-DMR table in
+#'   \code{data-raw/dmr_annotation.rda} and the
 #'   \code{IlluminaHumanMethylationEPICanno.ilm10b4.hg19} Bioconductor
 #'   annotation package with \code{set.seed(20210713)} (date of the v.0.1.9
 #'   Zenodo software-archive release, DOI

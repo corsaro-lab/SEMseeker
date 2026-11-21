@@ -108,6 +108,7 @@ semseeker <- function(input,
 
   # ---- Step 0: the assembly of the run, refused before any folder exists --
   genome_build <- .sem_genome_build_resolve(input, input_type, tech, genome_build, result_folder)
+  .sem_regions_check(list(...)[["areas"]], list(...)[["subareas"]])
 
   # ---- Step 1: core_init_env FIRST - cleans folder (start_fresh), sets up
   #      parallel plan, configures session. Must happen before any
@@ -226,6 +227,34 @@ semseeker <- function(input,
     genome_build <- manifest_build
   }
   genome_build
+}
+
+#' Refuse region classes SEMseeker does not build
+#'
+#' Checked before any folder exists: an unknown area or subarea used to reach
+#' the end of core_init_env() as an unrecognised argument, after the folder and
+#' its session had been created.
+#'
+#' @param areas the \code{areas} passed to \code{semseeker()}, or \code{NULL}
+#'   for the default set; \code{"ALL"} asks for every area.
+#' @param subareas the \code{subareas} passed to \code{semseeker()}, or
+#'   \code{NULL}; \code{"ALL"} asks for every subarea.
+#' @return Invisibly \code{NULL}; stops naming the unknown values and the
+#'   values allowed.
+#' @keywords internal
+.sem_regions_check <- function(areas, subareas) {
+  allowed <- util_areas_subareas_allowed()
+  allowed_areas <- setdiff(unique(allowed$AREA), "POSITION")
+  unknown_areas <- setdiff(areas, c(allowed_areas, "POSITION", "ALL"))
+  if (length(unknown_areas) > 0L)
+    stop("areas: SEMseeker builds no area ", paste0("'", unknown_areas, "'", collapse = ", "), ". Allowed: ",
+         paste(allowed_areas, collapse = ", "), ", or 'ALL'.", call. = FALSE)
+  allowed_subareas <- unique(allowed$SUBAREA)
+  unknown_subareas <- setdiff(subareas, c(allowed_subareas, "ALL"))
+  if (length(unknown_subareas) > 0L)
+    stop("subareas: SEMseeker builds no subarea ", paste0("'", unknown_subareas, "'", collapse = ", "), ". Allowed: ",
+         paste(allowed_subareas, collapse = ", "), ", or 'ALL'.", call. = FALSE)
+  invisible(NULL)
 }
 
 #' Tell an Illumina source from a coordinate source

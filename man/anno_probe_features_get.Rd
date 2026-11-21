@@ -26,8 +26,8 @@ Bioconductor array annotation packages (see \code{\link{anno_probe_annotation_bu
 and cached in the session environment.
 
 For \strong{WGBS} and \strong{LONGREAD} data, coordinates are read directly
-from the saved POSITION pivot parquet; semantic areas (GENE_*, ISLAND_*,
-CHR_CYTOBAND, DMR_*) are resolved via \code{\link{anno_area_granges_build}} and
+from the saved POSITION pivot parquet; semantic areas (GENE_*, ISLAND_*)
+are resolved via \code{\link{anno_area_granges_build}} and
 \code{GenomicRanges::findOverlaps()}.
 }
 \section{PROBE_WHOLE vs POSITION_WHOLE - technology semantics}{

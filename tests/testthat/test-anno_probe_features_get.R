@@ -1,12 +1,7 @@
 # Unit tests for the pure per-area column helpers used by anno_probe_annotation_build():
-# .anno_gene_columns / .anno_chr_columns (ISLAND lives in test-anno_island_opensea.R). These
+# .anno_gene_columns (ISLAND lives in test-anno_island_opensea.R). These
 # exercise the annotation recoding without an Illumina annotation package, so the
 # glue is covered in CI.
-#
-# NOTE — DMR is deliberately NOT a column-helper: a probe can belong to several
-# DMRs, so it is a row-EXPANDING join (merge), not a 1:1 per-probe column.
-# anno_probe_features_get() relies on that expansion (+ distinct()) to preserve
-# multi-DMR membership, so DMR stays as merge() inside anno_probe_annotation_build().
 
 test_that(".anno_gene_columns recodes RefGene groups into the 9 GENE_* columns", {
   group <- c("Body", "TSS200;Body", "1stExon", "5'UTR;3'UTR", "")
@@ -50,21 +45,6 @@ test_that("GENE_PROMOTER names a gene once however many of its windows are hit",
   # the single-window columns are unchanged by the generalisation of the helper
   expect_equal(g$GENE_TSS200,  c("GENEX", NA, "GENEW"))
   expect_equal(g$GENE_TSS1500, c("GENEX", "GENEY", NA))
-})
-
-test_that(".anno_chr_columns assigns cytoband by range overlap (injected table)", {
-  cytoband <- data.frame(
-    CHR      = c("1", "1"),
-    START    = c(1L, 10000L),
-    END      = c(9999L, 20000L),
-    CYTOBAND = c("p36.33", "p36.32"),
-    stringsAsFactors = FALSE)
-
-  out <- SEMseeker:::.anno_chr_columns(
-    chr = c("1", "1", "2"), start = c(5000L, 15000L, 500L), cytoband = cytoband)
-
-  expect_named(out, "CHR_CYTOBAND")
-  expect_equal(out$CHR_CYTOBAND, c("p36.33", "p36.32", NA))  # chr2 absent -> NA
 })
 
 # ---- The cache has to know which columns it was written for ----------------

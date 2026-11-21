@@ -251,10 +251,9 @@ can be aggregated region-by-region. The available subareas per area:
 
 | Area | Subareas |
 |---|---|
-| `GENE` | `BODY`, `TSS1500`, `TSS200`, `1STEXON`, `5UTR`, `3UTR`, `EXONBND`, `WHOLE` |
+| `GENE` | `BODY`, `TSS1500`, `TSS200`, `1STEXON`, `5UTR`, `3UTR`, `EXONBND`, `PROMOTER`, `WHOLE` |
 | `ISLAND` | `ISLAND`, `N_SHORE`, `S_SHORE`, `N_SHELF`, `S_SHELF`, `OPENSEA`, `WHOLE` |
-| `CHR` | `WHOLE`, `CYTOBAND` |
-| `DMR` | `WHOLE`, `DMR` |
+| `CHR` | `WHOLE` |
 | `PROBE` | `WHOLE` |
 
 #### CpG-island context mapping (`ISLAND`)
@@ -323,7 +322,7 @@ one answers a different question:
 |---|---|
 | `MARKER` | which quantity |
 | `FIGURE` | which side of it (`HYPER`/`HYPO`), or for `SIGNAL` the **scale** of the value: `BETA` for a proportion bounded in [0,1], `MVALUE` for the logit-transformed one |
-| `SCOPE` | `SAMPLE` = one number per sample, so the file is **one row tall**; `INSTANCE` = one row per gene, island, cytoband or probe |
+| `SCOPE` | `SAMPLE` = one number per sample, so the file is **one row tall**; `INSTANCE` = one row per gene, island, chromosome or probe |
 | `AREA`, `SUBAREA` | the region class: which positions take part |
 | `AGGREGATION` | how those positions are reduced — `SUM`, `MEAN`, `MEDIAN`, `VARIANCE`, `IQR`, and `VALUE` when the row is already a single position so nothing is reduced |
 

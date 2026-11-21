@@ -70,23 +70,7 @@ util_keys_create <- function(ssEnv, arguments)
   ########################################################################################################################
   # manage AREAS and SUBAREAS #####
 
-  keys_areas_default <- data.frame("AREA"=c("GENE","ISLAND","DMR","CHR","PROBE"))
-
-  # PROMOTER is a window of its own here, not a shorthand read back later: the
-  # positions of TSS200, TSS1500 and 1STEXON are masked once, so one gene gets one
-  # measure. Grouped at read time it would reach three families of results, and a
-  # gene with three p-values has none.
-  keys_gene_subareas_default <- data.frame("AREA"="GENE", "SUBAREA"=c("BODY","TSS1500","TSS200","1STEXON","3UTR","5UTR","EXONBND","PROMOTER","WHOLE"))
-  # ISLAND context (Illumina Relation_to_Island, 6 categories): WHOLE = whole
-  # neighbourhood (core+shores+shelves, like GENE_WHOLE), ISLAND = core only,
-  # OPENSEA = CpGs outside every neighbourhood. See island_opensea.R.
-  keys_island_subareas_default <- data.frame("AREA"="ISLAND","SUBAREA"=c("ISLAND","N_SHORE","S_SHORE","N_SHELF","S_SHELF","OPENSEA","WHOLE"))
-  keys_dmr_subareas_default <- data.frame("AREA"="DMR","SUBAREA"=c("WHOLE"))
-  keys_chr_subareas_default <- data.frame("AREA"="CHR","SUBAREA"=c("WHOLE","CYTOBAND"))
-  keys_probe_subareas_default <- data.frame("AREA"="PROBE","SUBAREA"=c("WHOLE"))
-  keys_position_subareas_default <- data.frame("AREA"="POSITION","SUBAREA"=c("WHOLE"))
-
-  keys_areas_subareas_default <- rbind(keys_gene_subareas_default, keys_island_subareas_default, keys_dmr_subareas_default, keys_chr_subareas_default, keys_probe_subareas_default, keys_position_subareas_default)
+  keys_areas_subareas_default <- util_areas_subareas_allowed()
   ssEnv$default$keys_areas_subareas_default <- keys_areas_subareas_default
 
   areas <- unique(c(arguments[["areas"]],"POSITION"))
@@ -188,4 +172,30 @@ util_keys_create <- function(ssEnv, arguments)
   core_update_session_info(ssEnv)
 
   return(arguments)
+}
+
+#' The region classes a run can ask for
+#'
+#' One table, read both by the keys of a session and by the door of
+#' semseeker(), so that what the door accepts and what the keys can build
+#' are the same list by construction.
+#'
+#' PROMOTER is a window of its own here, not a shorthand read back later: the
+#' positions of TSS200, TSS1500 and 1STEXON are masked once, so one gene gets one
+#' measure. Grouped at read time it would reach three families of results, and a
+#' gene with three p-values has none. ISLAND follows the Relation_to_Island
+#' context: WHOLE is the whole neighbourhood (core, shores and shelves, like
+#' GENE_WHOLE), ISLAND is the core only, OPENSEA the positions outside every
+#' neighbourhood (see island_opensea.R).
+#'
+#' @return A data frame with one row per allowed (AREA, SUBAREA) pair.
+#' @keywords internal
+util_areas_subareas_allowed <- function() {
+  rbind(
+    data.frame(AREA = "GENE", SUBAREA = c("BODY", "TSS1500", "TSS200", "1STEXON", "3UTR", "5UTR", "EXONBND", "PROMOTER", "WHOLE")),
+    data.frame(AREA = "ISLAND", SUBAREA = c("ISLAND", "N_SHORE", "S_SHORE", "N_SHELF", "S_SHELF", "OPENSEA", "WHOLE")),
+    data.frame(AREA = "CHR", SUBAREA = "WHOLE"),
+    data.frame(AREA = "PROBE", SUBAREA = "WHOLE"),
+    data.frame(AREA = "POSITION", SUBAREA = "WHOLE")
+  )
 }

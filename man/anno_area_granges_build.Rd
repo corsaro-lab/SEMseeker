@@ -8,7 +8,7 @@ anno_area_granges_build(area_subarea, genome_build = NULL)
 }
 \arguments{
 \item{area_subarea}{Character scalar: area and subarea joined by \code{"_"}
-(e.g. \code{"GENE_BODY"}, \code{"ISLAND_N_SHORE"}, \code{"CHR_CYTOBAND"}).}
+(e.g. \code{"GENE_BODY"}, \code{"ISLAND_N_SHORE"}, \code{"CHR_WHOLE"}).}
 
 \item{genome_build}{Character scalar: reference assembly.  Defaults to
 \code{ssEnv$genome_build} (set by \code{\link{core_init_env}}), or
@@ -17,7 +17,7 @@ anno_area_granges_build(area_subarea, genome_build = NULL)
 \value{
 A \code{GRanges} object.  \code{mcols(gr)$label} contains the
   subarea identifier used downstream to group CpGs (gene symbol, island
-  coordinate, cytoband name, etc.).
+  coordinate, chromosome name).
 }
 \description{
 Constructs the same region boundaries used by Illumina array annotation
@@ -58,7 +58,7 @@ Install via \code{BiocManager::install()}.
     failing, but the result is not comparable across backends.}
   \item{ISLAND areas}{\code{AnnotationHub} (downloads track on first use,
     then caches locally).}
-  \item{CHR / DMR areas}{no extra packages needed.}
+  \item{CHR areas}{the chromosome lengths of the TxDb package of the build.}
 }
 }
 

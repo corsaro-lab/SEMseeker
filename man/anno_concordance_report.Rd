@@ -42,16 +42,13 @@ A \code{data.frame} with one row per area and columns:
 Validates \code{\link{anno_area_granges_build}} (the WGBS / long-read annotation
 path) against the Illumina manifest annotation used by
 \code{\link{anno_probe_annotation_build}}. The two pipelines are expected to
-assign CpGs to the same semantic areas (\code{GENE_*}, \code{ISLAND_*},
-\code{CHR_CYTOBAND}, \code{DMR_*}). This function takes a subset of Illumina
+assign CpGs to the same semantic areas (\code{GENE_*}, \code{ISLAND_*}). This function takes a subset of Illumina
 probes of known annotation, runs the WGBS pipeline on the same coordinates,
 and reports the concordance rate per area.
 }
 \details{
 Concordance categories (informational, returned in the \code{category} column):
 \itemize{
-  \item \code{"bundled"} - both pipelines use the same bundled data
-    (\code{cytoband_hg19.rda}, \code{dmr_annotation.rda}). Expected rate: 1.0.
   \item \code{"txdb"} - WGBS path uses \code{TxDb} UCSC \code{knownGene}
     while the Illumina manifest uses RefSeq. Some probes map to different
     gene symbols between the two sources.

@@ -532,7 +532,7 @@ controlled over, and `<m>` is the method the run declared (`multiple_test_adj`).
 Which one to report is an analytical choice that belongs in your Methods:
 
 - at `SCOPE = INSTANCE` the `KEY` level is the usual one — its members are the
-  genes (or islands, or cytobands) tested for one measurement;
+  genes (or islands, or chromosomes) tested for one measurement;
 - at `SCOPE = SAMPLE` the key holds a **single row**, so `PVALUE_ADJ_KEY_<m>`
   equals the raw p-value by arithmetic. The `SCOPE` level is the one with
   members to count there;

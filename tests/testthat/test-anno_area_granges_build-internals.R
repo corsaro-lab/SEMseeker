@@ -39,8 +39,6 @@ test_that(".anno_normalize_label_set splits, strips chr, uppercases, dedups, sor
 test_that(".anno_area_category maps AREA to its annotation backend", {
   expect_equal(SEMseeker:::.anno_area_category("GENE_TSS200"),  "txdb")
   expect_equal(SEMseeker:::.anno_area_category("ISLAND_WHOLE"), "annotationhub")
-  expect_equal(SEMseeker:::.anno_area_category("CHR_CYTOBAND"), "bundled")
-  expect_equal(SEMseeker:::.anno_area_category("DMR_X"),        "bundled")
   expect_equal(SEMseeker:::.anno_area_category("FOO_BAR"),      "unknown")
 })
 
