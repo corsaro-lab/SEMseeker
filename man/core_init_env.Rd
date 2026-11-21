@@ -17,11 +17,13 @@ core_init_env(result_folder, maxResources = 90, ...)
   \item{\code{parallel_strategy}}{parallelisation strategy for \pkg{future}:
     \code{"sequential"} (default), \code{"multisession"}, \code{"multicore"},
     \code{"cluster"}}
-  \item{\code{genome_build}}{reference genome assembly: \code{"hg19"} (default,
-    matches Illumina array annotation), \code{"hg38"} (GRCh38, typical for
-    long-read / Nanopore data), \code{"mm10"} (mouse - requires C-05).
-    Stored in \code{ssEnv$genome_build} and written to session provenance
-    metadata (C-06).}
+  \item{\code{genome_build}}{reference genome assembly: \code{"hg19"},
+    \code{"hg38"}, \code{"mm10"} or \code{"legacy"}. \code{semseeker()}
+    fixes it from the manifest or from the user's declaration; called
+    directly, the default is \code{"hg19"}. A folder that already holds a
+    session keeps its recorded assembly: a different one is refused,
+    \code{start_fresh} included. Stored in \code{ssEnv$genome_build} and
+    written to session provenance metadata.}
   \item{\code{tech}}{override technology auto-detection: \code{"K850"},
     \code{"K450"}, \code{"K27"}, \code{"WGBS"}, \code{"LONGREAD"}.
     Required for long-read data because LONGREAD cannot be distinguished from

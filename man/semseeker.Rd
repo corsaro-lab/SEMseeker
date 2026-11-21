@@ -10,8 +10,7 @@ semseeker(
   result_folder,
   input_type = c("auto", "bedmethyl", "coord_df", "matrix"),
   tech = NULL,
-  genome_build = "hg19",
-  strict_build_check = TRUE,
+  genome_build = NULL,
   ...
 )
 }
@@ -31,13 +30,20 @@ inferred from the object class / file extension.}
 \code{"K27"}, \code{"WGBS"}, \code{"LONGREAD"}). If \code{NULL} (default)
 it is auto-detected downstream by \code{core_get_meth_tech()}.}
 
-\item{genome_build}{Reference genome build. One of \code{"hg19"} (default),
-\code{"hg38"}, \code{"mm10"}, \code{"legacy"}.}
-
-\item{strict_build_check}{If \code{TRUE} (default), impossible tech /
-genome_build combinations (e.g. \code{tech="LONGREAD"} with
-\code{genome_build="hg19"}) raise an error. If \code{FALSE}, a warning is
-emitted and the pipeline proceeds.}
+\item{genome_build}{Reference assembly of the coordinates: \code{"hg19"},
+\code{"hg38"}, \code{"mm10"} or \code{"legacy"}. A run works on one
+assembly, which names every pivot and is recorded in the session. For
+coordinate inputs (bedmethyl files, WGBS or long-read data frames) only
+whoever aligned the reads knows it, so it has no default and must be given.
+For an Illumina matrix it is the assembly of the array manifest (hg19 for
+the 27k, 450k and EPIC manifests) and can be omitted; a different value is
+refused, because the probe coordinates would keep the manifest's assembly
+while the areas were built on the declared one. A result folder keeps the
+assembly of its first run for good: a later run on the same folder that
+declares another one is refused, \code{start_fresh = TRUE} included, and
+one that declares none uses the recorded one. SEMseeker never converts
+coordinates from one assembly to another. Every refusal comes before
+anything is written.}
 
 \item{...}{Additional arguments forwarded to \code{\link{sem_core}}
 and \code{core_init_env()} (e.g. \code{parallel_strategy}, \code{alpha},
@@ -63,7 +69,8 @@ Invisibly \code{NULL}; writes output files to \code{result_folder}.
 Public entry point. Accepts a wide range of inputs - bedmethyl files
 (modkit / nanopolish), coordinate-based data frames (WGBS / long-read),
 Illumina probe-indexed matrices, or already-loaded data frames - normalises
-them to the internal format, validates the tech / genome_build combination,
+them to the internal format, fixes the assembly of the run (see
+\code{genome_build}),
 and delegates to the core pipeline \code{\link{sem_core}}. Input
 values are passed through unchanged: if you need to convert M-values to
 beta, call \code{\link{sem_mvalue_to_beta}} explicitly before \code{semseeker()}.
@@ -107,7 +114,8 @@ semseeker(
   input = wgbs_df,              # columns: CHR, START, END, sample1, ...
   sample_sheet = ss,
   result_folder = tempdir(),
-  tech = "WGBS"
+  tech = "WGBS",
+  genome_build = "hg38"
 )
 }
 

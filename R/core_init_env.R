@@ -96,6 +96,42 @@
   arguments
 }
 
+#' Assembly recorded by a result folder
+#'
+#' A result folder works on one assembly for its whole life: the first run
+#' records it in the session, and every position written there is a coordinate
+#' of that assembly.
+#'
+#' @param result_folder a folder that may hold the results of a previous run.
+#' @return The recorded assembly, or \code{NULL} when the folder holds no
+#'   session or the session records none.
+#' @keywords internal
+core_result_folder_genome_build <- function(result_folder) {
+  if (is.null(result_folder) || !core_result_folder_is_own(result_folder))
+    return(NULL)
+  recorded <- readRDS(file.path(result_folder, "Log", "session_info.rds"))$genome_build
+  if (is.null(recorded) || !nzchar(recorded)) NULL else as.character(recorded)
+}
+
+#' Refuse to change the assembly of a result folder
+#'
+#' Runs before the session is opened, so before start_fresh deletes anything:
+#' a folder begun on one assembly is never reused, wiped or rewritten on
+#' another; another assembly takes another folder.
+#'
+#' @param result_folder the folder the session is opened on.
+#' @param declared_build the genome_build passed to core_init_env(), or
+#'   \code{NULL} when none was passed (the recorded one is then kept).
+#' @return Invisibly \code{NULL}; stops on a mismatch.
+#' @keywords internal
+.core_init_env_check_build <- function(result_folder, declared_build) {
+  recorded_build <- core_result_folder_genome_build(result_folder)
+  if (!is.null(recorded_build) && !is.null(declared_build) && !identical(as.character(declared_build), recorded_build))
+    stop("'", result_folder, "' holds results on ", recorded_build, " and keeps that assembly for good; genome_build = '",
+         declared_build, "' is refused, start_fresh included. Use a new result folder for ", declared_build, ".", call. = FALSE)
+  invisible(NULL)
+}
+
 .core_init_env_bootstrap_session <- function(result_folder, start_fresh) {
   if (start_fresh) {
     core_folder_delete(result_folder)
@@ -246,11 +282,13 @@
 #'     \item{\code{parallel_strategy}}{parallelisation strategy for \pkg{future}:
 #'       \code{"sequential"} (default), \code{"multisession"}, \code{"multicore"},
 #'       \code{"cluster"}}
-#'     \item{\code{genome_build}}{reference genome assembly: \code{"hg19"} (default,
-#'       matches Illumina array annotation), \code{"hg38"} (GRCh38, typical for
-#'       long-read / Nanopore data), \code{"mm10"} (mouse - requires C-05).
-#'       Stored in \code{ssEnv$genome_build} and written to session provenance
-#'       metadata (C-06).}
+#'     \item{\code{genome_build}}{reference genome assembly: \code{"hg19"},
+#'       \code{"hg38"}, \code{"mm10"} or \code{"legacy"}. \code{semseeker()}
+#'       fixes it from the manifest or from the user's declaration; called
+#'       directly, the default is \code{"hg19"}. A folder that already holds a
+#'       session keeps its recorded assembly: a different one is refused,
+#'       \code{start_fresh} included. Stored in \code{ssEnv$genome_build} and
+#'       written to session provenance metadata.}
 #'     \item{\code{tech}}{override technology auto-detection: \code{"K850"},
 #'       \code{"K450"}, \code{"K27"}, \code{"WGBS"}, \code{"LONGREAD"}.
 #'       Required for long-read data because LONGREAD cannot be distinguished from
@@ -275,6 +313,7 @@ core_init_env <- function(result_folder, maxResources = 90, ...) {
   popped       <- .core_pop_arg(arguments, "start_fresh", FALSE)
   start_fresh  <- popped$value
   arguments    <- popped$args
+  .core_init_env_check_build(result_folder, arguments[["genome_build"]])
   ssEnv        <- .core_init_env_bootstrap_session(result_folder, start_fresh)
 
   arguments <- .core_apply_defaults(arguments, .SS_DEFAULTS)

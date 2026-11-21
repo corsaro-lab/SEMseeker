@@ -19,6 +19,20 @@
   K27  = "IlluminaHumanMethylation27kanno.ilmn12.hg19"
 )
 
+#' Assembly of an Illumina annotation package
+#'
+#' The probe coordinates of a manifest belong to one assembly, which the
+#' Bioconductor name of the package states as its last token
+#' (\code{IlluminaHumanMethylation450kanno.ilmn12.hg19}). A run on an array
+#' works on that assembly and no other.
+#'
+#' @param pkg Character vector of annotation package names.
+#' @return Character vector of assemblies, one per package (e.g. \code{"hg19"}).
+#' @keywords internal
+.anno_pkg_genome_build <- function(pkg) {
+  sub("^.*\\.", "", pkg)
+}
+
 #' Load a named sub-table from an Illumina annotation package
 #'
 #' Each data object (e.g. "Locations", "Islands.UCSC", "Other") is stored as an

@@ -3,7 +3,8 @@
 #' Public entry point. Accepts a wide range of inputs - bedmethyl files
 #' (modkit / nanopolish), coordinate-based data frames (WGBS / long-read),
 #' Illumina probe-indexed matrices, or already-loaded data frames - normalises
-#' them to the internal format, validates the tech / genome_build combination,
+#' them to the internal format, fixes the assembly of the run (see
+#' \code{genome_build}),
 #' and delegates to the core pipeline \code{\link{sem_core}}. Input
 #' values are passed through unchanged: if you need to convert M-values to
 #' beta, call \code{\link{sem_mvalue_to_beta}} explicitly before \code{semseeker()}.
@@ -30,12 +31,20 @@
 #' @param tech Optional technology label (\code{"K850"}, \code{"K450"},
 #'   \code{"K27"}, \code{"WGBS"}, \code{"LONGREAD"}). If \code{NULL} (default)
 #'   it is auto-detected downstream by \code{core_get_meth_tech()}.
-#' @param genome_build Reference genome build. One of \code{"hg19"} (default),
-#'   \code{"hg38"}, \code{"mm10"}, \code{"legacy"}.
-#' @param strict_build_check If \code{TRUE} (default), impossible tech /
-#'   genome_build combinations (e.g. \code{tech="LONGREAD"} with
-#'   \code{genome_build="hg19"}) raise an error. If \code{FALSE}, a warning is
-#'   emitted and the pipeline proceeds.
+#' @param genome_build Reference assembly of the coordinates: \code{"hg19"},
+#'   \code{"hg38"}, \code{"mm10"} or \code{"legacy"}. A run works on one
+#'   assembly, which names every pivot and is recorded in the session. For
+#'   coordinate inputs (bedmethyl files, WGBS or long-read data frames) only
+#'   whoever aligned the reads knows it, so it has no default and must be given.
+#'   For an Illumina matrix it is the assembly of the array manifest (hg19 for
+#'   the 27k, 450k and EPIC manifests) and can be omitted; a different value is
+#'   refused, because the probe coordinates would keep the manifest's assembly
+#'   while the areas were built on the declared one. A result folder keeps the
+#'   assembly of its first run for good: a later run on the same folder that
+#'   declares another one is refused, \code{start_fresh = TRUE} included, and
+#'   one that declares none uses the recorded one. SEMseeker never converts
+#'   coordinates from one assembly to another. Every refusal comes before
+#'   anything is written.
 #' @param ... Additional arguments forwarded to \code{\link{sem_core}}
 #'   and \code{core_init_env()} (e.g. \code{parallel_strategy}, \code{alpha},
 #'   \code{LESIONS_BP}, \code{marker}, \code{areas}). \code{LESIONS_BP}
@@ -81,7 +90,8 @@
 #'   input = wgbs_df,              # columns: CHR, START, END, sample1, ...
 #'   sample_sheet = ss,
 #'   result_folder = tempdir(),
-#'   tech = "WGBS"
+#'   tech = "WGBS",
+#'   genome_build = "hg38"
 #' )
 #' }
 #'
@@ -91,11 +101,13 @@ semseeker <- function(input,
                       result_folder,
                       input_type = c("auto", "bedmethyl", "coord_df", "matrix"),
                       tech = NULL,
-                      genome_build = "hg19",
-                      strict_build_check = TRUE,
+                      genome_build = NULL,
                       ...) {
 
   input_type <- match.arg(input_type)
+
+  # ---- Step 0: the assembly of the run, refused before any folder exists --
+  genome_build <- .sem_genome_build_resolve(input, input_type, tech, genome_build, result_folder)
 
   # ---- Step 1: core_init_env FIRST - cleans folder (start_fresh), sets up
   #      parallel plan, configures session. Must happen before any
@@ -106,9 +118,6 @@ semseeker <- function(input,
     genome_build  = genome_build,
     ...
   )
-
-  # ---- Step 2: validate tech × genome_build ----------------------------
-  .sem_validate_tech_build(tech, genome_build, strict_build_check)
 
   # ---- Step 3: normalise input to SEMseeker signal_data ----------------
   # Values are passed through unchanged. The beta-vs-M-value flag is
@@ -170,20 +179,71 @@ semseeker <- function(input,
        class(input)[1L], "'. Pass input_type explicitly.")
 }
 
+#' Fix the one assembly a run works on
+#'
+#' Every position SEMseeker writes is a coordinate, so the assembly is part of
+#' its identity. An Illumina manifest carries its own assembly; a coordinate
+#' input carries none that SEMseeker could read, and a silent default would
+#' label the coordinates of another assembly.
+#'
+#' @param input the \code{input} of \code{semseeker()}: one source or a list of
+#'   sources, one per batch.
+#' @param input_type the \code{input_type} of \code{semseeker()}, already matched;
+#'   \code{"auto"} is resolved here per source.
+#' @param tech the declared technology, or \code{NULL} when it is left to
+#'   auto-detection.
+#' @param genome_build the assembly the user declared, or \code{NULL}.
+#' @param result_folder the result folder of the run; when it already holds a
+#'   run, its recorded assembly stands for an undeclared one, and
+#'   core_init_env() refuses a different one.
+#' @return The assembly of the run, a single string.
 #' @keywords internal
-.sem_validate_tech_build <- function(tech, genome_build, strict) {
-  if (is.null(tech) || !nzchar(tech)) return(invisible(NULL))
+.sem_genome_build_resolve <- function(input, input_type, tech, genome_build, result_folder = NULL) {
+  if (is.null(genome_build))
+    genome_build <- core_result_folder_genome_build(result_folder)
+  allowed_builds <- .SS_DEFAULTS$genome_build$choices
+  if (!is.null(genome_build) && !(length(genome_build) == 1L && genome_build %in% allowed_builds))
+    stop("genome_build must be one of ", paste0("'", allowed_builds, "'", collapse = ", "), "; got '",
+         paste(genome_build, collapse = "', '"), "'.", call. = FALSE)
 
-  bad <- (identical(tech, "LONGREAD") && identical(genome_build, "hg19"))
+  sources <- if (is.list(input) && !is.data.frame(input)) input else list(input)
+  source_kinds <- vapply(sources, .sem_source_kind, character(1), input_type = input_type, tech = tech)
 
-  if (bad) {
-    msg <- paste0(
-      "tech = 'LONGREAD' with genome_build = 'hg19' is almost certainly wrong: ",
-      "long-read methylation pipelines (Nanopore / PacBio) align to GRCh38. ",
-      "Set genome_build = 'hg38' in core_init_env() / semseeker()."
-    )
-    if (isTRUE(strict)) stop(msg) else warning(msg)
+  if (any(source_kinds == "coordinates") && is.null(genome_build))
+    stop("genome_build is required for coordinate input (bedmethyl, WGBS, long reads): declare the assembly ",
+         "the reads were aligned to, e.g. genome_build = 'hg38'.", call. = FALSE)
+
+  if (any(source_kinds == "illumina")) {
+    manifests <- if (!is.null(tech) && tech %in% names(.ANNO_PKGS)) .ANNO_PKGS[[tech]] else unname(.ANNO_PKGS)
+    manifest_build <- unique(.anno_pkg_genome_build(manifests))
+    if (length(manifest_build) != 1L)
+      stop("the Illumina manifests disagree on the assembly; declare tech so that one manifest is used.", call. = FALSE)
+    if (!is.null(genome_build) && !identical(genome_build, manifest_build))
+      stop("genome_build = '", genome_build, "' does not match the Illumina manifest (",
+           paste(manifests, collapse = ", "), "), whose coordinates are ", manifest_build,
+           ". Omit genome_build, or lift the data over to ", genome_build,
+           " and pass it as coordinates.", call. = FALSE)
+    genome_build <- manifest_build
   }
+  genome_build
+}
 
-  invisible(NULL)
+#' Tell an Illumina source from a coordinate source
+#'
+#' @param one_input one source of \code{semseeker()}: file paths, a data frame
+#'   or a matrix.
+#' @param input_type as in \code{.sem_genome_build_resolve()}.
+#' @param tech as in \code{.sem_genome_build_resolve()}.
+#' @return \code{"illumina"} or \code{"coordinates"}.
+#' @keywords internal
+.sem_source_kind <- function(one_input, input_type, tech) {
+  if (!is.null(tech) && nzchar(tech))
+    return(if (tech %in% names(.ANNO_PKGS)) "illumina" else "coordinates")
+  source_type <- if (identical(input_type, "auto")) .sem_detect_input_type(one_input) else input_type
+  if (!identical(source_type, "matrix"))
+    return("coordinates")
+  # a matrix keyed by CHR_START is coordinate data, as core_get_meth_tech() reads it
+  row_ids <- rownames(one_input)
+  if (length(row_ids) > 0L && all(grepl("_", row_ids[seq_len(min(1000L, length(row_ids)))])))
+    "coordinates" else "illumina"
 }

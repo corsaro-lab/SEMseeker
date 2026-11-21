@@ -18,6 +18,18 @@
   any folder containing them are always refused. The examples in the help
   pages write under `tempdir()`.
 
+- **The genome assembly is fixed once per result folder.** `genome_build`
+  has no default any more. For coordinate input (bedmethyl files, WGBS or
+  long-read data frames) it must be given, because only whoever aligned the
+  reads knows it; a silent hg19 used to label the coordinates of another
+  assembly. For an Illumina matrix it is taken from the array manifest (hg19)
+  and a different value is refused: the probe coordinates kept the manifest's
+  assembly while the areas were built on the declared one. A result folder
+  keeps the assembly of its first run: a later run on it that declares
+  another one is refused before anything is written, `start_fresh = TRUE`
+  included, where it used to rewrite the folder on the new assembly.
+  `strict_build_check` is gone, together with the warning it controlled.
+
 - **SQL conditions run in DuckDB, not SQLite.** The WHERE fragments given in
   the inference details and in the sample, area and pathway selections used to
   run through `sqldf`. Three things now behave differently: double quotes name

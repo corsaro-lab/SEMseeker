@@ -210,6 +210,39 @@ semseeker(
 )
 ```
 
+### Genome assembly
+
+SEMseeker keys every result by its coordinates, so the assembly is part of what
+each position means. Four rules follow.
+
+- **One assembly per run.** It names every pivot (`..._HG19.parquet`) and is
+  recorded in the session of the result folder.
+- **Who sets it depends on the input.** Illumina probe ids are placed on
+  their coordinates through the Bioconductor manifest of the array, and the
+  manifest fixes the assembly: hg19 for the 27k, 450k and EPIC manifests, so
+  `genome_build` can be omitted, and a different value is refused. Coordinate
+  input (bedmethyl files, WGBS or long-read data frames) carries no assembly
+  SEMseeker could read: only whoever aligned the reads knows it, so
+  `genome_build` has no default and must be given.
+- **A result folder keeps its assembly for good.** A later run on the same
+  folder that declares another assembly is refused before anything is
+  written, `start_fresh = TRUE` included; another assembly takes another
+  folder. A run that declares none uses the recorded one.
+- **No conversion between assemblies.** SEMseeker never lifts coordinates
+  over from one assembly to another. Data on another assembly are lifted over
+  before the run and passed as coordinates.
+
+```{r genome_build, eval=FALSE}
+# Long reads aligned to GRCh38: the assembly is declared.
+semseeker(
+  input         = list.files("bedmethyl/", pattern = "\\.bed$", full.names = TRUE),
+  sample_sheet  = sample_sheet,
+  result_folder = "~/semseeker_longreads/",
+  tech          = "LONGREAD",
+  genome_build  = "hg38"
+)
+```
+
 ### Genomic areas & subareas
 
 After per-probe markers are computed, SEMseeker annotates each probe to the

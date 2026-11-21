@@ -90,6 +90,7 @@ test_that("array, WGBS bedmethyl and LONGREAD bedmethyl produce convergent SEM c
       result_folder     = out_wgbs,
       input_type        = "bedmethyl",
       tech              = "WGBS",
+      genome_build      = "hg19",  ## test data is array-derived hg19
       parallel_strategy = "sequential"
     )
     TRUE
@@ -118,7 +119,6 @@ test_that("array, WGBS bedmethyl and LONGREAD bedmethyl produce convergent SEM c
       input_type         = "bedmethyl",
       tech               = "LONGREAD",
       genome_build       = "hg19",  ## test data is array-derived hg19; match other two paths
-      strict_build_check = FALSE,   ## suppresses LONGREAD+hg19 warning (intentional here)
       parallel_strategy  = "sequential"
     )
     TRUE
