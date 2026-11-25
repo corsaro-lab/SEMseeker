@@ -1,12 +1,16 @@
 ---
-title: "Getting started — epimutations and delta metrics"
+title: "Getting started: epimutations and delta metrics"
+description: >
+  Detect stochastic epigenetic mutations (SEMs) and compute per-region delta
+  metrics from DNA methylation data with SEMseeker, from input preparation to
+  result files.
 output:
   rmarkdown::html_vignette:
     toc: true
     toc_depth: 3
 bibliography: getting-started.bib
 vignette: >
-  %\VignetteIndexEntry{Getting started — epimutations and delta metrics}
+  %\VignetteIndexEntry{Getting started: epimutations and delta metrics}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

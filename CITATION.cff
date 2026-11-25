@@ -1,0 +1,28 @@
+# Citation metadata read by GitHub ("Cite this repository"), Zenodo and indexers.
+# Keep version and date-released aligned with DESCRIPTION at every release.
+cff-version: 1.2.0
+message: "If you use SEMseeker, please cite it as below."
+type: software
+title: "SEMseeker: Stochastic Epigenetic Mutations SEM Seeker"
+abstract: >-
+  R package for the detection, quantification and association analysis of
+  Stochastic Epigenetic Mutations (SEMs) from DNA methylation data: Illumina
+  methylation arrays, bisulfite sequencing and long-read sequencing. It computes
+  binary SEM calls and continuous deviation metrics, aggregates mutations into
+  genomic lesions, and provides association analysis and pathway enrichment.
+authors:
+  - family-names: Corsaro
+    given-names: Luigi
+    orcid: "https://orcid.org/0000-0003-1218-230X"
+version: 0.99.6
+doi: 10.5281/zenodo.5095416
+license: AGPL-3.0-or-later
+repository-code: "https://github.com/corsaro-lab/SEMseeker"
+url: "https://corsaro-lab.github.io/SEMseeker/"
+keywords:
+  - DNA methylation
+  - epigenetics
+  - stochastic epigenetic mutations
+  - epigenomics
+  - bioinformatics
+  - R package
