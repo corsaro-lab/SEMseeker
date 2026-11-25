@@ -77,102 +77,45 @@ folder precisely to keep it out.
 
 ---
 
-## Non-CRAN dependencies
+## Dependency installation
 
-### polars
+Every `Imports` and `Depends` entry is on CRAN or Bioconductor: since the move
+of the data engine to DuckDB no hard dependency comes from another repository,
+and `DESCRIPTION` declares neither `Additional_repositories` nor `Remotes`.
 
-`polars` is not on CRAN. It is distributed via the **R-multiverse** community repository:
+The step *Install R dependencies* of `R-CMD-check.yml` runs in four calls:
 
-```r
-Sys.setenv(NOT_CRAN = "true")
-install.packages("polars", repos = "https://community.r-multiverse.org")
-```
+1. `remotes::install_deps(dependencies = NA)` with the repositories configured
+   by `setup-r@v2` (on Linux the distribution-specific P3M URL, which serves
+   binaries). `dependencies = NA` installs `Imports`, `Depends` and
+   `LinkingTo` only: the full `Suggests` set pulls in chains such as
+   `pathfindR` -> `ggkegg` that are not needed for `R CMD check` and have
+   repeatedly broken CI.
+2. `BiocManager::install(c("limma", "KEGGREST"))` on its own. The Illumina
+   annotation packages load `minfi` while they install, and `minfi` needs
+   `limma`; `KEGGREST` is loaded by `bumphunter` and `AnnotationDbi` during the
+   same load tests. BiocManager installs a vector in the order given, not in
+   dependency order, so these two go first.
+3. The Bioconductor packages the test suite uses: the three Illumina annotation
+   packages, `AnnotationHub`, `TxDb.Hsapiens.UCSC.hg19.knownGene`,
+   `org.Hs.eg.db` and `qvalue`.
+4. The CRAN `Suggests` the test suite uses: `Rfast`, `mockery`, `ggpubr`,
+   `circlize`, `nanoparquet`.
 
-**Why `NOT_CRAN = "true"` is required:**
-The polars package performs a runtime check and refuses to install in CRAN-like
-sandboxed environments unless `NOT_CRAN` is explicitly set to `"true"`.
+`options(Ncpus = 1L)` keeps the installs serial: on the Windows runner a
+parallel install load-tested a package before its dependencies were built.
 
-**DESCRIPTION configuration:**
+The two lists in steps 3 and 4 are enumerated on purpose and checked by
+`tests/testthat/test-pkg_suggests_installed.R`, which scans every
+`skip_if_not_installed("pkg")` call in the tests and fails when the named
+package is missing, so a test cannot skip silently because CI forgot to install
+it. `test-coverage.yml` keeps its own install list, also with
+`dependencies = NA`: nothing ties the two lists together, they are aligned by
+hand and have drifted before.
 
-```
-Additional_repositories: https://community.r-multiverse.org
-```
-
-**Why `setup-r-dependencies@v2` (pak) cannot be used for polars:**
-`pak` resolves ALL `Imports` from DESCRIPTION before configuring extra
-repositories. This means polars is looked up before `Additional_repositories`
-is configured, producing *"Can't find package called polars"* on every run.
-Neither pre-install steps nor `.Rprofile` overrides help — pak spawns R
-subprocesses with `--no-save --no-restore`, bypassing `.Rprofile`.
-
-**Solution — use `remotes::install_deps()` instead:**
-`remotes` reads `Additional_repositories` *before* resolving, so polars is
-found correctly:
-
-```yaml
-- name: Install R dependencies
-  run: |
-    Sys.setenv(NOT_CRAN = "true")
-    install.packages(
-      c("remotes", "rcmdcheck", "testthat", "devtools"),
-      repos = "https://packagemanager.posit.co/cran/latest"
-    )
-    remotes::install_deps(
-      dependencies = NA,   # Imports/Depends/LinkingTo only — skip Suggests
-      repos = c(
-        rpolars = "https://community.r-multiverse.org",
-        CRAN    = "https://packagemanager.posit.co/cran/latest"
-      )
-    )
-  shell: Rscript {0}
-```
-
-`NOT_CRAN: "true"` is set as a global env var in the workflow job so it is
-active for all R processes (including `R CMD check`).
-
-**Why `dependencies = NA` (not `TRUE`):**
-`dependencies = TRUE` installs Suggests too. semseeker's `Suggests` includes
-`pathfindR`, which hard-requires `ggkegg` — a Bioconductor package that is not
-available on CRAN or community.r-multiverse.org. This causes
-`remotes::install_deps()` to emit *"dependency 'ggkegg' is not available"* and
-the subsequent test run to fail.
-
-Using `dependencies = NA` skips Suggests entirely. All code paths that need
-a Suggests package guard themselves with `requireNamespace()` and the
-corresponding tests call `testthat::skip()` when the package is absent, so CI
-is not affected. See also _Known Issue #5_ below.
-
-### polars API versioning (breaking changes 0.22 → 0.23)
-
-CI installs the **latest** polars from community.r-multiverse.org; local
-development typically uses an older pinned version (0.22.4 in renv.lock).
-This mismatch has caused recurring CI failures. Known breaking changes:
-
-| Old API (≤ 0.22.4) | New API (≥ 0.23) | Affected files |
-|---|---|---|
-| `df$to_data_frame()` | `as.data.frame(df)` | 11 R source files, 5 test files |
-| `lf$cast(list(col = dtype))` | `lf$with_columns(pl$col("c")$cast(dtype))` | `annotate_position_pivots.R` |
-| `lf$rename(list(old = "new"))` | `lf$select(pl$col("old")$alias("new"))` | `create_position_pivots.R` |
-| `$sort(descending = c(F, F, ...))` | `$sort(descending = FALSE)` scalar only | `signal_save.R`, `signal_range_values.R`, `deltaX_get.R`, `annotate_position_pivots.R`, `create_position_pivots.R` |
-
-**Rule:** never chain `$to_data_frame()` on a polars object; always use
-`as.data.frame()`. When casting multiple columns, use `$with_columns()` with
-per-column `$cast()`. This is forward-compatible with all polars R versions.
-
-**Long-term fix:** pin a minimum polars version in DESCRIPTION once one is
-confirmed to include all fixes, or switch to `pak::lockfile` to pin the exact
-version in CI.
-
-### ctdR
-
-`ctdR` is a private/internal package hosted on GitHub at `drake69/ctdR`.
-It is installed automatically via the `Remotes` field in `DESCRIPTION`:
-
-```
-Remotes: drake69/ctdR
-```
-
-`pak` / `setup-r-dependencies@v2` handles GitHub remotes natively.
+`ctdR`, `pathfindR`, `WebGestaltR` and the other enrichment backends are
+`Suggests` that CI does not install. The code guards each call with
+`requireNamespace()`; the tests that need one of them skip.
 
 ---
 
@@ -252,7 +195,7 @@ the global environment, so calls like `pivot_file_name_parquet()` work without
 ### Option B — local Docker container (matches CI exactly)
 
 `Dockerfile.ci` + `ci-local.sh` provide a container that mirrors GitHub Actions:
-same R version (4.5), same polars from community.r-multiverse.org, same
+same R version (4.6), the same Bioconductor annotation packages, the same
 `R CMD check --as-cran` flags.
 
 ```bash
@@ -281,7 +224,7 @@ The `.Rcheck` directory contains:
 | `semseeker-Ex.Rout` | Output from running `\examples{}` in man pages |
 
 **Difference vs GitHub CI:** container runs on Linux (Debian), not macOS. This
-catches polars API issues, `semseeker:::` visibility bugs, and `R CMD check`
+catches data-engine issues, `semseeker:::` visibility bugs, and `R CMD check`
 compliance. It will not reproduce macOS-specific issues such as symlink
 resolution differences (`/var` → `/private/var`), which are handled separately
 in the test assertions.

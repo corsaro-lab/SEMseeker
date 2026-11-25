@@ -1,0 +1,204 @@
+{
+  "package": "SEMseeker",
+  "version": "0.99.6",
+  "date": "2026-11-25",
+  "external": {
+    "db_source": "repositories",
+    "db_fetched_at": "2026-11-25 09:32:04",
+    "n_depends": 0,
+    "n_imports": 43,
+    "n_suggests": 39,
+    "hard_closure": 133,
+    "full_closure": 394,
+    "closure_by_origin": {
+      "base": 6,
+      "Bioconductor": 5,
+      "CRAN": 122
+    },
+    "imports_unused_in_R": "combinat",
+    "imports_single_file": ["doFuture", "effsize", "fastDummies", "ggvenn", "glmnet", "lmtest", "parallelly", "VennDiagram", "xtable"],
+    "suggests_unused": ["meta", "tidyverse"],
+    "non_cran_bioc": [],
+    "imports_string_only": "VennDiagram",
+    "suggests_string_only": ["ggpubr", "IlluminaHumanMethylation27kanno.ilmn12.hg19", "IlluminaHumanMethylation450kanno.ilmn12.hg19", "IlluminaHumanMethylationEPICanno.ilm10b4.hg19", "quantreg", "TxDb.Hsapiens.UCSC.hg19.knownGene", "TxDb.Hsapiens.UCSC.hg38.knownGene"],
+    "undeclared_used": [],
+    "r_dir_strays": ["example", "example_1.R", "example_2.R", "example_inference.R"]
+  },
+  "internal": {
+    "n_files": 210,
+    "n_functions": 350,
+    "n_exported": 23,
+    "n_edges": 983,
+    "edges_by_kind": {
+      "ast": 977,
+      "string": 6
+    },
+    "median_fun_lines": 30.5,
+    "functions_over_200_lines": ["assoc_apply_stat_model", "assoc_apply_stat_model_batch", "assoc_apply_stat_model_batch_lazy", "assoc_bayes_analysis", "assoc_glm_model_bulk", "assoc_predictors_prepare", "assoc_run_marker", "assoc_test_model", "assoc_volcano_plot_inference", "diagnostic_performance", "enrich_phenotype_phenolyzer", "enrich_WebGestalt", "io_data_preparation", "meta_association_overlaps_studies", "meta_association_overlaps_subsamples", "meta_enrichment_overlaps_subsamples", "sem_analyze_batch", "sem_analyze_population", "sem_analyze_population_bulk", "sem_coverage_analysis", "util_exploratory_analysis"],
+    "reachable_from_endpoints": 257,
+    "reachable_from_exports": 302,
+    "unreachable_from_exports": [".anno_area_category", ".anno_concordance_for_area", ".anno_normalize_label_set", ".anno_wgbs_labels_for_area", ".assoc_volcano_marker_from_name", ".f2_power", ".sem_source_kind", "anno_concordance_report", "assoc_analysis_summary", "assoc_data_extractor", "assoc_results_save", "assoc_statistical_power", "core_recover", "enrich_find_unique_gene_sets", "enrich_hypothesis_get", "enrich_pathway_keys_build", "enrich_results_get", "enrich_taxonomies_armonyser", "enrich_wrap_it", "io_burden_colname", "io_convertTextToNumeric", "io_guess_decimal_separator", "io_name_composer", "io_plot_file_name", "io_scope_name", "io_stat_colname", "meta_artefact_files", "meta_key_sets_read", "meta_key_space", "meta_keys_select", "meta_start", "meta_studies_normalise", "sem_available_metrics", "sem_cluster_analysis", "sem_compare_markers", "sem_metrics_filter", "sem_metrics_name_collect", "sem_metrics_ranking", "sem_mvalue_to_beta", "sem_ssim", "sem_variation_of_information", "util_aggregate_values", "util_data_frame_add_column", "util_epimutation_direction_expand", "util_gene_region_expand", "util_test_match_order", "util_test_match_order_by_rownames"],
+    "domain_cycles": [
+      ["anno", "assoc", "core", "enrich", "io", "plot", "sem", "unprefixed", "util"]
+    ],
+    "domain_cross_edges": 645,
+    "domain_feedback_arcs": {
+      "io": {
+        "from": "io",
+        "to": "util",
+        "calls": 8
+      },
+      "io.1": {
+        "from": "io",
+        "to": "anno",
+        "calls": 6
+      },
+      "core": {
+        "from": "core",
+        "to": "sem",
+        "calls": 4
+      },
+      "core.1": {
+        "from": "core",
+        "to": "anno",
+        "calls": 3
+      },
+      "core.2": {
+        "from": "core",
+        "to": "io",
+        "calls": 3
+      },
+      "assoc": {
+        "from": "assoc",
+        "to": "unprefixed",
+        "calls": 2
+      },
+      "io.2": {
+        "from": "io",
+        "to": "unprefixed",
+        "calls": 2
+      },
+      "core.3": {
+        "from": "core",
+        "to": "util",
+        "calls": 2
+      },
+      "io.3": {
+        "from": "io",
+        "to": "assoc",
+        "calls": 1
+      },
+      "plot": {
+        "from": "plot",
+        "to": "assoc",
+        "calls": 1
+      },
+      "util": {
+        "from": "util",
+        "to": "assoc",
+        "calls": 1
+      },
+      "assoc.1": {
+        "from": "assoc",
+        "to": "sem",
+        "calls": 1
+      },
+      "anno": {
+        "from": "anno",
+        "to": "unprefixed",
+        "calls": 1
+      }
+    },
+    "domain_feedback_calls": 35,
+    "n_file_cycles": 2,
+    "largest_file_cycle": ["anno_probe_features_get.R", "io_pivot_build.R", "io_read_pivot.R"],
+    "top_fan_in": {
+      "core_log_event": 112,
+      "core_get_session_info": 102,
+      "core_name_cleaning": 63,
+      "io_file_path_build": 44,
+      "io_dir_check_and_create": 40,
+      "core_init_env": 22,
+      "core_close_env": 17,
+      "io_engine_connection": 17,
+      "core_update_session_info": 15,
+      "io_inference_file_name": 13,
+      "io_signal_figure": 11,
+      "util_split_and_clean": 11,
+      "assoc_sig_formula_vars": 10,
+      "io_enrichment_folder": 10,
+      "io_pivot_file_name_parquet": 10
+    },
+    "duplicated_definitions": "%||%",
+    "parse_failures": []
+  },
+  "join": {
+    "buckets": {
+      "core": 27,
+      "layer": 12,
+      "periphery": 3,
+      "suggests": 37,
+      "unused": 3
+    },
+    "blocking": [],
+    "unused": ["combinat", "meta", "tidyverse"],
+    "periphery": ["ggvenn", "reshape2", "xtable"],
+    "layer_only": {
+      "caret": "association_analysis",
+      "fastDummies": "association_analysis",
+      "graphics": "association_analysis",
+      "jsonlite": "semseeker",
+      "lqmm": "association_analysis",
+      "matrixStats": "semseeker",
+      "R.utils": "semseeker",
+      "effsize": "association_analysis",
+      "pwr": "association_analysis",
+      "philentropy": "association_analysis",
+      "lmtest": "association_analysis",
+      "glmnet": "association_analysis"
+    },
+    "per_layer": [
+      {
+        "endpoint": "semseeker",
+        "functions": 159,
+        "files": 75,
+        "loc": 6447,
+        "imports": 27,
+        "closure": 82
+      },
+      {
+        "endpoint": "association_analysis",
+        "functions": 184,
+        "files": 99,
+        "loc": 9847,
+        "imports": 32,
+        "closure": 108
+      },
+      {
+        "endpoint": "enrichment_analysis",
+        "functions": 64,
+        "files": 36,
+        "loc": 3224,
+        "imports": 13,
+        "closure": 24
+      },
+      {
+        "endpoint": "UNION",
+        "functions": 258,
+        "files": 150,
+        "loc": 14940,
+        "imports": 37,
+        "closure": 125
+      }
+    ],
+    "imports_never_reached": ["combinat", "ggvenn", "reshape2", "tidyr", "VennDiagram", "xtable"],
+    "closure_now": 133,
+    "closure_endpoint_reachable": 125,
+    "closure_core_only": 82,
+    "closure_core_plus_layer": 130,
+    "packages_removable": 8,
+    "minimal_core_functions": 258,
+    "minimal_core_files": 150,
+    "total_functions": 350
+  }
+}
