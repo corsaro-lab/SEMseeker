@@ -199,3 +199,27 @@ test_that("the door writes a file and refuses to invent an envelope", {
   expect_gt(file.size(written), 1000)
   expect_match(dirname(written), "SIGNAL_THRESHOLD_PER_SAMPLE")
 })
+
+# The excursion labels carry a Greek delta, which the base pdf() device cannot
+# encode: it warns and substitutes the glyph, and fails where warnings are
+# errors. The chart saved as a PDF must therefore draw without a warning.
+test_that("a PDF draws the delta labels without an encoding warning", {
+  skip_if_not(isTRUE(capabilities("cairo")), "R built without cairo: the base pdf() device is the only one")
+  pdf_path <- tempfile(fileext = ".pdf")
+  on.exit(unlink(pdf_path), add = TRUE)
+  plot_object <- .build(.signal(), .envelope(), .sheet4(), "1_1001", .palette)
+
+  expect_no_warning(ggplot2::ggsave(pdf_path, plot = plot_object, width = 9, height = 5, units = "in",
+                                    device = SEMseeker:::.sem_threshold_plot_device(pdf_path)))
+  expect_true(file.exists(pdf_path))
+})
+
+test_that("only a PDF changes device; every other format keeps ggsave's choice", {
+  expect_null(SEMseeker:::.sem_threshold_plot_device("chart.png"))
+  expect_null(SEMseeker:::.sem_threshold_plot_device("chart.svg"))
+  if (isTRUE(capabilities("cairo"))) {
+    expect_identical(SEMseeker:::.sem_threshold_plot_device("chart.PDF"), grDevices::cairo_pdf)
+  } else {
+    expect_null(SEMseeker:::.sem_threshold_plot_device("chart.pdf"))
+  }
+})

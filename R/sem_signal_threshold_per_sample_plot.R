@@ -102,9 +102,30 @@ sem_signal_threshold_per_sample_plot <- function(probe, sample_sheet,
     show_labels = show_labels, label_font_size = label_font_size)
 
   ggplot2::ggsave(filename, plot = plot_object, width = 9, height = 5,
-                  units = "in", dpi = as.numeric(ssEnv$plot_resolution_ppi))
+                  units = "in", dpi = as.numeric(ssEnv$plot_resolution_ppi),
+                  device = .sem_threshold_plot_device(filename))
 
   invisible(filename)
+}
+
+# The device that can draw this chart's labels into `filename`.
+#
+# Why it exists: every excursion label starts with a Greek delta (U+03B4). The
+# base pdf() device writes text in a single-byte encoding that has no delta: it
+# warns and substitutes the glyph, or stops when warnings are errors, as under
+# R CMD check. cairo_pdf() draws any Unicode glyph, so a PDF goes through it
+# whenever R was built with cairo. Every other format keeps ggsave()'s choice
+# from the extension, and so does a PDF on an R without cairo.
+#
+# Args:
+#   filename: character(1), the path the chart is saved to; only its extension
+#     is read, compared without regard to case.
+#
+# Returns: grDevices::cairo_pdf for a PDF when cairo is available, otherwise
+#   NULL, which leaves the device to ggsave().
+.sem_threshold_plot_device <- function(filename) {
+  is_pdf <- tolower(tools::file_ext(filename)) == "pdf"
+  if (is_pdf && isTRUE(capabilities("cairo"))) grDevices::cairo_pdf else NULL
 }
 
 # The reference envelope of one probe, or NULL. The thresholds are written once

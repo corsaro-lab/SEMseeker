@@ -85,6 +85,13 @@
 
 ## Bug fixes
 
+- **The signal threshold chart draws its delta labels in PDF.**
+  `sem_signal_threshold_per_sample_plot()` labels each excursion with a Greek
+  delta, which the default PDF device cannot encode: with `plot_format = "pdf"`
+  the label came out with a substituted glyph and a warning, or the call
+  stopped where warnings are errors. A PDF is now written with `cairo_pdf()`
+  when R has cairo; the other formats are unchanged.
+
 - **An object called `existing_db` in the workspace no longer stops the
   enrichment.** The ctdR, STRINGdb, Phenolyzer with STRINGdb and pathfindR
   backends of `enrichment_analysis()` looked for a name `existing_db` up to the
