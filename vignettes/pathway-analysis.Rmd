@@ -1,5 +1,8 @@
 ---
 title: "Pathway and enrichment analysis"
+description: >
+  Run pathway and gene-set enrichment on SEMseeker association results
+  through WebGestalt, STRINGdb, pathfindR and CTD.
 output:
   rmarkdown::html_vignette:
     toc: true

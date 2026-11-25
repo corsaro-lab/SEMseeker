@@ -1,12 +1,15 @@
 ---
-title: "Association analysis — statistical models, correlation and group tests"
+title: "Association analysis: statistical models, correlation and group tests"
+description: >
+  Test SEMseeker markers and delta metrics against phenotypes:
+  regression models, correlation, group tests, permutation and mediation.
 output:
   rmarkdown::html_vignette:
     toc: true
     toc_depth: 3
 bibliography: association-analysis.bib
 vignette: >
-  %\VignetteIndexEntry{Association analysis — statistical models, correlation and group tests}
+  %\VignetteIndexEntry{Association analysis: statistical models, correlation and group tests}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

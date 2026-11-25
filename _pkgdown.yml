@@ -22,7 +22,7 @@ authors:
     href: https://luigicorsaro.com/?utm_source=semseeker-docs
 
 home:
-  title: "semseeker — Stochastic Epigenetic Mutation Seeker"
+  title: "SEMseeker: Stochastic Epigenetic Mutation Seeker"
   description: >
     Detect, quantify and analyse stochastic epigenetic mutations (SEMs)
     from DNA methylation data.
@@ -38,9 +38,9 @@ navbar:
     articles:
       text: "Articles"
       menu:
-        - text: "Getting started — epimutations & delta metrics"
+        - text: "Getting started: epimutations and delta metrics"
           href: articles/getting-started.html
-        - text: "Association analysis — all statistical models"
+        - text: "Association analysis: statistical models, correlation and group tests"
           href: articles/association-analysis.html
         - text: "Pathway and enrichment analysis"
           href: articles/pathway-analysis.html

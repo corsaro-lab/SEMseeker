@@ -1,0 +1,38 @@
+{
+  "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+  "@type": "SoftwareSourceCode",
+  "identifier": "SEMseeker",
+  "name": "SEMseeker: Stochastic Epigenetic Mutations SEM Seeker",
+  "description": "Detection, quantification and association analysis of Stochastic Epigenetic Mutations (SEMs) from DNA methylation data: Illumina methylation arrays (EPIC 850k, 450k, 27k), bisulfite sequencing (WGBS / RRBS) and long-read sequencing (Oxford Nanopore, PacBio). Computes binary SEM calls and continuous deviation metrics, aggregates mutations into genomic lesions, and provides association analysis and pathway enrichment.",
+  "version": "0.99.6",
+  "license": "https://spdx.org/licenses/AGPL-3.0-or-later",
+  "codeRepository": "https://github.com/corsaro-lab/SEMseeker",
+  "issueTracker": "https://github.com/corsaro-lab/SEMseeker/issues",
+  "url": "https://corsaro-lab.github.io/SEMseeker/",
+  "readme": "https://github.com/corsaro-lab/SEMseeker#readme",
+  "sameAs": "https://doi.org/10.5281/zenodo.5095416",
+  "programmingLanguage": {
+    "@type": "ComputerLanguage",
+    "name": "R",
+    "url": "https://r-project.org"
+  },
+  "runtimePlatform": "R (>= 4.6.0)",
+  "author": [
+    {
+      "@type": "Person",
+      "@id": "https://orcid.org/0000-0003-1218-230X",
+      "givenName": "Luigi",
+      "familyName": "Corsaro"
+    }
+  ],
+  "maintainer": [
+    {
+      "@type": "Person",
+      "@id": "https://orcid.org/0000-0003-1218-230X",
+      "givenName": "Luigi",
+      "familyName": "Corsaro"
+    }
+  ],
+  "keywords": ["DNA methylation", "epigenetics", "stochastic epigenetic mutations", "Epigenetics", "DNAMethylation", "MethylationArray", "DifferentialMethylation", "Pathways", "LongRead", "Sequencing"],
+  "developmentStatus": "https://www.repostatus.org/#active"
+}

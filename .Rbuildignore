@@ -27,3 +27,5 @@
 ^\.coding_agent$
 ^ci-check-output$
 ^tests/testthat/NA$
+^CITATION\.cff$
+^codemeta\.json$

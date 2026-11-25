@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# semseeker
+# SEMseeker
 
 <!-- badges: start -->
 
@@ -29,7 +29,7 @@ variability per region.
 Supported input technologies:
 
 - **Illumina microarrays**: EPIC (850k), 450k, 27k — detected automatically
-- **Bisulfite sequencing (WGBS / RRBS)** and **long-read sequencing (ONT / PacBio)**: planned (see [documents/requirements.md](documents/requirements.md))
+- **Bisulfite sequencing (WGBS / RRBS)** and **long-read sequencing (ONT / PacBio)**: bedmethyl files (modkit / nanopolish) or coordinate-indexed data frames (`CHR`/`START`/`END`)
 
 ---
 
