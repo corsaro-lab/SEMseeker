@@ -75,7 +75,7 @@ jobs:
 
       - uses: r-lib/actions/setup-pandoc@v2
 
-      # gdtools (transitive dep via ctdR → clusterProfiler) requires cairo + fontconfig.
+      # cairo + fontconfig: graphics devices and font rendering (cairo_pdf for the PDF charts).
       - name: Install system libraries (macOS)
         if: runner.os == 'macOS'
         run: |
@@ -191,14 +191,19 @@ jobs:
               #          .assoc_adjust_vector(). Without it the test skips, and
               #          test-pkg_suggests_installed.R fails on purpose: a silent
               #          skip hides a coverage gap instead of reporting one.
-              "qvalue"
+              "qvalue",
+              # ctdR     test-enrich_result_resume.R: the resume path of
+              #          enrich_ctdR(), which refuses to start without ctdR.
+              #          On Bioconductor since 3.24; its imports (fgsea, GSVA,
+              #          limma, SummarizedExperiment) no longer pull clusterProfiler.
+              "ctdR"
             ),
             ask = FALSE, update = FALSE
           )
           # Install CRAN Suggests that are exercised by the test suite. These
           # are deliberately enumerated (rather than installed via
           # dependencies = "Suggests") because the full Suggests set pulls
-          # in heavy chains (pathfindR → ggkegg, ctdR, etc.) that are not
+          # in heavy chains (pathfindR → ggkegg, etc.) that are not
           # needed for R CMD check and that have repeatedly broken CI.
           #   Rfast     test-assoc_glm_model_bulk.R (binomial_bulk)
           #   mockery   test-assoc_model_limma.R (mocked bindings)

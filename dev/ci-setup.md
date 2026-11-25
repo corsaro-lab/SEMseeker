@@ -98,7 +98,7 @@ The step *Install R dependencies* of `R-CMD-check.yml` runs in four calls:
    dependency order, so these two go first.
 3. The Bioconductor packages the test suite uses: the three Illumina annotation
    packages, `AnnotationHub`, `TxDb.Hsapiens.UCSC.hg19.knownGene`,
-   `org.Hs.eg.db` and `qvalue`.
+   `org.Hs.eg.db`, `qvalue` and `ctdR` (on Bioconductor since 3.24).
 4. The CRAN `Suggests` the test suite uses: `Rfast`, `mockery`, `ggpubr`,
    `circlize`, `nanoparquet`.
 
@@ -113,8 +113,8 @@ it. `test-coverage.yml` keeps its own install list, also with
 `dependencies = NA`: nothing ties the two lists together, they are aligned by
 hand and have drifted before.
 
-`ctdR`, `pathfindR`, `WebGestaltR` and the other enrichment backends are
-`Suggests` that CI does not install. The code guards each call with
+`pathfindR`, `WebGestaltR` and the other enrichment backends are `Suggests`
+that CI does not install. The code guards each call with
 `requireNamespace()`; the tests that need one of them skip.
 
 ---

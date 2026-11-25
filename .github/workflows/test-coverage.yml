@@ -27,7 +27,7 @@ jobs:
 
       - uses: r-lib/actions/setup-pandoc@v2
 
-      # gdtools (transitive dep via ctdR → clusterProfiler) requires cairo + fontconfig
+      # cairo + fontconfig: graphics devices and font rendering (cairo_pdf for the PDF charts)
       # libomp is required at runtime by binary R packages built with OpenMP (e.g. Rfast)
       - name: Install system libraries (macOS)
         run: |
@@ -83,12 +83,15 @@ jobs:
               # Not optional: it is what turns the Entrez keys of TxDb into the
               # gene symbols the Illumina path uses, so both backends name a gene
               # the same way. test-anno_area_granges_build.R
-              "org.Hs.eg.db"
+              "org.Hs.eg.db",
+              # test-enrich_result_resume.R: the resume path of enrich_ctdR().
+              # On Bioconductor since 3.24, without the clusterProfiler chain.
+              "ctdR"
             ),
             ask = FALSE, update = FALSE
           )
           # Install Suggests that are safe to install from CRAN (no Bioconductor chain)
-          # Excluded: pathfindR, ctdR, GEOquery, STRINGdb, AnnotationDbi,
+          # Excluded: pathfindR, GEOquery, STRINGdb, AnnotationDbi,
           #           OpenCL, openai, WebGestaltR (require Bioc or non-CRAN sources)
           #
           #   Rfast    test-assoc_glm_model_bulk.R (binomial_bulk)
