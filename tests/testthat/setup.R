@@ -256,9 +256,18 @@ tmp <- normalizePath(tempdir())
 # that reuse a folder deliberately - resume paths, idempotency - keep doing so:
 # they hold it in a local variable, and only where that variable comes from has
 # changed.
+#
+# The name comes from tempfile(), not from R's random number generator. The
+# suite fixes the seed in many places, and a name drawn with stringi after the
+# same seed was the same name: two tests were handed one folder. Where the
+# first test's folder could not be removed (on Windows, files still open), the
+# second found it full and core_init_env(start_fresh = TRUE) refused to delete
+# a folder SEMseeker had not created. tempfile() ignores set.seed() and never
+# returns a path that already exists.
 sem_test_folder <- function() {
-  d <- file.path(normalizePath(tempdir()), "semseeker",
-                 stringi::stri_rand_strings(1, 12, pattern = "[A-Za-z0-9]"))
+  test_root <- file.path(normalizePath(tempdir()), "semseeker")
+  dir.create(test_root, recursive = TRUE, showWarnings = FALSE)
+  d <- tempfile(pattern = "", tmpdir = test_root)
   dir.create(d, recursive = TRUE, showWarnings = FALSE)
   d
 }
