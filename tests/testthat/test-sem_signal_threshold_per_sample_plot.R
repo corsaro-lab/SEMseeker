@@ -36,7 +36,7 @@ test_that("the delta labels are drawn, one per excursion", {
 
   labels <- unlist(lapply(built$data, function(layer) layer$label))
   labels <- labels[!is.na(labels)]
-  deltas <- labels[grepl("\u03B4", labels)]
+  deltas <- labels[grepl("^delta~", labels)]
 
   # two excursions, two deltas. MID is inside the envelope and REF_1 is a
   # reference, so neither is annotated.
@@ -48,14 +48,14 @@ test_that("the delta is the distance outside the envelope, in the right directio
   built <- ggplot2::ggplot_build(
     .build(.signal(), .envelope(), .sheet4(), "1_1001", .palette))
   labels <- unlist(lapply(built$data, function(layer) layer$label))
-  deltas <- labels[!is.na(labels) & grepl("\u03B4", labels)]
+  deltas <- labels[!is.na(labels) & grepl("^delta~", labels)]
 
   # CASE_1 is 0.95 against an upper limit of 0.8, so 0.15.
   # CASE_2 is 0.05 against a lower limit of 0.2, so 0.15 as well: a distance
   # outside the envelope, not a signed difference, so both are positive.
   # The number is parsed out rather than matched as a string: the exponent of
   # 1.5e-01 carries a minus of its own, so looking for "-" proves nothing.
-  numbers <- as.numeric(sub("^\\S+\\s+", "", deltas))
+  numbers <- as.numeric(sub('^delta~"(.*)"$', "\\1", deltas))
   expect_equal(sort(numbers), c(0.15, 0.15))
   expect_true(all(numbers > 0))
 })
@@ -97,7 +97,7 @@ test_that("the five envelope lines render, and their labels can be turned off", 
   bare_labels <- unlist(lapply(without$data, function(layer) layer$label))
   bare_labels <- bare_labels[!is.na(bare_labels)]
   expect_false("Upper Limit" %in% bare_labels)
-  expect_equal(sum(grepl("\u03B4", bare_labels)), 2L)
+  expect_equal(sum(grepl("^delta~", bare_labels)), 2L)
   bare_lines <- unlist(lapply(without$data, function(layer) layer$yintercept))
   expect_equal(length(bare_lines[!is.na(bare_lines)]), 5L)
 })
@@ -116,7 +116,7 @@ test_that("a reference sample is marked as one even outside the envelope it defi
   expect_equal(sum(fills == "blue"), 1L)
   # and it carries no delta: a reference is not reported as an excursion.
   labels <- unlist(lapply(built$data, function(layer) layer$label))
-  expect_equal(sum(grepl("\u03B4", labels[!is.na(labels)])), 2L)
+  expect_equal(sum(grepl("^delta~", labels[!is.na(labels)])), 2L)
 })
 
 test_that("a non-finite threshold drops its line instead of breaking the chart", {
@@ -200,26 +200,30 @@ test_that("the door writes a file and refuses to invent an envelope", {
   expect_match(dirname(written), "SIGNAL_THRESHOLD_PER_SAMPLE")
 })
 
-# The excursion labels carry a Greek delta, which the base pdf() device cannot
-# encode: it warns and substitutes the glyph, and fails where warnings are
-# errors. The chart saved as a PDF must therefore draw without a warning.
-test_that("a PDF draws the delta labels without an encoding warning", {
-  skip_if_not(isTRUE(capabilities("cairo")), "R built without cairo: the base pdf() device is the only one")
+# The excursion labels carry a Greek delta. Written as the Unicode character it
+# fails on the base pdf() device, which encodes text in a single byte, and the
+# devices that can draw it are not on every machine: cairo_pdf() on macOS needs
+# XQuartz. So the delta is plotmath, and the chart must save through the base
+# pdf() device itself, with no warning.
+test_that("a PDF on the base pdf() device draws the delta labels without a warning", {
   pdf_path <- tempfile(fileext = ".pdf")
   on.exit(unlink(pdf_path), add = TRUE)
   plot_object <- .build(.signal(), .envelope(), .sheet4(), "1_1001", .palette)
 
   expect_no_warning(ggplot2::ggsave(pdf_path, plot = plot_object, width = 9, height = 5, units = "in",
-                                    device = SEMseeker:::.sem_threshold_plot_device(pdf_path)))
+                                    device = grDevices::pdf))
   expect_true(file.exists(pdf_path))
 })
 
-test_that("only a PDF changes device; every other format keeps ggsave's choice", {
-  expect_null(SEMseeker:::.sem_threshold_plot_device("chart.png"))
-  expect_null(SEMseeker:::.sem_threshold_plot_device("chart.svg"))
-  if (isTRUE(capabilities("cairo"))) {
-    expect_identical(SEMseeker:::.sem_threshold_plot_device("chart.PDF"), grDevices::cairo_pdf)
-  } else {
-    expect_null(SEMseeker:::.sem_threshold_plot_device("chart.pdf"))
-  }
+test_that("each delta label is a valid plotmath expression and keeps the number as written", {
+  built <- ggplot2::ggplot_build(
+    .build(.signal(), .envelope(), .sheet4(), "1_1001", .palette))
+  labels <- unlist(lapply(built$data, function(layer) layer$label))
+  deltas <- labels[!is.na(labels) & grepl("^delta~", labels)]
+
+  # a label that does not parse would stop the drawing, not just look wrong.
+  parsed <- lapply(deltas, function(label) str2lang(label))
+  expect_length(parsed, 2L)
+  # the number is a quoted string, so plotmath prints 1.5e-01 and not 0.15.
+  expect_true(all(grepl('^delta~"[0-9.]+e[-+][0-9]+"$', deltas)))
 })

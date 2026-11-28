@@ -102,30 +102,9 @@ sem_signal_threshold_per_sample_plot <- function(probe, sample_sheet,
     show_labels = show_labels, label_font_size = label_font_size)
 
   ggplot2::ggsave(filename, plot = plot_object, width = 9, height = 5,
-                  units = "in", dpi = as.numeric(ssEnv$plot_resolution_ppi),
-                  device = .sem_threshold_plot_device(filename))
+                  units = "in", dpi = as.numeric(ssEnv$plot_resolution_ppi))
 
   invisible(filename)
-}
-
-# The device that can draw this chart's labels into `filename`.
-#
-# Why it exists: every excursion label starts with a Greek delta (U+03B4). The
-# base pdf() device writes text in a single-byte encoding that has no delta: it
-# warns and substitutes the glyph, or stops when warnings are errors, as under
-# R CMD check. cairo_pdf() draws any Unicode glyph, so a PDF goes through it
-# whenever R was built with cairo. Every other format keeps ggsave()'s choice
-# from the extension, and so does a PDF on an R without cairo.
-#
-# Args:
-#   filename: character(1), the path the chart is saved to; only its extension
-#     is read, compared without regard to case.
-#
-# Returns: grDevices::cairo_pdf for a PDF when cairo is available, otherwise
-#   NULL, which leaves the device to ggsave().
-.sem_threshold_plot_device <- function(filename) {
-  is_pdf <- tolower(tools::file_ext(filename)) == "pdf"
-  if (is_pdf && isTRUE(capabilities("cairo"))) grDevices::cairo_pdf else NULL
 }
 
 # The reference envelope of one probe, or NULL. The thresholds are written once
@@ -197,20 +176,23 @@ sem_signal_threshold_per_sample_plot <- function(probe, sample_sheet,
   reference_lines <- reference_lines[is.finite(reference_lines$VALUE), ,
                                      drop = FALSE]
 
-  # The label is the distance outside the envelope, prefixed with a delta.
-  # The character is written as a \u escape and not literally: R CMD check
-  # tolerates non-ASCII in a comment and refuses it in code, and this one is in
-  # a string.
+  # The label is the distance outside the envelope, prefixed with a delta, for
   # excursions only: writing one for every sample would annotate "0" across the
   # whole axis.
+  # The delta is plotmath (`delta`), drawn from the symbol font, and not the
+  # Unicode character U+03B4. The base pdf() device writes text in a single-byte
+  # encoding that has no delta and fails on it, and the devices that do have it
+  # are not always there: cairo_pdf() on macOS needs XQuartz. The symbol font is
+  # available to every device. The number is quoted so plotmath prints it as
+  # written, 1.5e-01, instead of reading it as 0.15.
   distance <- ifelse(class_of_sample == "Hyper",
                      signal$VALUE - envelope$superior,
                      envelope$inferior - signal$VALUE)
   annotations <- data.frame(
     X = signal$SAMPLE[is_excursion],
     VALUE = signal$VALUE[is_excursion],
-    LABEL = paste0("\u03B4 ", format(distance[is_excursion],
-                                     scientific = TRUE, digits = 2)),
+    LABEL = paste0("delta~\"", format(distance[is_excursion],
+                                      scientific = TRUE, digits = 2), "\""),
     COLOUR = palette[class_of_sample[is_excursion]],
     stringsAsFactors = FALSE)
 
@@ -219,6 +201,7 @@ sem_signal_threshold_per_sample_plot <- function(probe, sample_sheet,
     class_colours = palette,
     reference_lines = reference_lines,
     annotations = if (nrow(annotations) > 0L) annotations else NULL,
+    annotations_parse = TRUE,
     label_font_size = label_font_size,
     title = paste("Signal against the reference envelope at", probe))
 }

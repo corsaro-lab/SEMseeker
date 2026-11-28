@@ -27,7 +27,7 @@ jobs:
 
       - uses: r-lib/actions/setup-pandoc@v2
 
-      # cairo + fontconfig: graphics devices and font rendering (cairo_pdf for the PDF charts)
+      # cairo + fontconfig: graphics devices and font rendering.
       # libomp is required at runtime by binary R packages built with OpenMP (e.g. Rfast)
       - name: Install system libraries (macOS)
         run: |

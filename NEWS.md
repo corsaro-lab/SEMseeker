@@ -89,8 +89,9 @@
   `sem_signal_threshold_per_sample_plot()` labels each excursion with a Greek
   delta, which the default PDF device cannot encode: with `plot_format = "pdf"`
   the label came out with a substituted glyph and a warning, or the call
-  stopped where warnings are errors. A PDF is now written with `cairo_pdf()`
-  when R has cairo; the other formats are unchanged.
+  stopped where warnings are errors. The delta is now drawn as a plotmath
+  symbol, which every graphics device can render, so a PDF is correct on any
+  system without cairo or XQuartz; the other formats are unchanged.
 
 - **An object called `existing_db` in the workspace no longer stops the
   enrichment.** The ctdR, STRINGdb, Phenolyzer with STRINGdb and pathfindR

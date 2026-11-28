@@ -75,7 +75,7 @@ jobs:
 
       - uses: r-lib/actions/setup-pandoc@v2
 
-      # cairo + fontconfig: graphics devices and font rendering (cairo_pdf for the PDF charts).
+      # cairo + fontconfig: graphics devices and font rendering.
       - name: Install system libraries (macOS)
         if: runner.os == 'macOS'
         run: |

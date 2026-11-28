@@ -42,6 +42,11 @@
 #'   An empty `LABEL` draws the line without the label.
 #' @param annotations data.frame with `X`, `VALUE`, `LABEL` and `COLOUR`, or
 #'   `NULL`. One rotated label per point, overlap-checked.
+#' @param annotations_parse logical. `TRUE` reads each annotation `LABEL` as a
+#'   plotmath expression (for example `delta~"0.15"`), `FALSE` (the default)
+#'   draws it as plain text. Plotmath draws Greek letters from the symbol font,
+#'   which every graphics device has, where a Unicode character fails on the
+#'   base pdf() device.
 #' @param segment_alpha numeric. Opacity of the segments.
 #' @param label_font_size numeric. Size of the annotation labels.
 #' @param max_x_labels integer. Above this many distinct categories the x axis
@@ -59,6 +64,7 @@
 #' @noRd
 .plot_lollipop_build <- function(plot_data, x_label, y_label, class_colours,
                                  reference_lines = NULL, annotations = NULL,
+                                 annotations_parse = FALSE,
                                  segment_alpha = 0.5, label_font_size = 3,
                                  max_x_labels = 60L, title = "") {
 
@@ -129,7 +135,7 @@
         ggplot2::aes(x = .data$X, y = .data$VALUE, label = .data$LABEL,
                      colour = .data$COLOUR),
         angle = 90, check_overlap = TRUE, size = label_font_size,
-        hjust = 1, vjust = -0.45)
+        hjust = 1, vjust = -0.45, parse = annotations_parse)
 
   plot_object
 }
