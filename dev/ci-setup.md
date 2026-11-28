@@ -98,7 +98,11 @@ The step *Install R dependencies* of `R-CMD-check.yml` runs in four calls:
    dependency order, so these two go first.
 3. The Bioconductor packages the test suite uses: the three Illumina annotation
    packages, `AnnotationHub`, `TxDb.Hsapiens.UCSC.hg19.knownGene`,
-   `org.Hs.eg.db`, `qvalue` and `ctdR` (on Bioconductor since 3.24).
+   `org.Hs.eg.db`, `qvalue` and `ctdR` (on Bioconductor since 3.24). On Linux
+   `ctdR` needs the system library `libmagick++-dev`: it imports `GSVA`, which
+   imports `SpatialExperiment`, which imports `magick`, and the P3M binary of
+   `magick` links `libMagick++`. Without it `ctdR` installs but cannot load,
+   and the meta-test below reports it as missing.
 4. The CRAN `Suggests` the test suite uses: `Rfast`, `mockery`, `ggpubr`,
    `circlize`, `nanoparquet`.
 

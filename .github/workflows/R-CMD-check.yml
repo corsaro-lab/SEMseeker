@@ -83,6 +83,9 @@ jobs:
           # libomp is keg-only → symlink so dyld finds it when loading Rfast.so
           sudo ln -sf "$(brew --prefix libomp)/lib/libomp.dylib" "$(brew --prefix)/lib/libomp.dylib"
 
+      # libmagick++-dev: the P3M binary of magick links libMagick++, and magick is
+      # pulled in by ctdR -> GSVA -> SpatialExperiment. Without it ctdR installs
+      # but cannot load.
       - name: Install system libraries (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -91,7 +94,7 @@ jobs:
             libcurl4-openssl-dev libssl-dev libxml2-dev \
             libfontconfig1-dev libharfbuzz-dev libfribidi-dev \
             libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev \
-            libcairo2-dev libgit2-dev libsodium-dev
+            libcairo2-dev libgit2-dev libsodium-dev libmagick++-dev
 
       - uses: r-lib/actions/setup-r@v2
         with:
