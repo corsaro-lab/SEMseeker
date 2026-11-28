@@ -174,7 +174,15 @@ jobs:
           # installs stopped one package from being load-tested before another
           # was built, but it does not make BiocManager order a vector
           # topologically: the order asked for is the order used.
-          BiocManager::install(c("limma", "KEGGREST"), ask = FALSE, update = FALSE)
+          #
+          # GenomicFeatures joins them for the same reason (Bioconductor 3.24).
+          # The annotation packages load it while they are load-tested, through
+          # minfi and bumphunter. While Bioconductor has no macOS binary of the
+          # current GenomicFeatures, the runner builds it from source, and in
+          # the vector below it was built after the three Illumina annotation
+          # packages: they failed with "there is no package called
+          # 'GenomicFeatures'", and 39 tests failed on macOS only.
+          BiocManager::install(c("limma", "KEGGREST", "GenomicFeatures"), ask = FALSE, update = FALSE)
           BiocManager::install(
             c(
               "IlluminaHumanMethylationEPICanno.ilm10b4.hg19",

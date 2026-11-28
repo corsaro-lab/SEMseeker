@@ -91,11 +91,15 @@ The step *Install R dependencies* of `R-CMD-check.yml` runs in four calls:
    `LinkingTo` only: the full `Suggests` set pulls in chains such as
    `pathfindR` -> `ggkegg` that are not needed for `R CMD check` and have
    repeatedly broken CI.
-2. `BiocManager::install(c("limma", "KEGGREST"))` on its own. The Illumina
-   annotation packages load `minfi` while they install, and `minfi` needs
-   `limma`; `KEGGREST` is loaded by `bumphunter` and `AnnotationDbi` during the
-   same load tests. BiocManager installs a vector in the order given, not in
-   dependency order, so these two go first.
+2. `BiocManager::install(c("limma", "KEGGREST", "GenomicFeatures"))` on its
+   own. The Illumina annotation packages load `minfi` while they install, and
+   `minfi` needs `limma`; `KEGGREST` is loaded by `bumphunter` and
+   `AnnotationDbi`, and `GenomicFeatures` by `minfi` and `bumphunter`, during
+   the same load tests. BiocManager installs a vector in the order given, not in
+   dependency order, so these three go first. `GenomicFeatures` became
+   necessary with Bioconductor 3.24, when macOS had no binary of the new
+   version yet and the runner built it from source after the annotation
+   packages. `test-coverage.yml` uses the same first call.
 3. The Bioconductor packages the test suite uses: the three Illumina annotation
    packages, `AnnotationHub`, `TxDb.Hsapiens.UCSC.hg19.knownGene`,
    `org.Hs.eg.db`, `qvalue` and `ctdR` (on Bioconductor since 3.24). On Linux
